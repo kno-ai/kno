@@ -1,8 +1,6 @@
 package cli
 
 import (
-	"fmt"
-
 	"github.com/kno-ai/kno/internal/app"
 	"github.com/kno-ai/kno/internal/config"
 	mcpserver "github.com/kno-ai/kno/internal/mcp"
@@ -17,12 +15,12 @@ func newMCPCmd() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cfg, err := config.Load()
 			if err != nil {
-				return fmt.Errorf("loading config: %w", err)
+				return mcpserver.ServeUnconfigured(err)
 			}
 
 			a, err := app.FromConfig(cfg)
 			if err != nil {
-				return err
+				return mcpserver.ServeUnconfigured(err)
 			}
 
 			return mcpserver.Serve(a)
