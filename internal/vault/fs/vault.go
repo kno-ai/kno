@@ -42,7 +42,15 @@ func (v *Vault) EnsureLayout() error {
 
 func (v *Vault) WriteNote(note model.Note) (string, error) {
 	if note.ID == "" {
-		note.ID = newNoteID(note.CreatedAt)
+		note.ID = newNoteID(note.CreatedAt, note.Title)
+		// Handle collision: append short random suffix.
+		if dir, err := sanitize.SafeJoin(v.NotesDir(), note.ID); err == nil {
+			if _, err := os.Stat(dir); err == nil {
+				b := make([]byte, 2)
+				rand.Read(b)
+				note.ID = note.ID + "-" + hex.EncodeToString(b)
+			}
+		}
 	}
 
 	dir, err := sanitize.SafeJoin(v.NotesDir(), note.ID)
@@ -465,12 +473,9 @@ func (v *Vault) DeletePage(id string) error {
 
 // --- helpers ---
 
-func newNoteID(t time.Time) string {
-	b := make([]byte, 3)
-	if _, err := rand.Read(b); err != nil {
-		b = []byte{0, 0, 0}
-	}
-	return fmt.Sprintf("%s-%s", t.Format("20060102T150405Z0700"), hex.EncodeToString(b))
+func newNoteID(t time.Time, title string) string {
+	slug := sanitize.Slugify(title)
+	return fmt.Sprintf("%s-%s", t.Format("20060102"), slug)
 }
 
 func writeJSON(path string, v any) error {

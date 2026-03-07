@@ -1,20 +1,27 @@
 # kno — User Guide
 
-kno is a knowledge vault for your AI conversations. It gives Claude a memory
-that compounds over time — your decisions, lessons, and context accumulate
-into living documents that load instantly into any future session.
+kno is a knowledge vault for your AI conversations. You decide what's
+worth keeping, how it's organized, and when it gets refined — and that
+curation is what makes it useful. Your decisions, lessons, and context
+accumulate into living documents that load instantly into any future
+session. The knowledge compounds because you tend it.
 
 ---
 
 ## How it works in one paragraph
 
-At the end of a session you run `/kno.save`. kno saves a structured
-summary to your vault. Periodically you run `/kno.distill`, which reads
-your saved sessions and synthesizes them into page documents — maintained,
-readable files that reflect everything you've learned about a subject. At
-the start of your next session you run `/kno.load`, which finds the
-relevant page documents and injects them into the conversation. Claude
-starts informed instead of cold. That's the loop.
+At the end of a session you run `/kno.save`. kno reviews the conversation
+and proposes what to keep — you confirm, edit, or skip. Periodically you
+run `/kno.distill`, which synthesizes your saved sessions into page
+documents — maintained, readable files that reflect everything you've
+learned about a subject, organized the way you think about it. At the
+start of your next session you run `/kno.load`, which finds the relevant
+pages and injects them into the conversation. Claude starts informed
+instead of cold. That's the loop: save, distill, load.
+
+The loop takes about 30 seconds per session. That small investment is
+what turns a pile of conversations into knowledge you trust — documents
+you'd hand to a colleague, not transcripts you'd never reread.
 
 ---
 
@@ -342,34 +349,17 @@ kno doesn't need to know about it.
 
 ## Tags
 
-Tags are the connective tissue of your vault. When you save a session,
-kno proposes tags based on the conversation. When you load or distill,
-kno uses those tags to match sessions to your pages and queries. Good
-tags make sessions findable; inconsistent tags make them invisible.
-
-**Use #hashtags to steer tags.** When you run `/kno.save`, any #hashtags
-in your message become tags automatically:
+Tags are how load and distill match sessions to your pages and queries.
+kno proposes them during save — you can steer with #hashtags:
 
 ```
 /kno.save — #aws #rds, the parameter group fix was the big lesson
 ```
 
-**Be consistent.** kno shows you existing tags from recent sessions so
-you can reuse them. If prior sessions used "aws", stick with "aws" —
-don't introduce "amazon" or "AWS". Consistent tags mean better matching
-across load, distill, and page suggestions.
-
-**Be specific.** "rds" and "connection-pool" are more useful than
-"databases" and "infrastructure." Specific tags create tight clusters
-that distill can match confidently.
-
-**2-5 tags per session.** One tag is too few to be useful. Ten tags
-dilute relevance. Aim for the tags you'd use to find this session
-six months from now.
-
-**Tags drive page suggestions.** When kno notices 3+ sessions sharing
-tags with no matching page, it suggests creating one. Good tags make
-this signal clear; vague tags make it noisy.
+kno shows existing tags from recent sessions so you can stay consistent.
+Reuse "aws" rather than introducing "amazon" — consistent, specific tags
+make everything downstream work better. When several sessions share tags
+with no matching page, kno suggests creating one.
 
 ---
 
@@ -377,8 +367,9 @@ this signal clear; vague tags make it noisy.
 
 **Save immediately.** The habit that makes everything else work is running
 `/kno.save` before you close the tab. The summary is generated from the
-conversation while it's still in context. Waiting until later means
-reconstructing it.
+conversation while it's still in context — you review it, confirm the
+tags, and move on. Thirty seconds of curation now means Claude starts
+your next session already knowing what happened.
 
 **Create pages before you need them.** If you know you're going to work
 on something repeatedly — a codebase, a health situation, a hobby — create
@@ -427,6 +418,9 @@ kno page list
 
 # show a page document
 kno page show <id>
+
+# rename a page (updates files and note references)
+kno page rename <id> --name "New Name"
 
 # search pages
 kno page search "aws infrastructure"

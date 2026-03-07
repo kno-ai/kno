@@ -3,15 +3,17 @@
 A knowledge vault for your AI conversations.
 
 Every time you close a chat with Claude, the insights from that session
-disappear. kno fixes that. It saves what you learned, synthesizes it into
-living page documents over time, and loads the right context into your next
-session automatically.
+disappear. kno fixes that. You save what you learned, distill it into
+living page documents, and load the right context into your next session.
+The knowledge compounds because you curate it — 30 seconds of attention
+per session is what turns scattered conversations into documents you'd
+hand to a colleague.
 
 ## The knowledge loop
 
 Three commands. One habit.
 
-- **`/kno.save`** — End of session. Save a structured summary to your vault.
+- **`/kno.save`** — End of session. Review and confirm a structured summary with tags.
 - **`/kno.distill`** — Periodically. Synthesize sessions into living page documents.
 - **`/kno.load`** — Start of session. Load relevant knowledge before you begin.
 
@@ -39,7 +41,7 @@ Restart Claude Desktop after setup. Five slash commands appear automatically:
 ## What it feels like
 
 ```
-/kno.save
+/kno.save — #aws #rds, the parameter group fix was the key thing
 
 Here's what I'll save from this session:
 
@@ -61,14 +63,16 @@ What are you working on?
 > debugging a connection pool issue in our payment service
 
 Found:
-  Pages (1):    Payment Processing — last distilled 2 weeks ago
-  Sessions (2): ACH return handling (3 days ago)
-                MySQL connection pool (1 week ago)
+  Pages (1):     Payment Processing — last distilled 2 weeks ago
+  Sessions (2,   matched by tags: payments, mysql, connection-pool):
+                 ACH return handling (3 days ago)
+                 MySQL connection pool (1 week ago)
 
 Load all 3? [yes / pick / skip]
 ```
 
-Your vault is just a folder. Sync it with git, Dropbox, iCloud, or don't.
+Your vault is just a folder of markdown files. Sync it with git, Dropbox,
+iCloud — or browse it in Obsidian alongside your other notes.
 
 ## Documentation
 

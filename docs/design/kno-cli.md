@@ -41,8 +41,8 @@ JSON errors are written to stderr with exit code 1.
 **Common errors**
 
 ```
-✗  Not found: note x9f200
-✗  Not found: page b81e44
+✗  Not found: note 20260305-rds-slow-query-debugging
+✗  Not found: page aws-infrastructure
 ✗  --title is required
 ✗  --name is required
 ✗  --count is required
@@ -94,22 +94,15 @@ if Claude Desktop is detected.
 
 **Options**
 
-    --name <name>           Name for this vault's MCP server registration.
-                            Defaults to `kno`. Use a different name for
-                            each additional vault (e.g. `kno-personal`).
-                            The name determines the skill prefix in Claude
-                            Desktop — a vault named `kno-personal` exposes
-                            /kno-personal.save, /kno-personal.load, etc.
-
-    --vault <path>          Vault directory path. Default: ~/kno for
-                            the first vault. Use a distinct path for each
-                            additional vault (e.g. ~/kno-personal).
-
     --name <name>           MCP server name registered with Claude Desktop.
                             Default: kno. Use a distinct name for each
                             additional vault (e.g. kno-personal). The name
                             becomes the skill prefix in Claude Desktop:
                             /kno-personal.save, /kno-personal.load, etc.
+
+    --vault <path>          Vault directory path. Default: ~/kno for
+                            the first vault. Use a distinct path for each
+                            additional vault (e.g. ~/kno-personal).
 
     --no-claude-desktop     Skip Claude Desktop detection and MCP
                             registration. Useful in headless or CI
@@ -214,10 +207,10 @@ List notes in the vault, newest first.
 **Output (default)**
 
 ```
-ID        TITLE                            CREATED       STATUS
-x9f200    RDS slow query debugging          2026-03-05    not distilled
-a3b100    SQS dead letter queue             2026-02-20    distilled
-c7d400    EFT file processing               2026-02-10    distilled
+ID                                    TITLE                          CREATED       STATUS
+20260305-rds-slow-query-debugging     RDS slow query debugging       2026-03-05    not distilled
+20260220-sqs-dead-letter-queue        SQS dead letter queue          2026-02-20    distilled
+20260110-eft-file-processing          EFT file processing            2026-02-10    distilled
 ```
 
 **Output (--json)**
@@ -225,7 +218,7 @@ c7d400    EFT file processing               2026-02-10    distilled
 ```json
 [
   {
-    "id": "x9f200",
+    "id": "20260305-rds-slow-query-debugging",
     "title": "RDS slow query debugging",
     "metadata": {
       "tags": ["aws", "databases", "performance"],
@@ -262,7 +255,7 @@ read in a single call.
 **Output (default)**
 
 ```
-━━━ RDS slow query debugging  [x9f200]  2026-03-05 ━━━━━━━━━━━━━━━━━━━━━━━━
+━━━ RDS slow query debugging  [20260305-rds-slow-query-debugging]  2026-03-05 ━━━━━━━━━━━━━━━━━━━━━━━━
 
 Query planner regression after RDS 14.3 → 14.4 minor version upgrade...
 [full note content]
@@ -276,7 +269,7 @@ distilled_at: —
 ```json
 [
   {
-    "id": "x9f200",
+    "id": "20260305-rds-slow-query-debugging",
     "title": "RDS slow query debugging",
     "content": "...",
     "metadata": {
@@ -322,28 +315,28 @@ The response indicates what was removed and whether it was undistilled.
 **Output (default)**
 
 ```
-Created: RDS slow query debugging  [x9f200]
+Created: RDS slow query debugging  [20260305-rds-slow-query-debugging]
 ```
 
 When a distilled note was auto-removed to make room:
 
 ```
-Created: RDS slow query debugging  [x9f200]
-Removed: EFT file processing       [c7d400]  (oldest distilled — distill backlog reminder)
+Created: RDS slow query debugging  [20260305-rds-slow-query-debugging]
+Removed: EFT file processing       [20260110-eft-file-processing]  (oldest distilled — distill backlog reminder)
 ```
 
 When an undistilled note was auto-removed (no distilled notes available):
 
 ```
-Created: RDS slow query debugging  [x9f200]
-Removed: SQS visibility timeout    [f9e300]  (oldest — UNDISTILLED, knowledge may be lost. Run /kno.distill)
+Created: RDS slow query debugging  [20260305-rds-slow-query-debugging]
+Removed: SQS visibility timeout    [20260120-sqs-visibility-timeout]  (oldest — UNDISTILLED, knowledge may be lost. Run /kno.distill)
 ```
 
 **Output (--json)**
 
 ```json
 {
-  "id": "x9f200",
+  "id": "20260305-rds-slow-query-debugging",
   "title": "RDS slow query debugging",
   "created_at": "2026-03-05T14:22:00Z",
   "auto_removed": null
@@ -354,10 +347,10 @@ When a distilled note was auto-removed:
 
 ```json
 {
-  "id": "x9f200",
+  "id": "20260305-rds-slow-query-debugging",
   "title": "RDS slow query debugging",
   "created_at": "2026-03-05T14:22:00Z",
-  "auto_removed": "c7d400"
+  "auto_removed": "20260110-eft-file-processing"
 }
 ```
 
@@ -365,10 +358,10 @@ When an undistilled note was auto-removed:
 
 ```json
 {
-  "id": "x9f200",
+  "id": "20260305-rds-slow-query-debugging",
   "title": "RDS slow query debugging",
   "created_at": "2026-03-05T14:22:00Z",
-  "auto_removed": "f9e300",
+  "auto_removed": "20260120-sqs-visibility-timeout",
   "auto_removed_undistilled": true
 }
 ```
@@ -397,21 +390,21 @@ Unspecified metadata keys are unchanged. Specified keys are replaced.
 
 ```bash
 # stamp distillation into one page
-kno note update x9f200 \
+kno note update 20260305-rds-slow-query-debugging \
   --meta distilled_at=2026-03-05T14:22:00Z \
-  --meta distilled_into=b81e44
+  --meta distilled_into=aws-infrastructure
 
 # stamp distillation into two pages — skill reads first, then writes all values
-kno note update x9f200 \
+kno note update 20260305-rds-slow-query-debugging \
   --meta distilled_at=2026-03-05T14:22:00Z \
-  --meta distilled_into=b81e44 \
-  --meta distilled_into=c90d12
+  --meta distilled_into=aws-infrastructure \
+  --meta distilled_into=kubernetes-migration
 
 # update content only
-echo "<revised content>" | kno note update x9f200
+echo "<revised content>" | kno note update 20260305-rds-slow-query-debugging
 
 # update content and tags
-echo "<revised content>" | kno note update x9f200 \
+echo "<revised content>" | kno note update 20260305-rds-slow-query-debugging \
   --meta tags=aws \
   --meta tags=rds
 ```
@@ -419,14 +412,14 @@ echo "<revised content>" | kno note update x9f200 \
 **Output (default)**
 
 ```
-Updated: RDS slow query debugging  [x9f200]
+Updated: RDS slow query debugging  [20260305-rds-slow-query-debugging]
 ```
 
 **Output (--json)**
 
 ```json
 {
-  "id": "x9f200",
+  "id": "20260305-rds-slow-query-debugging",
   "updated_at": "2026-03-05T15:00:00Z"
 }
 ```
@@ -454,9 +447,9 @@ with summaries. Metadata filters are applied on top of search results.
 **Output (default)**
 
 ```
-ID        TITLE                          SCORE   STATUS
-x9f200    RDS slow query debugging       0.92    not distilled
-f3a100    Aurora connection pool tuning  0.81    distilled
+ID                                          TITLE                            SCORE   STATUS
+20260305-rds-slow-query-debugging           RDS slow query debugging         0.92    not distilled
+20260215-aurora-connection-pool-tuning      Aurora connection pool tuning     0.81    distilled
 ```
 
 **Output (--json)**
@@ -464,7 +457,7 @@ f3a100    Aurora connection pool tuning  0.81    distilled
 ```json
 [
   {
-    "id": "x9f200",
+    "id": "20260305-rds-slow-query-debugging",
     "title": "RDS slow query debugging",
     "score": 0.92,
     "metadata": {
@@ -512,10 +505,10 @@ List all pages. Pages are finite and curated — no limit is applied.
 **Output (default)**
 
 ```
-ID        NAME                    LAST DISTILLED
-b81e44    AWS Infrastructure      2026-03-01
-a3f9c2    Payment Processing      2026-02-15
-c90d12    Kubernetes Migration             —
+ID                    NAME                    LAST DISTILLED
+aws-infrastructure    AWS Infrastructure      2026-03-01
+payment-processing    Payment Processing      2026-02-15
+kubernetes-migration           Kubernetes Migration             —
 ```
 
 **Output (--json)**
@@ -523,7 +516,7 @@ c90d12    Kubernetes Migration             —
 ```json
 [
   {
-    "id": "b81e44",
+    "id": "aws-infrastructure",
     "name": "AWS Infrastructure",
     "metadata": {
       "last_distilled_at": "2026-03-01T10:00:00Z"
@@ -550,7 +543,7 @@ Show full page document and metadata.
 **Output (default)**
 
 ```
-━━━ AWS Infrastructure  [b81e44]  last distilled 2026-03-01 ━━━━━━━━━━━━
+━━━ AWS Infrastructure  [aws-infrastructure]  last distilled 2026-03-01 ━━━━━━━━━━━━
 
 ## AWS Infrastructure — Current Understanding
 ...
@@ -561,7 +554,7 @@ Show full page document and metadata.
 
 ```json
 {
-  "id": "b81e44",
+  "id": "aws-infrastructure",
   "name": "AWS Infrastructure",
   "content": "## AWS Infrastructure — Current Understanding\n...",
   "metadata": {
@@ -599,14 +592,14 @@ The CLI stores and returns content without interpretation.
 **Output (default)**
 
 ```
-Created: AWS Infrastructure  [b81e44]
+Created: AWS Infrastructure  [aws-infrastructure]
 ```
 
 **Output (--json)**
 
 ```json
 {
-  "id": "b81e44",
+  "id": "aws-infrastructure",
   "name": "AWS Infrastructure",
   "created_at": "2026-01-15T09:00:00Z"
 }
@@ -633,30 +626,67 @@ either or both. Piping content replaces the full page content.
 
 ```bash
 # update content — primary distill write-back
-echo "<updated content>" | kno page update b81e44
+echo "<updated content>" | kno page update aws-infrastructure
 
 # update metadata only
-kno page update b81e44 --meta last_distilled_at=2026-03-05T14:22:00Z
+kno page update aws-infrastructure --meta last_distilled_at=2026-03-05T14:22:00Z
 
 # update both — typical distill write-back
-echo "<updated content>" | kno page update b81e44 \
+echo "<updated content>" | kno page update aws-infrastructure \
   --meta last_distilled_at=2026-03-05T14:22:00Z
 ```
 
 **Output (default)**
 
 ```
-Updated: AWS Infrastructure  [b81e44]
+Updated: AWS Infrastructure  [aws-infrastructure]
 ```
 
 **Output (--json)**
 
 ```json
 {
-  "id": "b81e44",
+  "id": "aws-infrastructure",
   "updated_at": "2026-03-05T14:22:00Z"
 }
 ```
+
+---
+
+### kno page rename
+
+```
+kno page rename <id>  --name <name>  [--json]
+```
+
+Rename a page. Renames the underlying files, updates the search index, and
+fixes `distilled_into` references on any notes that pointed to the old ID.
+The page ID is derived from the name (slugified), so renaming typically
+changes the ID.
+
+**Options**
+
+    --name <name>    Required. New display name for the page.
+    --json           Machine-readable output
+
+**Output (default)**
+
+```
+Renamed: aws-infrastructure → AWS Cloud Ops  [aws-cloud-ops]
+```
+
+**Output (--json)**
+
+```json
+{
+  "old_id": "aws-infrastructure",
+  "new_id": "aws-cloud-ops",
+  "name": "AWS Cloud Ops"
+}
+```
+
+If the slug doesn't change (e.g. only capitalization differs), the name
+is updated in metadata but files are not renamed.
 
 ---
 
@@ -680,9 +710,9 @@ Returns ranked results.
 **Output (default)**
 
 ```
-ID        NAME                  SCORE
-b81e44    AWS Infrastructure    0.95
-a3f9c2    Payment Processing    0.42
+ID                    NAME                  SCORE
+aws-infrastructure    AWS Infrastructure    0.95
+payment-processing    Payment Processing    0.42
 ```
 
 **Output (--json)**
@@ -690,7 +720,7 @@ a3f9c2    Payment Processing    0.42
 ```json
 [
   {
-    "id": "b81e44",
+    "id": "aws-infrastructure",
     "name": "AWS Infrastructure",
     "score": 0.95,
     "excerpt": "...RDS performance and connection pool tuning..."
@@ -724,12 +754,12 @@ Notes: 143 / 200  (57 remaining)
   Undistilled:   22
 
 Pages: 6
-  b81e44    AWS Infrastructure       last distilled 3 days ago
-  a3f9c2    Payment Processing       last distilled 2 weeks ago
-  c90d12    Kubernetes Migration              last distilled 1 month ago
-  d11e33    React Auth Patterns     never distilled
-  e22f44    EFT Processing           last distilled 6 days ago
-  f33a55    MySQL Optimization       last distilled 3 weeks ago
+  aws-infrastructure      AWS Infrastructure       last distilled 3 days ago
+  payment-processing      Payment Processing       last distilled 2 weeks ago
+  kubernetes-migration             Kubernetes Migration              last distilled 1 month ago
+  react-auth-patterns     React Auth Patterns     never distilled
+  eft-processing          EFT Processing           last distilled 6 days ago
+  mysql-optimization      MySQL Optimization       last distilled 3 weeks ago
 
 Config:
   notes.max_count           200
@@ -754,14 +784,14 @@ Config:
   },
   "pages": [
     {
-      "id": "b81e44",
+      "id": "aws-infrastructure",
       "name": "AWS Infrastructure",
       "metadata": {
         "last_distilled_at": "2026-03-02T10:00:00Z"
       }
     },
     {
-      "id": "a3f9c2",
+      "id": "payment-processing",
       "name": "Payment Processing",
       "metadata": {
         "last_distilled_at": "2026-02-19T10:00:00Z"
@@ -829,11 +859,11 @@ be removed without deleting anything.
 ```
 Would remove 5 notes (oldest first):
 
-  c7d400    EFT file processing           2026-01-10    distilled
-  b2a100    MySQL index tuning            2026-01-15    distilled
-  f9e300    SQS visibility timeout        2026-01-20    not distilled
-  a4c200    ACH return handling           2026-01-25    not distilled
-  d1b800    ECS task scaling              2026-02-01    distilled
+  20260110-eft-file-processing        EFT file processing        2026-01-10    distilled
+  20260115-mysql-index-tuning         MySQL index tuning         2026-01-15    distilled
+  20260120-sqs-visibility-timeout     SQS visibility timeout     2026-01-20    not distilled
+  20260125-ach-return-handling        ACH return handling        2026-01-25    not distilled
+  20260201-ecs-task-scaling           ECS task scaling           2026-02-01    distilled
 
 Run without --dry-run to proceed.
 ```
@@ -843,11 +873,11 @@ Run without --dry-run to proceed.
 ```
 Removed 5 notes (oldest first):
 
-  c7d400    EFT file processing           2026-01-10    distilled
-  b2a100    MySQL index tuning            2026-01-15    distilled
-  f9e300    SQS visibility timeout        2026-01-20    not distilled
-  a4c200    ACH return handling           2026-01-25    not distilled
-  d1b800    ECS task scaling              2026-02-01    distilled
+  20260110-eft-file-processing        EFT file processing        2026-01-10    distilled
+  20260115-mysql-index-tuning         MySQL index tuning         2026-01-15    distilled
+  20260120-sqs-visibility-timeout     SQS visibility timeout     2026-01-20    not distilled
+  20260125-ach-return-handling        ACH return handling        2026-01-25    not distilled
+  20260201-ecs-task-scaling           ECS task scaling           2026-02-01    distilled
 ```
 
 **Output (--json)**
@@ -855,7 +885,7 @@ Removed 5 notes (oldest first):
 ```json
 {
   "removed": 5,
-  "ids": ["c7d400", "b2a100", "f9e300", "a4c200", "d1b800"]
+  "ids": ["20260110-eft-file-processing", "20260115-mysql-index-tuning", "20260120-sqs-visibility-timeout", "20260125-ach-return-handling", "20260201-ecs-task-scaling"]
 }
 ```
 
@@ -882,14 +912,14 @@ distilled again on a future pass.
 **Output (default)**
 
 ```
-Deleted: AWS Infrastructure  [b81e44]
+Deleted: AWS Infrastructure  [aws-infrastructure]
 ```
 
 **Output (--json)**
 
 ```json
 {
-  "id": "b81e44",
+  "id": "aws-infrastructure",
   "deleted": true
 }
 ```

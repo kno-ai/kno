@@ -7,9 +7,10 @@ layout: default
 **A knowledge vault for your AI conversations.**
 
 Every time you close a chat with Claude, the insights from that session
-disappear. kno fixes that. It saves what you learned, synthesizes it into
-living page documents over time, and loads the right context into your next
-session automatically. Knowledge compounds instead of evaporating.
+disappear. kno fixes that. You save what you learned, distill it into
+living page documents, and load the right context into your next session.
+The knowledge compounds because you curate it — 30 seconds of attention
+per session turns scattered conversations into documents you trust.
 
 ---
 
@@ -27,9 +28,10 @@ Three commands. One habit.
   you close the tab.        documents.                not after.
 ```
 
-**`/kno.save`** — At the end of a session, kno reviews the conversation,
-proposes a structured summary with title, tags, and key points, and saves it
-to your vault. Ten seconds, and the session is preserved.
+**`/kno.save`** — At the end of a session, kno reviews the conversation and
+proposes a structured summary with title, tags, and key points. You confirm,
+edit, or skip — that moment of curation is what makes the knowledge findable
+later. Use #hashtags to steer tags directly.
 
 **`/kno.distill`** — Periodically, kno reads your saved sessions and folds
 them into page documents. Each page reflects everything you've learned about
@@ -78,19 +80,19 @@ kno has three layers:
 - **The skills** are the conversational layer — they interpret your intent,
   propose what to save, and guide you through the knowledge loop.
 
-Your vault is just a folder. Sync it with git, Dropbox, iCloud, or don't.
+Your vault is just a folder of markdown files. Sync it with git, Dropbox,
+iCloud — or browse it in Obsidian alongside your other notes.
 
 ```
 ~/kno/
   config.toml
   notes/
-    20260305T142200Z-a3b1c2/
+    20260305-rds-slow-query-debugging/
       content.md       # structured session summary
       meta.json        # title, tags, summary, distill status
   pages/
-    b81e44/
-      content.md       # living knowledge document
-      meta.json        # name, last_distilled_at
+    aws-infrastructure.md          # living knowledge document
+    aws-infrastructure.meta.json   # name, last_distilled_at
 ```
 
 ---

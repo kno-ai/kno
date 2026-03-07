@@ -262,6 +262,9 @@ kno page list --json
 
 # update content or guidance
 echo "<revised content>" | kno page update <id>
+
+# rename a page (updates files, index, and note references)
+kno page rename <id> --name "New Name"
 ```
 
 ### /kno.status

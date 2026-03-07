@@ -15,6 +15,13 @@ do, and you confirm before anything is written.
 These principles govern how all skills behave. Understanding them helps you
 trust the system — the skills follow these rules consistently.
 
+**You curate, kno compounds.** Every save, distill, and load is a moment
+where you decide what matters. That curation is the mechanism — the reason
+your pages read like documents you'd hand to a colleague, not auto-generated
+summaries you'd never reread. The loop takes seconds per session, and the
+knowledge it produces is yours: shaped by your judgment, organized by your
+priorities, refined every time you run distill.
+
 **Skills are conversational, not transactional.** You don't need to know
 command syntax or vault structure. Describe what you want. The skill
 interprets, proposes, and waits for confirmation. The structured vault
@@ -62,9 +69,11 @@ Each pass through the loop compounds the next. Notes feed distill.
 Distilled pages make load faster and richer. Better load means better
 sessions, which produce better notes.
 
-Over time, the vault accumulates a body of working knowledge that reflects
-how you actually think — not a generic summary, but your decisions, your
-lessons, your open questions.
+The loop is proactive by design. You choose what to save, what to focus
+on during distill, and what to load. That human judgment at each step is
+what produces pages worth reading — documents that reflect how you
+actually think, not auto-generated summaries. Your decisions, your
+lessons, your open questions, organized by your priorities.
 
 **These three commands are the user habit.**
 
@@ -73,9 +82,9 @@ are prefixed by the vault name. A vault set up as `kno-personal` exposes
 `/kno-personal.save`, `/kno-personal.distill`, and `/kno-personal.load`.
 The prefix is the only thing that changes — every skill works identically
 within its vault.
- `/kno.page` and `/kno.status`
+`/kno.page` and `/kno.status`
 exist to support the loop, but in practice the skill orchestrates them for
-you — surfacing page suggestions during note, checking vault health
+you — surfacing page suggestions during save, checking vault health
 before distill, prompting you when something needs attention. You may go
 weeks without calling them directly.
 
@@ -92,9 +101,11 @@ so far without treating it differently. You can save multiple times in a
 long session.
 
 **Why it matters:** Most insight from an LLM session evaporates when you
-close the tab. Note converts the session into a structured, searchable
-record that feeds every future session on the same page. The ten seconds
-it takes is the entire foundation of the knowledge loop.
+close the tab. Save converts the session into a structured, searchable
+record that feeds every future session on the same topic. You review the
+title, summary, and tags before confirming — that moment of curation is
+what makes the knowledge findable and useful later. Ten seconds now
+is the entire foundation of the knowledge loop.
 
 **How it works**
 
@@ -150,8 +161,8 @@ Got it. Updated:
 
 **Proactive suggestions**
 
-After note, if the vault is filling with undistilled notes, the skill
-will note it:
+After saving, if the vault is filling with undistilled sessions, the skill
+will mention it:
 
 ```
 Noted. You now have 18 undistilled notes.
