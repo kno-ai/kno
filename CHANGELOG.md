@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.1](https://github.com/kno-ai/kno/compare/v0.6.0...v0.6.1) (2026-03-07)
+
+
+### Bug Fixes
+
+* move directory field out of repository block in goreleaser config ([68d1632](https://github.com/kno-ai/kno/commit/68d1632048bd786ecdbb2841125aa0fe78b2aa15))
+
 ## [0.6.0](https://github.com/kno-ai/kno/compare/v0.5.0...v0.6.0) (2026-03-07)
 
 
