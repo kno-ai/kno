@@ -99,8 +99,8 @@ These are the only three you need to build a habit around.
 
 ### /kno.save
 
-Run this at the end of a session. kno reviews the conversation and
-proposes what to save.
+Run this at the end of a session — or mid-session when you hit a
+milestone. kno reviews the conversation and proposes what to save.
 
 ```
 /kno.save
@@ -205,6 +205,50 @@ Examples of guidance you might write:
 Good guidance is short and practical. A few sentences is enough — you can
 always refine it after seeing how distill uses it.
 
+### What a page looks like
+
+After several distill passes, a page becomes a living document. Here's
+what an AWS Infrastructure page might look like after a few months of
+sessions:
+
+```markdown
+<!-- Guidance -->
+Focus on operational lessons learned the hard way — config decisions,
+debugging patterns, cost surprises. Skip theoretical explanations of
+AWS services. When something contradicts prior experience, keep both
+with dates so I can see how my thinking evolved.
+
+## RDS
+
+- Pin parameter groups before minor version upgrades. Learned this after
+  a query planner regression in March — the upgrade changed join order
+  defaults. Always test minor upgrades in staging first.
+- Connection pool: 20 connections per service instance, hard max. Going
+  above this caused intermittent timeouts under load (Feb debugging session).
+- Read replicas lag 50-200ms under write-heavy loads. Don't use them for
+  anything requiring read-after-write consistency.
+
+## ECS
+
+- Drain window: 60 seconds minimum. The default 30s caused dropped
+  requests during deploys when health checks were slow to propagate.
+  Updated from 30s after March incident.
+- Task placement: spread across AZs using the spread strategy, not
+  binpack. Binpack saved ~$200/mo but created single-AZ blast radius.
+
+## Cost patterns
+
+- NAT gateway charges dominated our March bill — $1,400 for cross-AZ
+  traffic we didn't realize was happening. Fixed by colocating services
+  in the same AZ for internal traffic.
+```
+
+Notice how it reads like a document you'd hand to a colleague — not a
+transcript, not a summary of sessions, but organized knowledge with
+specific numbers, dates, and reasoning. Each distill pass adds,
+updates, or confirms sections based on new sessions. The guidance at
+the top shapes what gets included and how.
+
 See the [Architecture](kno-knowledge-architecture) doc for more on pages,
 metadata, and the mental model behind the knowledge loop.
 
@@ -212,15 +256,16 @@ metadata, and the mental model behind the knowledge loop.
 
 ## Vault management
 
-Your vault automatically manages capacity. When the vault is full and you
-save a new session, kno removes the oldest distilled session to make room.
-If no distilled sessions exist, it removes the oldest session regardless
-and warns you that undistilled knowledge may have been lost. The vault
-never blocks — you can always save.
+You don't need to think about capacity. When the vault is full, kno
+automatically removes the oldest distilled session to make room — its
+knowledge is already in a page, so nothing is lost. The distill loop
+is what protects your knowledge: once a session's insights are folded
+into a page, the raw session can safely be recycled.
 
-This means you don't need to think about capacity day-to-day. The distill
-loop protects your knowledge: once a session's insights are folded into a
-page, the raw session can safely be recycled.
+If the vault is full and no distilled sessions exist, kno removes the
+oldest session regardless and warns you. This is the signal to run
+`/kno.distill` — it prevents knowledge loss by folding sessions into
+pages before they age out.
 
 ---
 
@@ -304,6 +349,11 @@ a home for your sessions.
 the five seconds. Without it every session starts cold. With it Claude
 already knows your setup, your prior decisions, and the approaches you've
 already tried.
+
+**Save mid-session too.** `/kno.save` doesn't have to wait until the end.
+If you've hit a milestone in a long session — a decision made, a bug
+found, a design settled — save it now and keep going. You can save
+multiple times in one session.
 
 **Let kno prompt you.** You don't need to remember when to distill or
 whether your vault is filling up. kno surfaces these reminders during
