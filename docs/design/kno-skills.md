@@ -10,6 +10,47 @@ do, and you confirm before anything is written.
 
 ---
 
+## Skill Design Principles
+
+These principles govern how all skills behave. Understanding them helps you
+trust the system — the skills follow these rules consistently.
+
+**You curate, kno compounds.** Every save, distill, and load is a moment
+where you decide what matters. That curation is the mechanism — the reason
+your pages read like documents you'd hand to a colleague, not auto-generated
+summaries you'd never reread. The loop takes seconds per session, and the
+knowledge it produces is yours: shaped by your judgment, organized by your
+priorities, refined every time you run distill.
+
+**Skills are conversational, not transactional.** You don't need to know
+command syntax or vault structure. Describe what you want. The skill
+interprets, proposes, and waits for confirmation. The structured vault
+operation is the last step, not the first.
+
+**Skills surface decisions, not surprises.** Anything that modifies the
+vault — writing a note, updating a page, stamping notes as distilled
+— is shown to you before it happens. The vault is never modified silently.
+
+**Skills are proactive.** They notice when the backlog is large, when a
+page hasn't been distilled in a long time, when notes cluster around
+a theme that has no page. They surface these observations without being
+asked. The loop stays healthy without you having to manage it manually.
+
+**Skills narrow before loading.** On load and distill, the skill reads
+summaries first to decide what's worth fetching in full. Context usage
+stays efficient and predictable — the skill knows what it can afford to
+load before it commits to loading it.
+
+**Skills read before they write when state matters.** If a note already
+has `distilled_into` values, the skill reads the current state before
+updating it so no existing references are lost.
+
+**All vault access goes through the CLI.** Skills never touch the vault
+directly. Every read and write is a CLI call via MCP. Every change is
+traceable, testable, and replaceable.
+
+---
+
 ## The Knowledge Loop
 
 The three core skills form a complete loop:
@@ -28,9 +69,11 @@ Each pass through the loop compounds the next. Notes feed distill.
 Distilled pages make load faster and richer. Better load means better
 sessions, which produce better notes.
 
-Over time, the vault accumulates a body of working knowledge that reflects
-how you actually think — not a generic summary, but your decisions, your
-lessons, your open questions.
+The loop is proactive by design. You choose what to save, what to focus
+on during distill, and what to load. That human judgment at each step is
+what produces pages worth reading — documents that reflect how you
+actually think, not auto-generated summaries. Your decisions, your
+lessons, your open questions, organized by your priorities.
 
 **These three commands are the user habit.**
 
@@ -39,9 +82,9 @@ are prefixed by the vault name. A vault set up as `kno-personal` exposes
 `/kno-personal.save`, `/kno-personal.distill`, and `/kno-personal.load`.
 The prefix is the only thing that changes — every skill works identically
 within its vault.
- `/kno.page` and `/kno.status`
+`/kno.page` and `/kno.status`
 exist to support the loop, but in practice the skill orchestrates them for
-you — surfacing page suggestions during note, checking vault health
+you — surfacing page suggestions during save, checking vault health
 before distill, prompting you when something needs attention. You may go
 weeks without calling them directly.
 
@@ -52,20 +95,30 @@ weeks without calling them directly.
 **When to use it:** At the end of a session, before closing the
 conversation. The habit is: finish your work, then run `/kno.save`.
 
+You can also save mid-session — if you've reached a natural milestone or
+want to capture progress before continuing. The skill saves what's happened
+so far without treating it differently. You can save multiple times in a
+long session.
+
 **Why it matters:** Most insight from an LLM session evaporates when you
-close the tab. Note converts the session into a structured, searchable
-record that feeds every future session on the same page. The ten seconds
-it takes is the entire foundation of the knowledge loop.
+close the tab. Save converts the session into a structured, searchable
+record that feeds every future session on the same topic. You review the
+title, summary, and tags before confirming — that moment of curation is
+what makes the knowledge findable and useful later. Ten seconds now
+is the entire foundation of the knowledge loop.
 
 **How it works**
 
 The skill reviews the conversation, proposes a title, summary, and tags,
-then asks you to confirm before writing anything.
+then asks you to confirm before writing anything. Tags are the primary
+signal that load and distill use to match sessions to pages and queries
+— the skill checks existing tags from recent sessions to suggest
+consistent tagging.
 
 ```
 /kno.save
 
-Here's what I'll note from this session:
+Here's what I'll save from this session:
 
   Title:    RDS slow query debugging
   Summary:  Query planner regression after minor version upgrade. Fixed by
@@ -74,7 +127,7 @@ Here's what I'll note from this session:
 
   Tags:     aws, rds, databases, performance
 
-Save this note? [yes / edit / skip]
+Save this? [yes / edit / skip]
 ```
 
 You confirm, edit, or skip. The skill only writes on confirmation.
@@ -108,20 +161,20 @@ Got it. Updated:
 
 **Proactive suggestions**
 
-After note, if the vault is filling with undistilled notes, the skill
-will note it:
+After saving, if the vault is filling with undistilled sessions, the skill
+will mention it:
 
 ```
 Noted. You now have 18 undistilled notes.
 Consider running /kno.distill to compress them into your pages.
 ```
 
-If several notes share a theme but no page exists for it, the skill
-may suggest creating one:
+If several notes share tags but no page exists for them, the skill
+suggests creating one:
 
 ```
-You've noted 4 sessions related to RDS and database performance with
-no matching page. Would you like to create one before we distill?
+You've saved 4 sessions tagged "rds" and "database-performance" with
+no matching page. Want to create one?
 ```
 
 ---
@@ -167,10 +220,12 @@ Distill all, or start with one?
 ```
 
 In both modes, the skill works the same way per page: it scans all
-undistilled notes and decides which are relevant to that page.
-"Distill all" cycles through every page in turn. "Start with one"
-does the same scan for that page only — the rest of the notes stay
-undistilled until the next run.
+undistilled notes and matches them to pages using tags and content.
+Sessions tagged "aws" or "rds" match an AWS Infrastructure page;
+sessions tagged "payments" match Payment Processing. Tag overlap is
+the primary relevance signal. "Distill all" cycles through every page
+in turn. "Start with one" does the same scan for that page only — the
+rest of the notes stay undistilled until the next run.
 
 For each page, the skill synthesizes the update from the notes it
 found relevant, shows you what changed, and asks for confirmation before
@@ -193,6 +248,15 @@ Mark 9 notes as distilled? [yes / review first]
 
 You can review the updated document before confirming. Nothing is stamped
 until you say yes.
+
+**First distill into a new page**
+
+When a page has just been created and has no knowledge content yet, the
+first distill populates it from scratch. The skill reads the guidance you
+wrote, finds relevant undistilled notes, and synthesizes the initial
+document. You can also trigger this immediately after creating a page —
+the `/kno.page` skill offers to bootstrap-distill any relevant sessions
+right away so the page isn't empty.
 
 **Notes that fit multiple pages**
 
@@ -230,6 +294,10 @@ was updated. You don't need to remember to check.
 question. Especially valuable when returning to ongoing work or a domain
 where you have established context.
 
+You can also load mid-session — if the conversation shifts to a topic
+where you have existing knowledge, `/kno.load` will search and inject
+that context without disrupting your flow.
+
 **Why it matters:** Without load, every session starts cold — Claude has
 no memory of your prior decisions, the approaches you've already tried, or
 the lessons you've already learned. With load, the session starts informed.
@@ -251,7 +319,7 @@ Found:
     Payment Processing  — last distilled 2 weeks ago
     "...connection pool tuning, retry logic, ACH return handling..."
 
-  Recent notes (2, undistilled):
+  Recent sessions (2, matched by tags: payments, mysql, connection-pool):
     ACH return handling — error retry logic         3 days ago
     MySQL connection pool — max_connections         1 week ago
 
@@ -276,8 +344,11 @@ The skill searches immediately and presents what it finds.
 
 The skill balances relevance against context budget. It searches pages
 first (distilled, durable knowledge), then recent undistilled notes
-(fresh, not yet integrated). It reads summaries to decide what's worth
-loading in full before fetching the content.
+(fresh, not yet integrated). It uses tag overlap as a primary relevance
+signal — sessions tagged with terms matching your query or a page's
+theme rank higher than those with only generic text matches. It reads
+summaries and tags to decide what's worth loading in full before
+fetching the content.
 
 ---
 
@@ -306,15 +377,15 @@ the document reflects how *you* think about the subject — not a generic summar
 
 What area of knowledge do you want to track?
 
-> kubernetes-migration
+> our kubernetes migration
 
 Good. I'll follow your guidance each time I update this page. What should
 I focus on? What can I skip? How should I handle contradictions between
 sessions?
 
-> Focus on process improvements and lessons from batches that went wrong.
-> Skip equipment specs — I know those. Flag anything that contradicts
-> a previous decision.
+> Focus on migration blockers, service-by-service lessons, and networking
+> gotchas. Skip basic k8s concepts — I know those. Flag anything that
+> contradicts a previous decision.
 
 Creating page: Kubernetes Migration
 
@@ -388,133 +459,4 @@ Pages:
 
 22 undistilled notes.
 Run /kno.distill to compress them into your pages.
-```
-
----
-
-## Skill Design Principles
-
-These principles govern how all skills behave.
-
-**Skills are conversational, not transactional.** You don't need to know
-command syntax or vault structure. Describe what you want. The skill
-interprets, proposes, and waits for confirmation. The structured vault
-operation is the last step, not the first.
-
-**Skills surface decisions, not surprises.** Anything that modifies the
-vault — writing a note, updating a page, stamping notes as distilled
-— is shown to you before it happens. The vault is never modified silently.
-
-**Skills are proactive.** They notice when the backlog is large, when a
-page hasn't been distilled in a long time, when notes cluster around
-a theme that has no page. They surface these observations without being
-asked. The loop stays healthy without you having to manage it manually.
-
-**Skills narrow before loading.** On load and distill, the skill reads
-summaries first to decide what's worth fetching in full. Context usage
-stays efficient and predictable — the skill knows what it can afford to
-load before it commits to loading it.
-
-**Skills read before they write when state matters.** If a note already
-has `distilled_into` values, the skill reads the current state before
-updating it so no existing references are lost.
-
-**All vault access goes through the CLI.** Skills never touch the vault
-directly. Every read and write is a CLI call via MCP. Every change is
-traceable, testable, and replaceable.
-
----
-
-## MCP Implementation Reference
-
-The exact CLI calls each skill makes. Included here as confirmation that
-the CLI contract fully supports each workflow — not as user documentation.
-
-### /kno.save
-
-```bash
-# orient before writing
-kno vault status --json
-
-# write the note
-echo "<synthesized content>" | kno note create \
-  --title "RDS slow query debugging" \
-  --meta tags=aws \
-  --meta tags=rds \
-  --meta tags=performance \
-  --meta summary="Query planner regression after minor version upgrade..."
-```
-
-### /kno.distill
-
-```bash
-# orient
-kno vault status --json
-
-# find undistilled notes; summaries included for relevance filtering
-kno note list --filter distilled_at=null --json
-
-# bulk-read the relevant ones
-kno note show <id> <id> <id> --json
-
-# read the current page document
-kno page show <page-id> --json
-
-# [skill synthesizes update following guidance in page content]
-
-# write updated page and stamp last_distilled_at
-echo "<updated content>" | kno page update <page-id> \
-  --meta last_distilled_at=2026-03-05T14:22:00Z
-
-# stamp each note
-# if distilled_into is null in the list result, write directly — no pre-read needed
-# only read first when distilled_into is already populated (note belongs to
-# an existing page and we're adding a second)
-kno note update <id> \
-  --meta distilled_at=2026-03-05T14:22:00Z \
-  --meta distilled_into=<page-id>
-
-# if note belongs to multiple pages
-kno note update <id> \
-  --meta distilled_at=2026-03-05T14:22:00Z \
-  --meta distilled_into=<page-id-1> \
-  --meta distilled_into=<page-id-2>
-```
-
-### /kno.load
-
-```bash
-# orient
-kno vault status --json
-
-# search pages and undistilled notes for relevance
-kno page search "connection pool payment service" --json
-kno note search "connection pool payment service" \
-  --filter distilled_at=null --json
-
-# read selected content in full
-kno page show <page-id> --json
-kno note show <id> <id> --json
-```
-
-### /kno.page
-
-```bash
-# create with initial content (guidance + empty knowledge section)
-echo "<guidance + initial content>" | kno page create --name "Kubernetes Migration"
-
-# create empty — content added on first distill
-kno page create --name "Kubernetes Migration"
-
-# list all pages
-kno page list --json
-
-# update content or guidance
-echo "<revised content>" | kno page update <id>
-```
-
-### /kno.status
-
-```bash
-kno vault status --json
 ```

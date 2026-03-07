@@ -41,8 +41,11 @@ dump it.
    ```
 
 6. **Narrow before loading.** Review the returned titles, summaries, excerpts,
-   and scores. Decide what is worth loading in full. As a guide: 1-2 pages
-   and 2-3 recent sessions is usually the right amount. More than that dilutes
+   scores, and tags. Tags are a strong relevance signal — if the user
+   mentions "aws" and sessions are tagged "aws", that's a match even when
+   text search scores are marginal. Conversely, a high text score with no
+   tag overlap may be a false positive. As a guide: 1-2 pages and 2-3
+   recent sessions is usually the right amount. More than that dilutes
    rather than informs.
 
 7. **Nothing relevant found:** Don't load unrelated content just to have
@@ -69,6 +72,9 @@ in context they didn't realize they needed.
 
 - Prefer pages over raw sessions — pages are synthesized, higher signal.
 - Prefer recent sessions over old ones when relevance is similar.
+- Use tag overlap as a strong relevance signal. Sessions tagged with terms
+  the user mentioned (or terms matching a page's theme) are more likely
+  relevant than sessions that only match on generic content words.
 - 1-2 pages and 2-3 sessions is a good default. Adjust based on length and
   relevance.
 - If a page is very long, present the key points to the user rather than

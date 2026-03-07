@@ -20,6 +20,7 @@ func newPageCmd() *cobra.Command {
 		newPageListCmd(),
 		newPageShowCmd(),
 		newPageUpdateCmd(),
+		newPageRenameCmd(),
 		newPageSearchCmd(),
 	)
 
@@ -288,6 +289,83 @@ func newPageUpdateCmd() *cobra.Command {
 	}
 
 	cmd.Flags().StringArrayVar(&metaPairs, "meta", nil, "Metadata key=value pair (repeatable)")
+	cmd.Flags().BoolVar(&jsonOut, "json", false, "Output as JSON")
+	return cmd
+}
+
+func newPageRenameCmd() *cobra.Command {
+	var (
+		name    string
+		jsonOut bool
+	)
+
+	cmd := &cobra.Command{
+		Use:   "rename <id>",
+		Short: "Rename a page",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if name == "" {
+				return fmt.Errorf("--name is required")
+			}
+
+			a, err := loadApp(cmd)
+			if err != nil {
+				return err
+			}
+
+			oldID := args[0]
+
+			newID, err := a.Vault.RenamePage(oldID, name)
+			if err != nil {
+				return err
+			}
+
+			// Update search index: remove old, index new.
+			a.RemovePageFromIndex(oldID)
+			if page, err := a.Vault.ReadPage(newID); err == nil {
+				a.IndexPage(page)
+			}
+
+			// Update distilled_into references on notes.
+			if newID != oldID {
+				allNotes, err := a.Vault.ListNotes(0)
+				if err != nil {
+					return err
+				}
+				for _, nm := range allNotes {
+					if nm.Metadata == nil || !nm.Metadata.Has("distilled_into") {
+						continue
+					}
+					vals := nm.Metadata["distilled_into"]
+					changed := false
+					for i, val := range vals {
+						if val == oldID {
+							vals[i] = newID
+							changed = true
+						}
+					}
+					if changed {
+						updateMeta := make(model.MetaMap)
+						updateMeta["distilled_into"] = vals
+						a.Vault.UpdateNote(nm.ID, nil, updateMeta)
+					}
+				}
+			}
+
+			if jsonOut {
+				return printJSON(cmd.OutOrStdout(), map[string]any{
+					"old_id": oldID,
+					"new_id": newID,
+					"name":   name,
+				})
+			}
+
+			fmt.Fprintf(cmd.OutOrStdout(), "Renamed: %s → %s  [%s]\n", oldID, name, newID)
+			return nil
+		},
+	}
+
+	cmd.Flags().StringVar(&name, "name", "", "New page name (required)")
 	cmd.Flags().BoolVar(&jsonOut, "json", false, "Output as JSON")
 	return cmd
 }

@@ -597,6 +597,36 @@ func TestIntegration_PageDeleteNoteCleanup(t *testing.T) {
 
 }
 
+func TestIntegration_PageFlatLayout(t *testing.T) {
+	v := setupVault(t)
+
+	id, err := v.WritePage(model.Page{
+		Name:      "Test Page",
+		CreatedAt: time.Now(),
+		Content:   "test content",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Verify flat layout: pages/test-page.md and pages/test-page.meta.json
+	contentPath := filepath.Join(v.Root(), "pages", id+".md")
+	metaPath := filepath.Join(v.Root(), "pages", id+".meta.json")
+
+	if _, err := os.Stat(contentPath); err != nil {
+		t.Errorf("expected %s to exist", contentPath)
+	}
+	if _, err := os.Stat(metaPath); err != nil {
+		t.Errorf("expected %s to exist", metaPath)
+	}
+
+	// Verify no directory was created
+	dirPath := filepath.Join(v.Root(), "pages", id)
+	if info, err := os.Stat(dirPath); err == nil && info.IsDir() {
+		t.Errorf("expected no directory at %s", dirPath)
+	}
+}
+
 func TestIntegration_NoteUpdatePreservesExistingMeta(t *testing.T) {
 	v := setupVault(t)
 
