@@ -155,7 +155,7 @@ func newAdminPageDeleteCmd() *cobra.Command {
 
 			pageMeta, err := a.Vault.ReadPageMeta(pageID)
 			if err != nil {
-				return fmt.Errorf("Not found: page %s", pageID)
+				return fmt.Errorf("not found: page %s", pageID)
 			}
 
 			if err := a.Vault.DeletePage(pageID); err != nil {

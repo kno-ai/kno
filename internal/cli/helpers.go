@@ -36,7 +36,7 @@ func loadApp(cmd *cobra.Command) (*app.App, error) {
 
 	// Check vault exists
 	if _, err := os.Stat(vaultPath); os.IsNotExist(err) {
-		return nil, fmt.Errorf("Vault not found at %s; run 'kno setup' first", vaultPath)
+		return nil, fmt.Errorf("vault not found at %s; run 'kno setup' first", vaultPath)
 	}
 
 	return app.FromVaultPath(vaultPath)

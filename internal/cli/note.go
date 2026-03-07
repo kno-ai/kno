@@ -48,7 +48,7 @@ func newNoteCreateCmd() *cobra.Command {
 				return fmt.Errorf("reading stdin: %w", err)
 			}
 			if len(content) == 0 {
-				return fmt.Errorf("No content provided on stdin")
+				return fmt.Errorf("no content provided on stdin")
 			}
 
 			meta, err := model.ParseMetaFlags(metaPairs)
@@ -82,7 +82,7 @@ func newNoteCreateCmd() *cobra.Command {
 						return err
 					}
 					if oldest == "" {
-						return fmt.Errorf("Vault at capacity (%d notes) with nothing to remove", a.Config.Notes.MaxCount)
+						return fmt.Errorf("vault at capacity (%d notes) with nothing to remove", a.Config.Notes.MaxCount)
 					}
 					autoRemovedUndistilled = true
 				}
@@ -264,7 +264,7 @@ func newNoteShowCmd() *cobra.Command {
 			for _, id := range args {
 				note, err := a.Vault.ReadNote(id)
 				if err != nil {
-					return fmt.Errorf("Not found: note %s", id)
+					return fmt.Errorf("not found: note %s", id)
 				}
 				results = append(results, showResult{
 					ID:        note.ID,
@@ -345,7 +345,7 @@ func newNoteUpdateCmd() *cobra.Command {
 			}
 
 			if content == nil && meta == nil {
-				return fmt.Errorf("Nothing to update; provide content on stdin or --meta flags")
+				return fmt.Errorf("nothing to update; provide content on stdin or --meta flags")
 			}
 
 			id := args[0]
@@ -353,7 +353,7 @@ func newNoteUpdateCmd() *cobra.Command {
 			// Read title before update for output
 			noteMeta, err := a.Vault.ReadNoteMeta(id)
 			if err != nil {
-				return fmt.Errorf("Not found: note %s", id)
+				return fmt.Errorf("not found: note %s", id)
 			}
 
 			if err := a.Vault.UpdateNote(id, content, meta); err != nil {
