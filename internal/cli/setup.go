@@ -9,64 +9,62 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func defaultVaultPath() string {
-	home, err := os.UserHomeDir()
-	if err != nil {
-		return ""
-	}
-	return home + "/kno"
-}
-
 func newSetupCmd() *cobra.Command {
 	var (
-		vaultPath string
-		subdir    string
-		mcpConfig string
-		noMCP     bool
+		name            string
+		noClaudeDesktop bool
 	)
 
 	cmd := &cobra.Command{
 		Use:   "setup",
-		Short: "Configure kno with a knowledge vault",
+		Short: "Initialize a kno vault",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if vaultPath == "" {
-				vaultPath = defaultVaultPath()
-			}
+			vaultPath := resolveVault(cmd)
 			if vaultPath == "" {
 				return fmt.Errorf("could not determine default vault path; use --vault")
 			}
 
 			if err := os.MkdirAll(vaultPath, 0o755); err != nil {
-				return fmt.Errorf("creating vault directory %q: %w", vaultPath, err)
+				return fmt.Errorf("creating vault directory: %w", err)
 			}
 
-			cfg := config.DefaultConfig()
-			cfg.VaultPath = vaultPath
-			if subdir != "" {
-				cfg.KnoSubdir = subdir
-			}
-
-			v := fs.New(cfg.VaultPath, cfg.KnoSubdir)
+			v := fs.New(vaultPath)
 			if err := v.EnsureLayout(); err != nil {
 				return fmt.Errorf("creating vault layout: %w", err)
 			}
 
-			if err := config.Save(cfg); err != nil {
-				return fmt.Errorf("saving config: %w", err)
-			}
-
-			fmt.Fprintf(cmd.OutOrStdout(), "Vault: %s\n", vaultPath)
-			if configPath, err := config.Path(); err == nil {
-				fmt.Fprintf(cmd.OutOrStdout(), "Config: %s\n", configPath)
-			}
-
-			if !noMCP {
-				results := registerMCP(mcpConfig)
-				for _, r := range results {
-					fmt.Fprintf(cmd.OutOrStdout(), "Registered with %s\n", r)
+			// Write default config if none exists.
+			cfgPath := config.ConfigPath(vaultPath)
+			if _, err := os.Stat(cfgPath); os.IsNotExist(err) {
+				if err := config.Save(vaultPath, config.DefaultConfig()); err != nil {
+					return fmt.Errorf("writing config: %w", err)
 				}
+			}
+
+			fmt.Fprintf(cmd.OutOrStdout(), "✓  Vault created at %s\n", vaultPath)
+			fmt.Fprintf(cmd.OutOrStdout(), "✓  Config written to %s\n", cfgPath)
+
+			if !noClaudeDesktop {
+				serverName := "kno"
+				if name != "" {
+					serverName = name
+				}
+				results := registerMCP("", vaultPath, serverName)
 				if len(results) > 0 {
-					fmt.Fprintln(cmd.OutOrStdout(), "\nRestart Claude Desktop to activate.")
+					fmt.Fprintf(cmd.OutOrStdout(), "✓  MCP server %q registered with Claude Desktop\n", serverName)
+					fmt.Fprintf(cmd.OutOrStdout(), "\nRestart Claude Desktop to activate %s skills.\n", serverName)
+				} else {
+					fmt.Fprintln(cmd.OutOrStdout(), "—  Claude Desktop not found — skipping MCP registration")
+					fmt.Fprintln(cmd.OutOrStdout(), "\nTo register manually, add the following to your Claude Desktop config:")
+					fmt.Fprintln(cmd.OutOrStdout())
+					fmt.Fprintln(cmd.OutOrStdout(), "  {")
+					fmt.Fprintln(cmd.OutOrStdout(), "    \"mcpServers\": {")
+					fmt.Fprintf(cmd.OutOrStdout(), "      %q: {\n", serverName)
+					fmt.Fprintln(cmd.OutOrStdout(), "        \"command\": \"kno\",")
+					fmt.Fprintf(cmd.OutOrStdout(), "        \"args\": [\"--vault\", %q, \"mcp\"]\n", vaultPath)
+					fmt.Fprintln(cmd.OutOrStdout(), "      }")
+					fmt.Fprintln(cmd.OutOrStdout(), "    }")
+					fmt.Fprintln(cmd.OutOrStdout(), "  }")
 				}
 			}
 
@@ -74,10 +72,8 @@ func newSetupCmd() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringVar(&vaultPath, "vault", "", "Path to the knowledge vault directory (default: ~/kno)")
-	cmd.Flags().StringVar(&subdir, "subdir", "", "Subdirectory within vault for kno data (default: vault root; use e.g. 'kno' for shared vaults)")
-	cmd.Flags().StringVar(&mcpConfig, "mcp-config", "", "Explicit path to an MCP client config file to register with")
-	cmd.Flags().BoolVar(&noMCP, "no-mcp", false, "Skip MCP client registration")
+	cmd.Flags().StringVar(&name, "name", "", "MCP server name (default: kno)")
+	cmd.Flags().BoolVar(&noClaudeDesktop, "no-claude-desktop", false, "Skip Claude Desktop MCP registration")
 
 	return cmd
 }

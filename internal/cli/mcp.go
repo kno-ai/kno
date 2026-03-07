@@ -2,7 +2,6 @@ package cli
 
 import (
 	"github.com/kno-ai/kno/internal/app"
-	"github.com/kno-ai/kno/internal/config"
 	mcpserver "github.com/kno-ai/kno/internal/mcp"
 	"github.com/spf13/cobra"
 )
@@ -10,15 +9,14 @@ import (
 func newMCPCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "mcp",
-		Short: "Run the MCP server for Claude Desktop",
-		Long:  "Starts an MCP server over stdio, exposing kno tools to Claude Desktop.",
+		Short: "Run the MCP server over stdio",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cfg, err := config.Load()
-			if err != nil {
-				return mcpserver.ServeUnconfigured(err)
+			vaultPath := resolveVault(cmd)
+			if vaultPath == "" {
+				return mcpserver.ServeUnconfigured(nil)
 			}
 
-			a, err := app.FromConfig(cfg)
+			a, err := app.FromVaultPath(vaultPath)
 			if err != nil {
 				return mcpserver.ServeUnconfigured(err)
 			}

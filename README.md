@@ -1,63 +1,81 @@
 # kno
 
-Local-first knowledge capture for LLM conversations.
+A knowledge vault for your AI conversations.
 
-kno captures valuable LLM sessions into a local knowledge vault — so insights, decisions, and context compound over time instead of vanishing with each chat.
+Every time you close a chat with Claude, the insights from that session
+disappear. kno fixes that. It saves what you learned, synthesizes it into
+living page documents over time, and loads the right context into your next
+session automatically.
 
-## The problem
+## The knowledge loop
 
-You have great conversations with LLMs — debugging sessions, architecture decisions, deep dives. Then they're gone. Even saved transcripts are unsearchable walls of back-and-forth. Every new session starts cold.
+Three commands. One habit.
 
-## How kno works
+- **`/kno.save`** — End of session. Save a structured summary to your vault.
+- **`/kno.distill`** — Periodically. Synthesize sessions into living page documents.
+- **`/kno.load`** — Start of session. Load relevant knowledge before you begin.
 
-kno is a single binary that provides:
-
-- **CLI commands** for capturing content from clipboard, stdin, or files
-- **MCP server** for zero-friction capture directly from Claude Desktop
-- **Structured storage** — each capture is a directory with clean markdown and JSON metadata
-
-### Capture via Claude Desktop
-
-Type `/kno.capture` at the end of a conversation. Claude summarizes the session, extracts decisions and key points, and saves it to your vault automatically.
-
-### Capture via CLI
-
-```bash
-pbpaste | kno capture --stdin --title "SQS debugging session"
-```
-
-### Browse captures
-
-```bash
-kno list
-kno show <capture-name>
-```
-
-Or use `/kno.load` in Claude Desktop to browse and load a previous capture into a new conversation.
+Each pass through the loop makes the next one better. Sessions feed distill.
+Distilled pages make load richer. Better load means better sessions.
 
 ## Quick start
 
 ```bash
+# Homebrew
+brew tap kno-ai/tap
+brew install kno
+
+# Or from source
 go install github.com/kno-ai/kno/cmd/kno@latest
+```
+
+```bash
 kno setup
 ```
 
-That's it. `kno setup` creates a vault at `~/kno` and registers with Claude Desktop if installed.
+Restart Claude Desktop after setup. Five slash commands appear automatically:
+`/kno.save`, `/kno.load`, `/kno.distill`, `/kno.page`, `/kno.status`.
 
-## Vision
+## What it feels like
 
-kno is the foundation for a personal knowledge workflow:
+```
+/kno.save
 
-1. **Capture** — save structured summaries from LLM sessions (today)
-2. **Distill** — merge insights from captures into maintained topic documents (planned)
-3. **Context** — load relevant knowledge into new sessions automatically (planned)
-4. **Knowledge** — readable, maintained documents that represent your current understanding (planned)
+Here's what I'll save from this session:
 
-The goal: your knowledge compounds across hundreds of conversations over years, and every new session starts with the right context.
+  Title:    RDS slow query debugging
+  Summary:  Query planner regression after minor version upgrade.
+            Fixed by pinning parameter group.
+  Tags:     aws, rds, performance
 
-## Project status
+Save this? [yes / edit / skip]
+```
 
-Early development. The capture layer is functional — CLI, MCP server, and skills work end-to-end. The distillation and context layers are planned.
+Two weeks later, in a new session:
+
+```
+/kno.load
+
+What are you working on?
+
+> debugging a connection pool issue in our payment service
+
+Found:
+  Pages (1):    Payment Processing — last distilled 2 weeks ago
+  Sessions (2): ACH return handling (3 days ago)
+                MySQL connection pool (1 week ago)
+
+Load all 3? [yes / pick / skip]
+```
+
+Your vault is just a folder. Sync it with git, Dropbox, iCloud, or don't.
+
+## Documentation
+
+- [User Guide](docs/design/kno-guide.md) — full walkthrough and tips
+- [Architecture](docs/design/kno-knowledge-architecture.md) — mental model and design principles
+- [Skills Reference](docs/design/kno-skills.md) — how the slash commands work
+- [CLI Reference](docs/design/kno-cli.md) — complete command specification
 
 ## License
 

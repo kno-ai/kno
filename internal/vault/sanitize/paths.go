@@ -22,7 +22,7 @@ func Slugify(s string) string {
 		s = leadingTrailing.ReplaceAllString(s, "")
 	}
 	if s == "" {
-		return "capture"
+		return "note"
 	}
 	return s
 }

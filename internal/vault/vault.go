@@ -2,30 +2,37 @@ package vault
 
 import "github.com/kno-ai/kno/internal/model"
 
-// Vault is the interface for reading/writing kno-managed files in a vault.
+// Vault is the interface for reading/writing notes and pages.
 type Vault interface {
 	// Root returns the absolute path to the vault root.
 	Root() string
 
-	// KnoDir returns the absolute path to the kno subdirectory.
-	KnoDir() string
-
-	// EnsureLayout creates the kno directory structure if missing.
+	// EnsureLayout creates the vault directory structure if missing.
 	EnsureLayout() error
 
-	// WriteCapture writes a capture note and returns the result.
-	WriteCapture(note model.CaptureNote) (model.CaptureWriteResult, error)
+	// Note operations
 
-	// WriteFile writes content to a path relative to the kno subdirectory.
-	// The path is validated to prevent traversal outside the kno dir.
-	WriteFile(relPath string, content []byte) error
+	WriteNote(note model.Note) (string, error) // returns ID
+	ReadNote(id string) (model.Note, error)
+	ReadNoteMeta(id string) (model.NoteMeta, error)
+	UpdateNote(id string, content *string, meta model.MetaMap) error
+	ListNotes(limit int) ([]model.NoteMeta, error)
+	DeleteNote(id string) error
+	CountNotes() (total int, err error)
+	OldestDistilledNoteID() (string, error) // for auto-removal (distilled first)
+	OldestNoteID() (string, error)          // for auto-removal fallback (any note)
 
-	// ReadFile reads a file at a path relative to the kno subdirectory.
-	ReadFile(relPath string) ([]byte, error)
+	// Page operations
 
-	// ListCaptures returns capture directory names sorted newest-first.
-	ListCaptures(limit int) ([]string, error)
+	WritePage(page model.Page) (string, error) // returns ID
+	ReadPage(id string) (model.Page, error)
+	ReadPageMeta(id string) (model.PageMeta, error)
+	UpdatePage(id string, content *string, meta model.MetaMap) error
+	ListPages() ([]model.PageMeta, error)
+	DeletePage(id string) error
 
-	// ReadCapture reads a capture's meta.json and capture.md by directory name.
-	ReadCapture(dirName string) (model.CaptureMeta, string, error)
+	// Paths
+	NotesDir() string
+	PagesDir() string
+	IndexDir() string
 }
