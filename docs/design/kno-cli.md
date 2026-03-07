@@ -1,12 +1,10 @@
 # kno CLI Reference
 
 kno is a local-first knowledge vault for LLM conversations. The CLI provides
-deterministic, testable CRUD operations against the vault. No LLM calls are
-made by the CLI — intelligence lives in the skill layer above it.
+deterministic, testable CRUD operations against the vault.
 
 All commands support `--json` for machine-readable output. Human-readable
-output is the default. The MCP server exposes all commands except those in
-the ADMIN namespace.
+output is the default.
 
 ---
 
@@ -55,9 +53,7 @@ make no changes to the vault. Partial writes do not occur.
 
 ## SETUP
 
-Setup is a one-time installation step. It is not part of the MCP surface and
-not part of the admin namespace — it is a top-level command because it is the
-first thing every user runs and friction here costs adoption.
+Setup is a one-time installation step and the first thing every user runs.
 
 ---
 
@@ -98,7 +94,7 @@ if Claude Desktop is detected.
                             Default: kno. Use a distinct name for each
                             additional vault (e.g. kno-personal). The name
                             becomes the skill prefix in Claude Desktop:
-                            /kno-personal.save, /kno-personal.load, etc.
+                            /kno-personal.capture, /kno-personal.load, etc.
 
     --vault <path>          Vault directory path. Default: ~/kno for
                             the first vault. Use a distinct path for each
@@ -118,7 +114,7 @@ if Claude Desktop is detected.
 Restart Claude Desktop to activate kno skills.
 
 Quick start:
-  /kno.save    — save a session summary to your vault
+  /kno.capture    — capture a session summary to your vault
   /kno.load       — load knowledge into a new session
   kno note list  — browse your vault from the terminal
 ```
@@ -167,17 +163,17 @@ design — the durable knowledge artifact is the page document.
 
 **Note lifecycle**
 
-1. Created by the skill at the end of a session
-2. Available for load and distill while undistilled
-3. Marked as distilled after a distill pass (`distilled_at`, `distilled_into`)
+1. Created at the end of a session
+2. Available for load and curate while uncurated
+3. Marked as curated after a curate pass (`curated_at`, `curated_into`)
 4. Automatically removed when the vault reaches capacity (`notes.max_count`)
 
 Auto-removal algorithm on `note create` when at capacity:
-1. Remove the oldest note where `distilled_at` is set (preferred — this
+1. Remove the oldest note where `curated_at` is set (preferred — this
    knowledge is already preserved in a page document)
-2. If no distilled notes exist, remove the oldest note regardless of
-   distill status. The response includes `auto_removed_undistilled: true` to
-   signal that undistilled knowledge was lost.
+2. If no curated notes exist, remove the oldest note regardless of
+   curate status. The response includes `auto_removed_uncurated: true` to
+   signal that uncurated knowledge was lost.
 
 A new note can always be written. The vault never deadlocks.
 
@@ -199,7 +195,7 @@ List notes in the vault, newest first.
                               Use the value `null` to match records where
                               the key is absent or set to JSON null — this
                               mirrors the null value shown in JSON output.
-                              Example: --filter distilled_at=null
+                              Example: --filter curated_at=null
     --limit <n>               Maximum results to return.
                               Default: notes.default_list_limit (config)
     --json                    Machine-readable output
@@ -208,9 +204,9 @@ List notes in the vault, newest first.
 
 ```
 ID                                    TITLE                          CREATED       STATUS
-20260305-rds-slow-query-debugging     RDS slow query debugging       2026-03-05    not distilled
-20260220-sqs-dead-letter-queue        SQS dead letter queue          2026-02-20    distilled
-20260110-eft-file-processing          EFT file processing            2026-02-10    distilled
+20260305-rds-slow-query-debugging     RDS slow query debugging       2026-03-05    not curated
+20260220-sqs-dead-letter-queue        SQS dead letter queue          2026-02-20    curated
+20260110-eft-file-processing          EFT file processing            2026-02-10    curated
 ```
 
 **Output (--json)**
@@ -223,8 +219,8 @@ ID                                    TITLE                          CREATED    
     "metadata": {
       "tags": ["aws", "databases", "performance"],
       "summary": "Query planner regression after minor version upgrade. Fixed by pinning parameter group. Key lesson: always test minor upgrades in staging.",
-      "distilled_at": null,
-      "distilled_into": null
+      "curated_at": null,
+      "curated_into": null
     },
     "created_at": "2026-03-05T14:22:00Z"
   }
@@ -232,8 +228,8 @@ ID                                    TITLE                          CREATED    
 ```
 
 Note: `summary` lives in `metadata` and is always included in JSON output
-when present — it is the primary field the skill uses for routing and load
-decisions without requiring a `note show` call. Multi-value metadata
+when present — it enables routing and load decisions without requiring
+a `note show` call. Multi-value metadata
 fields are returned as JSON arrays. Single-value fields are returned as
 scalars. Absent or unset fields appear as JSON null.
 
@@ -261,7 +257,7 @@ Query planner regression after RDS 14.3 → 14.4 minor version upgrade...
 [full note content]
 
 tags: aws, databases, performance
-distilled_at: —
+curated_at: —
 ```
 
 **Output (--json)**
@@ -275,16 +271,15 @@ distilled_at: —
     "metadata": {
       "tags": ["aws", "databases", "performance"],
       "summary": "Query planner regression after minor version upgrade...",
-      "distilled_at": null,
-      "distilled_into": null
+      "curated_at": null,
+      "curated_into": null
     },
     "created_at": "2026-03-05T14:22:00Z"
   }
 ]
 ```
 
-Note: Always returns an array, even for a single id. This ensures consistent
-handling by the skill regardless of how many notes are requested.
+Note: Always returns an array, even for a single id.
 
 ---
 
@@ -297,10 +292,10 @@ kno note create --title <title>  [--meta <key>=<value>]...  < <content>
 Create a new note. Content is read from stdin and is required. Title is
 required. Metadata is optional. The vault index is updated automatically.
 
-If the vault is at capacity (`notes.max_count`), the oldest distilled
-note is automatically removed before writing the new one. If no distilled
+If the vault is at capacity (`notes.max_count`), the oldest curated
+note is automatically removed before writing the new one. If no curated
 notes exist, the oldest note (regardless of status) is removed instead.
-The response indicates what was removed and whether it was undistilled.
+The response indicates what was removed and whether it was uncurated.
 
 **Options**
 
@@ -310,7 +305,7 @@ The response indicates what was removed and whether it was undistilled.
                               Common keys:
                                 tags       one --meta per tag value
                                 summary    short summary (auto-generated
-                                           by skill if not provided)
+                                           if not provided)
 
 **Output (default)**
 
@@ -318,18 +313,18 @@ The response indicates what was removed and whether it was undistilled.
 Created: RDS slow query debugging  [20260305-rds-slow-query-debugging]
 ```
 
-When a distilled note was auto-removed to make room:
+When a curated note was auto-removed to make room:
 
 ```
 Created: RDS slow query debugging  [20260305-rds-slow-query-debugging]
-Removed: EFT file processing       [20260110-eft-file-processing]  (oldest distilled — distill backlog reminder)
+Removed: EFT file processing       [20260110-eft-file-processing]  (oldest curated — curate backlog reminder)
 ```
 
-When an undistilled note was auto-removed (no distilled notes available):
+When an uncurated note was auto-removed (no curated notes available):
 
 ```
 Created: RDS slow query debugging  [20260305-rds-slow-query-debugging]
-Removed: SQS visibility timeout    [20260120-sqs-visibility-timeout]  (oldest — UNDISTILLED, knowledge may be lost. Run /kno.distill)
+Removed: SQS visibility timeout    [20260120-sqs-visibility-timeout]  (oldest — UNCURATED, knowledge may be lost. Run /kno.curate)
 ```
 
 **Output (--json)**
@@ -343,7 +338,7 @@ Removed: SQS visibility timeout    [20260120-sqs-visibility-timeout]  (oldest �
 }
 ```
 
-When a distilled note was auto-removed:
+When a curated note was auto-removed:
 
 ```json
 {
@@ -354,7 +349,7 @@ When a distilled note was auto-removed:
 }
 ```
 
-When an undistilled note was auto-removed:
+When an uncurated note was auto-removed:
 
 ```json
 {
@@ -362,7 +357,7 @@ When an undistilled note was auto-removed:
   "title": "RDS slow query debugging",
   "created_at": "2026-03-05T14:22:00Z",
   "auto_removed": "20260120-sqs-visibility-timeout",
-  "auto_removed_undistilled": true
+  "auto_removed_uncurated": true
 }
 ```
 
@@ -383,22 +378,22 @@ Unspecified metadata keys are unchanged. Specified keys are replaced.
     --meta <key>=<value>    Update metadata. Repeatable. Always replaces
                             the existing value for that key. Duplicate keys
                             produce an array. Single key produces a scalar.
-                            Skill must read before writing when appending
-                            to an existing array (e.g. distilled_into).
+                            Read before writing when appending to an
+                            existing array (e.g. curated_into).
 
 **Examples**
 
 ```bash
-# stamp distillation into one page
+# stamp curation into one page
 kno note update 20260305-rds-slow-query-debugging \
-  --meta distilled_at=2026-03-05T14:22:00Z \
-  --meta distilled_into=aws-infrastructure
+  --meta curated_at=2026-03-05T14:22:00Z \
+  --meta curated_into=aws-infrastructure
 
-# stamp distillation into two pages — skill reads first, then writes all values
+# stamp curation into two pages — read first, then write all values
 kno note update 20260305-rds-slow-query-debugging \
-  --meta distilled_at=2026-03-05T14:22:00Z \
-  --meta distilled_into=aws-infrastructure \
-  --meta distilled_into=kubernetes-migration
+  --meta curated_at=2026-03-05T14:22:00Z \
+  --meta curated_into=aws-infrastructure \
+  --meta curated_into=kubernetes-migration
 
 # update content only
 echo "<revised content>" | kno note update 20260305-rds-slow-query-debugging
@@ -426,6 +421,71 @@ Updated: RDS slow query debugging  [20260305-rds-slow-query-debugging]
 
 ---
 
+### kno note delete
+
+```
+kno note delete <id>  [--json]
+```
+
+Permanently delete a note. The search index is updated automatically.
+
+**Output (default)**
+
+```
+Deleted: RDS slow query debugging  [20260305-rds-slow-query-debugging]
+```
+
+**Output (--json)**
+
+```json
+{
+  "id": "20260305-rds-slow-query-debugging",
+  "title": "RDS slow query debugging",
+  "deleted": true
+}
+```
+
+---
+
+### kno note prune
+
+```
+kno note prune --count <n>  [--dry-run]  [--json]
+```
+
+Remove the N oldest notes regardless of curate status. Use for bulk
+cleanup when you want to reduce vault size beyond what auto-removal
+handles. `--dry-run` shows what would be removed without deleting.
+
+**Options**
+
+    --count <n>    Required. Number of notes to remove.
+    --dry-run      Preview removals without deleting.
+    --json         Machine-readable output
+
+**Output (--dry-run, default)**
+
+```
+Would remove 5 notes (oldest first):
+
+  20260110-eft-file-processing        EFT file processing        2026-01-10    curated
+  20260115-mysql-index-tuning         MySQL index tuning         2026-01-15    curated
+  20260120-sqs-visibility-timeout     SQS visibility timeout     2026-01-20    not curated
+
+Run without --dry-run to proceed.
+```
+
+**Output (--json)**
+
+```json
+{
+  "removed": 5,
+  "ids": ["20260110-eft-file-processing", "20260115-mysql-index-tuning", "20260120-sqs-visibility-timeout"]
+}
+```
+
+---
+
 ### kno note search
 
 ```
@@ -448,8 +508,8 @@ with summaries. Metadata filters are applied on top of search results.
 
 ```
 ID                                          TITLE                            SCORE   STATUS
-20260305-rds-slow-query-debugging           RDS slow query debugging         0.92    not distilled
-20260215-aurora-connection-pool-tuning      Aurora connection pool tuning     0.81    distilled
+20260305-rds-slow-query-debugging           RDS slow query debugging         0.92    not curated
+20260215-aurora-connection-pool-tuning      Aurora connection pool tuning     0.81    curated
 ```
 
 **Output (--json)**
@@ -463,8 +523,8 @@ ID                                          TITLE                            SCO
     "metadata": {
       "tags": ["aws", "databases", "performance"],
       "summary": "Query planner regression after minor version upgrade...",
-      "distilled_at": null,
-      "distilled_into": null
+      "curated_at": null,
+      "curated_into": null
     },
     "created_at": "2026-03-05T14:22:00Z"
   }
@@ -472,16 +532,14 @@ ID                                          TITLE                            SCO
 ```
 
 Note: `summary` in `metadata` is always included in JSON output when present
-so the skill can make load decisions without follow-up `show` calls.
+enabling load decisions without follow-up `show` calls.
 
 ---
 
 ## PAGES
 
 Pages are curated, living knowledge documents. They are durable — notes
-are ephemeral, pages are not. Page content is user-owned and skill-maintained.
-The skill typically structures content to include instructions alongside the
-accumulated knowledge document, but the CLI stores and returns content without
+are ephemeral, pages are not. Page content is stored and returned without
 interpretation.
 
 ---
@@ -505,7 +563,7 @@ List all pages. Pages are finite and curated — no limit is applied.
 **Output (default)**
 
 ```
-ID                    NAME                    LAST DISTILLED
+ID                    NAME                    LAST CURATED
 aws-infrastructure    AWS Infrastructure      2026-03-01
 payment-processing    Payment Processing      2026-02-15
 kubernetes-migration           Kubernetes Migration             —
@@ -519,7 +577,7 @@ kubernetes-migration           Kubernetes Migration             —
     "id": "aws-infrastructure",
     "name": "AWS Infrastructure",
     "metadata": {
-      "last_distilled_at": "2026-03-01T10:00:00Z"
+      "last_curated_at": "2026-03-01T10:00:00Z"
     },
     "created_at": "2026-01-15T09:00:00Z"
   }
@@ -543,7 +601,7 @@ Show full page document and metadata.
 **Output (default)**
 
 ```
-━━━ AWS Infrastructure  [aws-infrastructure]  last distilled 2026-03-01 ━━━━━━━━━━━━
+━━━ AWS Infrastructure  [aws-infrastructure]  last curated 2026-03-01 ━━━━━━━━━━━━
 
 ## AWS Infrastructure — Current Understanding
 ...
@@ -558,7 +616,7 @@ Show full page document and metadata.
   "name": "AWS Infrastructure",
   "content": "## AWS Infrastructure — Current Understanding\n...",
   "metadata": {
-    "last_distilled_at": "2026-03-01T10:00:00Z"
+    "last_curated_at": "2026-03-01T10:00:00Z"
   },
   "created_at": "2026-01-15T09:00:00Z"
 }
@@ -577,12 +635,9 @@ kno page create --name <name>  [--meta <key>=<value>]...  [< <content>]
 ```
 
 Create a new page. Name is required. Initial content is optional — if not
-provided the page starts empty and is populated on the first distill pass.
+provided the page starts empty and is populated on the first curate pass.
 
-Page content is user-owned and skill-maintained. The skill typically
-structures content to include instructions (what to focus on, what to skip,
-how to handle contradictions) alongside the accumulated knowledge document.
-The CLI stores and returns content without interpretation.
+Content is stored and returned without interpretation.
 
 **Options**
 
@@ -625,15 +680,15 @@ either or both. Piping content replaces the full page content.
 **Examples**
 
 ```bash
-# update content — primary distill write-back
+# update content — primary curate write-back
 echo "<updated content>" | kno page update aws-infrastructure
 
 # update metadata only
-kno page update aws-infrastructure --meta last_distilled_at=2026-03-05T14:22:00Z
+kno page update aws-infrastructure --meta last_curated_at=2026-03-05T14:22:00Z
 
-# update both — typical distill write-back
+# update both — typical curate write-back
 echo "<updated content>" | kno page update aws-infrastructure \
-  --meta last_distilled_at=2026-03-05T14:22:00Z
+  --meta last_curated_at=2026-03-05T14:22:00Z
 ```
 
 **Output (default)**
@@ -660,7 +715,7 @@ kno page rename <id>  --name <name>  [--json]
 ```
 
 Rename a page. Renames the underlying files, updates the search index, and
-fixes `distilled_into` references on any notes that pointed to the old ID.
+fixes `curated_into` references on any notes that pointed to the old ID.
 The page ID is derived from the name (slugified), so renaming typically
 changes the ID.
 
@@ -687,6 +742,36 @@ Renamed: aws-infrastructure → AWS Cloud Ops  [aws-cloud-ops]
 
 If the slug doesn't change (e.g. only capitalization differs), the name
 is updated in metadata but files are not renamed.
+
+---
+
+### kno page delete
+
+```
+kno page delete <id>  [--json]
+```
+
+Permanently delete a page document. The search index is updated.
+Associated notes are not deleted — their `curated_into` arrays are
+updated to remove the deleted page id. Notes that referenced only this
+page have `curated_into` and `curated_at` cleared, making them eligible
+to be curated again.
+
+**Output (default)**
+
+```
+Deleted: AWS Infrastructure  [aws-infrastructure]
+```
+
+**Output (--json)**
+
+```json
+{
+  "id": "aws-infrastructure",
+  "name": "AWS Infrastructure",
+  "deleted": true
+}
+```
 
 ---
 
@@ -740,34 +825,32 @@ payment-processing    Payment Processing    0.42
 kno vault status  [--json]
 ```
 
-Return a snapshot of vault health, capacity, and configuration. Exposed via
-MCP — the skill calls this at the start of distill and load operations to
-orient before acting. Also useful as a power user overview.
+Return a snapshot of vault health, capacity, and configuration.
 
 **Output (default)**
 
 ```
 Vault: ~/kno
 
-Notes: 143 / 200  (57 remaining)
-  Distilled:    121
-  Undistilled:   22
+Notes: 143 / 500  (357 remaining)
+  Curated:      121
+  Uncurated:      22
 
 Pages: 6
-  aws-infrastructure      AWS Infrastructure       last distilled 3 days ago
-  payment-processing      Payment Processing       last distilled 2 weeks ago
-  kubernetes-migration             Kubernetes Migration              last distilled 1 month ago
-  react-auth-patterns     React Auth Patterns     never distilled
-  eft-processing          EFT Processing           last distilled 6 days ago
-  mysql-optimization      MySQL Optimization       last distilled 3 weeks ago
+  aws-infrastructure      AWS Infrastructure       last curated 3 days ago
+  payment-processing      Payment Processing       last curated 2 weeks ago
+  kubernetes-migration             Kubernetes Migration              last curated 1 month ago
+  react-auth-patterns     React Auth Patterns     never curated
+  eft-processing          EFT Processing           last curated 6 days ago
+  mysql-optimization      MySQL Optimization       last curated 3 weeks ago
 
 Config:
-  notes.max_count           200
+  notes.max_count           500
   notes.default_list_limit   50
   notes.summary_max_tokens  100
-  pages.max_content_tokens   8000
-  distill.max_notes_per_run  50
-  search.default_limit           5
+  pages.max_content_tokens   12000
+  curate.max_notes_per_run  50
+  search.default_limit          10
 ```
 
 **Output (--json)**
@@ -777,159 +860,56 @@ Config:
   "vault_path": "/Users/kevin/kno",
   "notes": {
     "total": 143,
-    "max_count": 200,
-    "remaining": 57,
-    "distilled": 121,
-    "undistilled": 22
+    "max_count": 500,
+    "remaining": 357,
+    "curated": 121,
+    "uncurated": 22
   },
   "pages": [
     {
       "id": "aws-infrastructure",
       "name": "AWS Infrastructure",
       "metadata": {
-        "last_distilled_at": "2026-03-02T10:00:00Z"
+        "last_curated_at": "2026-03-02T10:00:00Z"
       }
     },
     {
       "id": "payment-processing",
       "name": "Payment Processing",
       "metadata": {
-        "last_distilled_at": "2026-02-19T10:00:00Z"
+        "last_curated_at": "2026-02-19T10:00:00Z"
       }
     }
   ],
   "config": {
     "notes": {
-      "max_count": 200,
+      "max_count": 500,
       "default_list_limit": 50,
       "summary_max_tokens": 100
     },
     "pages": {
-      "max_content_tokens": 8000
+      "max_content_tokens": 12000
     },
-    "distill": {
+    "curate": {
       "max_notes_per_run": 50
     },
     "search": {
-      "default_limit": 5
+      "default_limit": 10
     }
   }
 }
 ```
 
-Note: Config values are included in JSON output so the skill can plan
-context usage and enforce size budgets without reading config files directly.
+Note: Config values are included in JSON output for programmatic access.
 `vault_path` is always the fully resolved absolute path — never a
 tilde-expanded shorthand.
 
 ---
 
-## ADMIN
-
-Admin commands support vault maintenance and are not exposed via the MCP
-server. They are available to power users and operators via the CLI only.
-The skill layer has no access to these commands.
-
----
-
-### kno admin prune
+### kno vault rebuild-index
 
 ```
-kno admin prune --count <n>  [--dry-run]  [--json]
-```
-
-Remove the N oldest notes from the vault regardless of distill status.
-This is a last-resort maintenance command for when the vault is at capacity
-and no distilled notes exist to auto-remove. Prefer letting the vault
-self-regulate via auto-removal of distilled notes on `note create`.
-
-The algorithm removes notes strictly by age — oldest first, no other
-criteria. No judgment about value or content. `--dry-run` shows what would
-be removed without deleting anything.
-
-**Options**
-
-    --count <n>    Required. Number of notes to remove.
-    --dry-run      Preview removals without deleting. Recommended before
-                   running without it.
-    --json         Machine-readable output
-
-**Output (--dry-run, default)**
-
-```
-Would remove 5 notes (oldest first):
-
-  20260110-eft-file-processing        EFT file processing        2026-01-10    distilled
-  20260115-mysql-index-tuning         MySQL index tuning         2026-01-15    distilled
-  20260120-sqs-visibility-timeout     SQS visibility timeout     2026-01-20    not distilled
-  20260125-ach-return-handling        ACH return handling        2026-01-25    not distilled
-  20260201-ecs-task-scaling           ECS task scaling           2026-02-01    distilled
-
-Run without --dry-run to proceed.
-```
-
-**Output (default)**
-
-```
-Removed 5 notes (oldest first):
-
-  20260110-eft-file-processing        EFT file processing        2026-01-10    distilled
-  20260115-mysql-index-tuning         MySQL index tuning         2026-01-15    distilled
-  20260120-sqs-visibility-timeout     SQS visibility timeout     2026-01-20    not distilled
-  20260125-ach-return-handling        ACH return handling        2026-01-25    not distilled
-  20260201-ecs-task-scaling           ECS task scaling           2026-02-01    distilled
-```
-
-**Output (--json)**
-
-```json
-{
-  "removed": 5,
-  "ids": ["20260110-eft-file-processing", "20260115-mysql-index-tuning", "20260120-sqs-visibility-timeout", "20260125-ach-return-handling", "20260201-ecs-task-scaling"]
-}
-```
-
-**Note:** `--dry-run` is strongly recommended before running this command.
-Removed notes are not recoverable. Undistilled notes in the removal
-set represent knowledge that has not been preserved in any page document.
-
----
-
-### kno admin page delete
-
-```
-kno admin page delete <id>
-```
-
-Permanently delete a page document. This operation is irreversible and
-not exposed via MCP.
-
-Associated notes are not deleted. Their `distilled_into` arrays are
-updated to remove the deleted page id. Notes that referenced only this
-page have `distilled_into` set back to null, making them eligible to be
-distilled again on a future pass.
-
-**Output (default)**
-
-```
-Deleted: AWS Infrastructure  [aws-infrastructure]
-```
-
-**Output (--json)**
-
-```json
-{
-  "id": "aws-infrastructure",
-  "deleted": true
-}
-```
-
----
-
-### kno admin index rebuild
-
-```
-kno admin index rebuild
+kno vault rebuild-index  [--json]
 ```
 
 Rebuild the full-text search index from scratch by walking the vault
@@ -953,33 +933,33 @@ Done.
 # ~/kno/config.toml
 
 [notes]
-max_count = 200                  # vault capacity; oldest distilled removed first
+max_count = 500                  # vault capacity; oldest curated removed first
 default_list_limit = 50          # default for kno note list
-summary_max_tokens = 100         # hint to skill: target length for note summaries
+summary_max_tokens = 100         # target length for note summaries
 
 [pages]
-max_content_tokens = 8000        # soft cap on page document size; content
+max_content_tokens = 12000        # soft cap on page document size; content
                                  # exceeding this limit is truncated with a
                                  # warning — never a hard failure
 
-[distill]
-max_notes_per_run = 50        # max notes processed in a single distill
+[curate]
+max_notes_per_run = 50        # max notes processed in a single curate
                                  # pass. Set high enough to cover typical
                                  # backlogs in one run. If backlog exceeds
-                                 # this limit, distill reports how many remain
-                                 # and the skill can prompt a follow-up run.
+                                 # this limit, curate reports how many remain
+                                 # and a follow-up run can be prompted.
 
 [search]
-default_limit = 5                # default result count for all search commands
+default_limit = 10                # default result count for all search commands
 ```
 
-Defaults are designed to be predictably successful. A skill operating within
-default limits always knows the upper bound of what it will receive.
+Defaults are designed to be predictably successful. Any consumer operating
+within default limits always knows the upper bound of what it will receive.
 
 Key behaviors:
-- Exceeding `notes.max_count` at create time removes the oldest distilled
+- Exceeding `notes.max_count` at create time removes the oldest curated
   note. If none exist, the oldest note is removed regardless of status.
 - Exceeding `pages.max_content_tokens` truncates with a warning — never
   a hard failure.
-- Exceeding `distill.max_notes_per_run` processes up to the limit and
+- Exceeding `curate.max_notes_per_run` processes up to the limit and
   reports how many notes remain for a follow-up run.

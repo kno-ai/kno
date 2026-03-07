@@ -67,14 +67,14 @@ func metaMapToJSON(m model.MetaMap) map[string]any {
 }
 
 // noteMetaJSON converts a MetaMap for note JSON output,
-// ensuring distilled_at and distilled_into are always present (null if absent).
+// ensuring curated_at and curated_into are always present (null if absent).
 func noteMetaJSON(m model.MetaMap) map[string]any {
 	out := metaMapToJSON(m)
-	if _, ok := out["distilled_at"]; !ok {
-		out["distilled_at"] = nil
+	if _, ok := out["curated_at"]; !ok {
+		out["curated_at"] = nil
 	}
-	if _, ok := out["distilled_into"]; !ok {
-		out["distilled_into"] = nil
+	if _, ok := out["curated_into"]; !ok {
+		out["curated_into"] = nil
 	}
 	return out
 }

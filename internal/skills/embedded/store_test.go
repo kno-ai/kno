@@ -8,8 +8,8 @@ func TestEmbeddedSkillsPresent(t *testing.T) {
 	store := New()
 
 	required := []string{
-		"save.md",
-		"distill.md",
+		"capture.md",
+		"curate.md",
 		"load.md",
 		"page.md",
 		"status.md",

@@ -66,7 +66,7 @@ go build -o /tmp/kno ./cmd/kno
 # Set up a test vault with MCP registration
 /tmp/kno setup --vault /tmp/kno-dev --name kno-dev
 
-# Restart Claude Desktop — /kno-dev.save, /kno-dev.load, etc. will appear
+# Restart Claude Desktop — /kno-dev.capture, /kno-dev.load, etc. will appear
 ```
 
 The MCP registration points Claude Desktop at `/tmp/kno` with
@@ -91,7 +91,7 @@ This starts the MCP server over stdio. Send JSON-RPC messages on stdin.
 ```
 cmd/kno/main.go          Entry point
 internal/
-  cli/                   Cobra commands (note, page, vault, admin, setup)
+  cli/                   Cobra commands (note, page, vault, setup)
   mcp/                   MCP server, tools, and prompts
   model/                 Data types: Note, Page, MetaMap
   vault/                 Vault interface
@@ -156,8 +156,8 @@ kno uses different language at different layers:
 |---|---|---|---|
 | CLI / data model | note, page | create, list, show, update, search | `kno note create` |
 | MCP tools | note, page | create, list, show, update, search | `kno_note_create` |
-| MCP prompts / skills | session | save, distill, load | `/kno.save` |
+| MCP prompts / skills | session, page | capture, curate, load | `/kno.capture` |
 
 - **CLI and MCP tools** use "note" — the data resource in the vault.
-- **Skills and user-facing text** use "save" (verb) and "session" (noun) — what the user experiences.
-- These layers don't cross. CLI never says "save". Skills never tell the user to run `kno note`.
+- **Skills and user-facing text** use "capture" (verb) and "session" (noun) — what the user experiences.
+- These layers don't cross. CLI never says "capture". Skills never tell the user to run `kno note`.

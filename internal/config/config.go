@@ -9,10 +9,10 @@ import (
 )
 
 type Config struct {
-	Notes   NotesConfig   `toml:"notes" json:"notes"`
-	Pages   PagesConfig   `toml:"pages" json:"pages"`
-	Distill DistillConfig `toml:"distill" json:"distill"`
-	Search  SearchConfig  `toml:"search" json:"search"`
+	Notes  NotesConfig  `toml:"notes" json:"notes"`
+	Pages  PagesConfig  `toml:"pages" json:"pages"`
+	Curate CurateConfig `toml:"curate" json:"curate"`
+	Search SearchConfig `toml:"search" json:"search"`
 }
 
 type NotesConfig struct {
@@ -25,7 +25,7 @@ type PagesConfig struct {
 	MaxContentTokens int `toml:"max_content_tokens" json:"max_content_tokens"`
 }
 
-type DistillConfig struct {
+type CurateConfig struct {
 	MaxNotesPerRun int `toml:"max_notes_per_run" json:"max_notes_per_run"`
 }
 
@@ -36,18 +36,18 @@ type SearchConfig struct {
 func DefaultConfig() Config {
 	return Config{
 		Notes: NotesConfig{
-			MaxCount:         200,
+			MaxCount:         500,
 			DefaultListLimit: 50,
 			SummaryMaxTokens: 100,
 		},
 		Pages: PagesConfig{
-			MaxContentTokens: 8000,
+			MaxContentTokens: 12000,
 		},
-		Distill: DistillConfig{
+		Curate: CurateConfig{
 			MaxNotesPerRun: 50,
 		},
 		Search: SearchConfig{
-			DefaultLimit: 5,
+			DefaultLimit: 10,
 		},
 	}
 }
@@ -109,8 +109,8 @@ func applyDefaults(cfg *Config) {
 	if cfg.Pages.MaxContentTokens == 0 {
 		cfg.Pages.MaxContentTokens = d.Pages.MaxContentTokens
 	}
-	if cfg.Distill.MaxNotesPerRun == 0 {
-		cfg.Distill.MaxNotesPerRun = d.Distill.MaxNotesPerRun
+	if cfg.Curate.MaxNotesPerRun == 0 {
+		cfg.Curate.MaxNotesPerRun = d.Curate.MaxNotesPerRun
 	}
 	if cfg.Search.DefaultLimit == 0 {
 		cfg.Search.DefaultLimit = d.Search.DefaultLimit

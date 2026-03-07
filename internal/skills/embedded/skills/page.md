@@ -4,10 +4,10 @@ You are helping the user create or manage knowledge pages.
 
 **Skill prefix:** When referencing other slash commands, match the prefix the
 user used to invoke this skill. If they invoked `/kno-personal.page`,
-reference `/kno-personal.distill`, not `/kno.distill`.
+reference `/kno-personal.curate`, not `/kno.curate`.
 
 Pages are where session notes become lasting knowledge. Each page is a
-living document that grows through distill passes. Without pages, sessions
+living document that grows through curate passes. Without pages, sessions
 accumulate but are never synthesized.
 
 ## Voice
@@ -43,36 +43,36 @@ get out of the way. If they're unsure, offer examples rather than rules.
    })
    ```
 
-The guidance goes into `content` — it becomes the instructions the distill
+The guidance goes into `content` — it becomes the instructions the curate
 skill reads before every update.
 
-**Tip for the user:** "Guidance is worth revisiting after your first distill
+**Tip for the user:** "Guidance is worth revisiting after your first curate
 — you'll have a better sense of what matters once you see real sessions
 folded in."
 
-## Bootstrap distill
+## Bootstrap curate
 
-After creating a page, check for undistilled sessions that might be relevant.
-Call `kno_note_list` with `filter: {"distilled_at": null}` and review the
+After creating a page, check for uncurated sessions that might be relevant.
+Call `kno_note_list` with `filter: {"curated_at": null}` and review the
 summaries and tags. Tags are a strong signal — if the new page is
 "AWS Infrastructure" and sessions are tagged "aws", "rds", or "ecs",
 they're almost certainly relevant.
 
-If there are relevant undistilled sessions, offer to distill them now:
-"I found N sessions that look relevant to this page. Want me to distill them
+If there are relevant uncurated sessions, offer to curate them now:
+"I found N sessions that look relevant to this page. Want me to curate them
 in now? It'll give your page a head start."
 
-If the user agrees, run the distill flow for this single page:
+If the user agrees, run the curate flow for this single page:
 1. Read relevant sessions in full: `kno_note_show({"ids": [...]})`
 2. Synthesize initial content, following the guidance just written.
 3. Show the proposed content to the user.
 4. On confirmation, update the page and stamp the sessions — exactly as the
-   distill skill would:
+   curate skill would:
    ```
    kno_page_update({
      "id": "<page-id>",
      "content": "<guidance + synthesized knowledge>",
-     "meta": {"last_distilled_at": "<ISO8601>"}
+     "meta": {"last_curated_at": "<ISO8601>"}
    })
    ```
    Then for each session:
@@ -80,8 +80,8 @@ If the user agrees, run the distill flow for this single page:
    kno_note_update({
      "id": "<note-id>",
      "meta": {
-       "distilled_at": "<ISO8601>",
-       "distilled_into": "<page-id>"
+       "curated_at": "<ISO8601>",
+       "curated_into": "<page-id>"
      }
    })
    ```
@@ -108,10 +108,10 @@ received at least a few sessions by then?
 
 Call `kno_page_list` and display the results. For each page, show:
 - Name
-- Last distilled date (from `last_distilled_at` in metadata, or "never distilled")
+- Last curated date (from `last_curated_at` in metadata, or "never curated")
 
-If any pages have never been distilled and undistilled sessions exist,
-mention it: "Some of your pages haven't been distilled yet — `/kno.distill`
+If any pages have never been curated and uncurated sessions exist,
+mention it: "Some of your pages haven't been curated yet — `/kno.curate`
 would populate them with your recent sessions."
 
 ## Editing a page
@@ -143,22 +143,20 @@ references automatically. The response includes both old and new IDs.
 
 ## Deleting a page
 
-Page deletion is an admin operation — it's not available through this skill.
-If the user asks to delete a page, point them to the CLI:
-"`kno admin page delete <id>` from the terminal — it will clean up session
-references too."
+If the user asks to delete a page, use the `kno_page_delete` tool directly.
+It cleans up session references automatically.
 
 ## Error handling
 
 If a tool call fails, report it clearly. Don't silently skip — especially
-on bootstrap distill, where a failed stamp breaks vault health.
+on bootstrap curate, where a failed stamp breaks vault health.
 
 ## Guidelines
 
 - Pages are intentional and user-owned. Never create one without the user
   asking for it. But do suggest creating one when it would help.
 - Page names should be clear and descriptive. Avoid generic names.
-- Guidance at the top of a page shapes every future distill pass — it's
+- Guidance at the top of a page shapes every future curate pass — it's
   worth spending a moment to get it right, but it doesn't have to be perfect
   on the first try.
 - Keep the page list curated. If the user has many pages, gently suggest

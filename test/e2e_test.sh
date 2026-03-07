@@ -88,12 +88,12 @@ echo "$SHOW_OUT" | grep -q "databases" && pass "note update reflected" || fail "
 # --- Note filtering ---
 echo ""
 echo "Note filtering"
-assert_contains "filter undistilled shows both" "$NOTE1" "$KNO" --vault "$VAULT" note list --filter distilled_at=null
+assert_contains "filter uncurated shows both" "$NOTE1" "$KNO" --vault "$VAULT" note list --filter curated_at=null
 
-# Stamp as distilled
-assert_exit_0 "stamp distilled" "$KNO" --vault "$VAULT" note update "$NOTE1" --meta distilled_at=2026-03-06T00:00:00Z --meta distilled_into=aws-infrastructure
-assert_not_contains "filter undistilled excludes stamped" "$NOTE1" "$KNO" --vault "$VAULT" note list --filter distilled_at=null
-assert_contains "filter undistilled shows remaining" "$NOTE2" "$KNO" --vault "$VAULT" note list --filter distilled_at=null
+# Stamp as curated
+assert_exit_0 "stamp curated" "$KNO" --vault "$VAULT" note update "$NOTE1" --meta curated_at=2026-03-06T00:00:00Z --meta curated_into=aws-infrastructure
+assert_not_contains "filter uncurated excludes stamped" "$NOTE1" "$KNO" --vault "$VAULT" note list --filter curated_at=null
+assert_contains "filter uncurated shows remaining" "$NOTE2" "$KNO" --vault "$VAULT" note list --filter curated_at=null
 
 # --- Page CRUD ---
 echo ""
@@ -104,7 +104,7 @@ assert_contains "page create empty" "Created" "$KNO" --vault "$VAULT" page creat
 assert_contains "page list shows 2" "AWS Infrastructure" "$KNO" --vault "$VAULT" page list
 assert_contains "page show content" "operational lessons" "$KNO" --vault "$VAULT" page show aws-infrastructure
 
-assert_exit_0 "page update" bash -c "echo 'Updated content.' | '$KNO' --vault '$VAULT' page update aws-infrastructure --meta last_distilled_at=2026-03-06T00:00:00Z"
+assert_exit_0 "page update" bash -c "echo 'Updated content.' | '$KNO' --vault '$VAULT' page update aws-infrastructure --meta last_curated_at=2026-03-06T00:00:00Z"
 assert_contains "page update reflected" "Updated content" "$KNO" --vault "$VAULT" page show aws-infrastructure
 
 # --- Search ---
@@ -135,12 +135,12 @@ echo "$JSON_OUT" | python3 -c "import sys,json; json.load(sys.stdin)" 2>/dev/nul
 JSON_OUT=$("$KNO" --vault "$VAULT" vault status --json 2>&1)
 echo "$JSON_OUT" | python3 -c "import sys,json; d=json.load(sys.stdin); assert 'pages' in d" 2>/dev/null && pass "vault status --json has pages key" || fail "vault status --json missing pages key"
 
-# --- Admin operations ---
+# --- Delete and prune ---
 echo ""
-echo "Admin operations"
+echo "Delete and prune"
 
-assert_contains "prune dry-run" "Would remove" "$KNO" --vault "$VAULT" admin prune --count 1 --dry-run
-assert_exit_0 "admin page delete" "$KNO" --vault "$VAULT" admin page delete payment-processing
+assert_contains "prune dry-run" "Would remove" "$KNO" --vault "$VAULT" note prune --count 1 --dry-run
+assert_exit_0 "page delete" "$KNO" --vault "$VAULT" page delete payment-processing
 assert_not_contains "page gone after delete" "Payment Processing" "$KNO" --vault "$VAULT" page list
 
 # --- Error cases ---
@@ -149,7 +149,7 @@ echo "Error cases"
 
 assert_exit_nonzero "show nonexistent note" "$KNO" --vault "$VAULT" note show nonexistent-id
 assert_exit_nonzero "show nonexistent page" "$KNO" --vault "$VAULT" page show nonexistent-id
-assert_exit_nonzero "delete nonexistent page" "$KNO" --vault "$VAULT" admin page delete nonexistent-id
+assert_exit_nonzero "delete nonexistent page" "$KNO" --vault "$VAULT" page delete nonexistent-id
 
 # --- Version ---
 echo ""

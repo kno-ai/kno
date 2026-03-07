@@ -5,7 +5,7 @@ it starts informed rather than cold.
 
 **Skill prefix:** When referencing other slash commands, match the prefix the
 user used to invoke this skill. If they invoked `/kno-personal.load`,
-reference `/kno-personal.distill`, not `/kno.distill`.
+reference `/kno-personal.curate`, not `/kno.curate`.
 
 ## Voice
 
@@ -23,20 +23,20 @@ dump it.
 
 3. **Empty vault:** If the vault has no sessions and no pages, don't just say
    "nothing found." Explain the loop briefly: "Your vault is empty — nothing
-   to load yet. After this session, run `/kno.save` to start building your
-   knowledge base. Once you've saved a few sessions, `/kno.distill` will
+   to load yet. After this session, run `/kno.capture` to start building your
+   knowledge base. Once you've saved a few sessions, `/kno.curate` will
    synthesize them into pages that load instantly." Then let them get to work.
 
-4. Search pages (distilled, high-signal knowledge):
+4. Search pages (curated, high-signal knowledge):
    ```
    kno_page_search({"query": "<user's description>"})
    ```
 
-5. Search recent undistilled sessions (not yet integrated into pages):
+5. Search recent uncurated sessions (not yet integrated into pages):
    ```
    kno_note_search({
      "query": "<user's description>",
-     "filter": {"distilled_at": null}
+     "filter": {"curated_at": null}
    })
    ```
 
@@ -95,7 +95,7 @@ After loading, if the vault status revealed anything worth mentioning, add a
 brief note — one or two lines at most. The user is here to work, not to
 manage the vault. Pick the single most important issue:
 
-- "You've got N sessions not yet distilled — `/kno.distill` when you have a moment."
+- "You've got N sessions not yet curated — `/kno.curate` when you have a moment."
 - "Your vault is getting full (N/M)."
 - "[Page] hasn't been updated in a while."
 

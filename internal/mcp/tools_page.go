@@ -44,6 +44,11 @@ func registerPageTools(s *server.MCPServer, a *app.App) {
 		mcp.WithString("name", mcp.Required(), mcp.Description("New page name.")),
 	), pageRenameHandler(a))
 
+	s.AddTool(mcp.NewTool("kno_page_delete",
+		mcp.WithDescription("Permanently delete a page. Sessions that were curated into this page become eligible for curation again."),
+		mcp.WithString("id", mcp.Required(), mcp.Description("Page ID to delete.")),
+	), pageDeleteHandler(a))
+
 	s.AddTool(mcp.NewTool("kno_page_search",
 		mcp.WithDescription("Search pages by text query."),
 		mcp.WithString("query", mcp.Required(), mcp.Description("Search query.")),
@@ -202,14 +207,14 @@ func pageRenameHandler(a *app.App) server.ToolHandlerFunc {
 			a.IndexPage(page)
 		}
 
-		// Update distilled_into references on notes.
+		// Update curated_into references on notes.
 		if newID != id {
 			allNotes, _ := a.Vault.ListNotes(0)
 			for _, nm := range allNotes {
-				if nm.Metadata == nil || !nm.Metadata.Has("distilled_into") {
+				if nm.Metadata == nil || !nm.Metadata.Has("curated_into") {
 					continue
 				}
-				vals := nm.Metadata["distilled_into"]
+				vals := nm.Metadata["curated_into"]
 				changed := false
 				for i, val := range vals {
 					if val == id {
@@ -219,7 +224,7 @@ func pageRenameHandler(a *app.App) server.ToolHandlerFunc {
 				}
 				if changed {
 					updateMeta := make(model.MetaMap)
-					updateMeta["distilled_into"] = vals
+					updateMeta["curated_into"] = vals
 					a.Vault.UpdateNote(nm.ID, nil, updateMeta)
 				}
 			}
@@ -229,6 +234,58 @@ func pageRenameHandler(a *app.App) server.ToolHandlerFunc {
 			"old_id": id,
 			"new_id": newID,
 			"name":   name,
+		}, "", "  ")
+		return mcp.NewToolResultText(string(data)), nil
+	}
+}
+
+func pageDeleteHandler(a *app.App) server.ToolHandlerFunc {
+	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		id, err := req.RequireString("id")
+		if err != nil {
+			return mcp.NewToolResultError("id is required"), nil
+		}
+
+		pageMeta, err := a.Vault.ReadPageMeta(id)
+		if err != nil {
+			return mcp.NewToolResultError(fmt.Sprintf("Not found: page %q", id)), nil
+		}
+
+		if err := a.Vault.DeletePage(id); err != nil {
+			return mcp.NewToolResultError(fmt.Sprintf("delete failed: %v", err)), nil
+		}
+		a.RemovePageFromIndex(id)
+
+		// Clean up curated_into references on notes.
+		allNotes, _ := a.Vault.ListNotes(0)
+		for _, nm := range allNotes {
+			if nm.Metadata == nil || !nm.Metadata.Has("curated_into") {
+				continue
+			}
+			vals := nm.Metadata["curated_into"]
+			var remaining []string
+			for _, v := range vals {
+				if v != id {
+					remaining = append(remaining, v)
+				}
+			}
+			if len(remaining) == len(vals) {
+				continue
+			}
+			updateMeta := make(model.MetaMap)
+			if len(remaining) == 0 {
+				updateMeta["curated_into"] = nil
+				updateMeta["curated_at"] = nil
+			} else {
+				updateMeta["curated_into"] = remaining
+			}
+			a.Vault.UpdateNote(nm.ID, nil, updateMeta)
+		}
+
+		data, _ := json.MarshalIndent(map[string]any{
+			"id":      id,
+			"name":    pageMeta.Name,
+			"deleted": true,
 		}, "", "  ")
 		return mcp.NewToolResultText(string(data)), nil
 	}

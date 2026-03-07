@@ -129,7 +129,7 @@ func TestIntegration_NoteUpdate(t *testing.T) {
 
 	newContent := "updated content"
 	newMeta := make(model.MetaMap)
-	newMeta.Set("distilled_at", "2026-03-06T12:00:00Z")
+	newMeta.Set("curated_at", "2026-03-06T12:00:00Z")
 
 	if err := v.UpdateNote(id, &newContent, newMeta); err != nil {
 		t.Fatal(err)
@@ -142,8 +142,8 @@ func TestIntegration_NoteUpdate(t *testing.T) {
 	if got.Content != "updated content" {
 		t.Errorf("Content = %q", got.Content)
 	}
-	if got.Metadata.Get("distilled_at") != "2026-03-06T12:00:00Z" {
-		t.Errorf("distilled_at = %q", got.Metadata.Get("distilled_at"))
+	if got.Metadata.Get("curated_at") != "2026-03-06T12:00:00Z" {
+		t.Errorf("curated_at = %q", got.Metadata.Get("curated_at"))
 	}
 }
 
@@ -172,10 +172,10 @@ func TestIntegration_NoteDelete(t *testing.T) {
 func TestIntegration_NoteCapacity(t *testing.T) {
 	v := setupVault(t)
 
-	// Create note, mark it distilled
+	// Create note, mark it curated
 	id, err := v.WriteNote(model.Note{
 		CreatedAt: time.Now(),
-		Title:     "Old Distilled",
+		Title:     "Old Curated",
 		Content:   "old",
 	})
 	if err != nil {
@@ -183,18 +183,18 @@ func TestIntegration_NoteCapacity(t *testing.T) {
 	}
 
 	distMeta := make(model.MetaMap)
-	distMeta.Set("distilled_at", "2026-01-01T00:00:00Z")
+	distMeta.Set("curated_at", "2026-01-01T00:00:00Z")
 	if err := v.UpdateNote(id, nil, distMeta); err != nil {
 		t.Fatal(err)
 	}
 
-	// Verify OldestDistilledNoteID finds it
-	oldest, err := v.OldestDistilledNoteID()
+	// Verify OldestCuratedNoteID finds it
+	oldest, err := v.OldestCuratedNoteID()
 	if err != nil {
 		t.Fatal(err)
 	}
 	if oldest != id {
-		t.Errorf("OldestDistilledNoteID = %q, want %q", oldest, id)
+		t.Errorf("OldestCuratedNoteID = %q, want %q", oldest, id)
 	}
 }
 
@@ -355,8 +355,8 @@ func TestIntegration_MetaMapFilter(t *testing.T) {
 	}
 
 	// Match null (absent)
-	if !m.MatchesFilter(map[string]string{"distilled_at": "null"}) {
-		t.Error("should match distilled_at=null when absent")
+	if !m.MatchesFilter(map[string]string{"curated_at": "null"}) {
+		t.Error("should match curated_at=null when absent")
 	}
 	if m.MatchesFilter(map[string]string{"status": "null"}) {
 		t.Error("should not match status=null when present")
@@ -393,10 +393,10 @@ func TestIntegration_Config(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if loaded.Notes.MaxCount != 200 {
+	if loaded.Notes.MaxCount != 500 {
 		t.Errorf("MaxCount = %d", loaded.Notes.MaxCount)
 	}
-	if loaded.Pages.MaxContentTokens != 8000 {
+	if loaded.Pages.MaxContentTokens != 12000 {
 		t.Errorf("MaxContentTokens = %d", loaded.Pages.MaxContentTokens)
 	}
 }
@@ -425,7 +425,7 @@ func TestIntegration_CapacityAutoRemoval(t *testing.T) {
 
 	base := time.Date(2026, 1, 1, 12, 0, 0, 0, time.UTC)
 
-	// Create 3 notes, mark first as distilled
+	// Create 3 notes, mark first as curated
 	ids := make([]string, 3)
 	for i := 0; i < 3; i++ {
 		id, err := v.WriteNote(model.Note{
@@ -439,9 +439,9 @@ func TestIntegration_CapacityAutoRemoval(t *testing.T) {
 		ids[i] = id
 	}
 
-	// Mark first as distilled
+	// Mark first as curated
 	distMeta := make(model.MetaMap)
-	distMeta.Set("distilled_at", "2026-01-01T00:00:00Z")
+	distMeta.Set("curated_at", "2026-01-01T00:00:00Z")
 	if err := v.UpdateNote(ids[0], nil, distMeta); err != nil {
 		t.Fatal(err)
 	}
@@ -452,13 +452,13 @@ func TestIntegration_CapacityAutoRemoval(t *testing.T) {
 		t.Fatalf("expected 3 notes, got %d", count)
 	}
 
-	// OldestDistilledNoteID should return first note
-	oldest, err := v.OldestDistilledNoteID()
+	// OldestCuratedNoteID should return first note
+	oldest, err := v.OldestCuratedNoteID()
 	if err != nil {
 		t.Fatal(err)
 	}
 	if oldest != ids[0] {
-		t.Errorf("oldest distilled = %q, want %q", oldest, ids[0])
+		t.Errorf("oldest curated = %q, want %q", oldest, ids[0])
 	}
 
 	// Delete it (simulating auto-removal)
@@ -471,13 +471,13 @@ func TestIntegration_CapacityAutoRemoval(t *testing.T) {
 		t.Fatalf("expected 2 notes after removal, got %d", count)
 	}
 
-	// No more distilled notes
-	oldest, err = v.OldestDistilledNoteID()
+	// No more curated notes
+	oldest, err = v.OldestCuratedNoteID()
 	if err != nil {
 		t.Fatal(err)
 	}
 	if oldest != "" {
-		t.Errorf("expected no distilled notes, got %q", oldest)
+		t.Errorf("expected no curated notes, got %q", oldest)
 	}
 }
 
@@ -494,7 +494,7 @@ func TestIntegration_PageDeleteNoteCleanup(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Create notes with various distilled_into states
+	// Create notes with various curated_into states
 	noteSingle, err := v.WriteNote(model.Note{
 		CreatedAt: time.Now(), Title: "Single ref", Content: "test",
 	})
@@ -514,19 +514,19 @@ func TestIntegration_PageDeleteNoteCleanup(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Mark noteSingle as distilled into pageA only
+	// Mark noteSingle as curated into pageA only
 	singleMeta := make(model.MetaMap)
-	singleMeta.Set("distilled_at", "2026-01-01T00:00:00Z")
-	singleMeta.Set("distilled_into", pageA)
+	singleMeta.Set("curated_at", "2026-01-01T00:00:00Z")
+	singleMeta.Set("curated_into", pageA)
 	if err := v.UpdateNote(noteSingle, nil, singleMeta); err != nil {
 		t.Fatal(err)
 	}
 
-	// Mark noteMulti as distilled into both pages
+	// Mark noteMulti as curated into both pages
 	multiMeta := make(model.MetaMap)
-	multiMeta.Set("distilled_at", "2026-01-01T00:00:00Z")
-	multiMeta.Add("distilled_into", pageA)
-	multiMeta.Add("distilled_into", pageB)
+	multiMeta.Set("curated_at", "2026-01-01T00:00:00Z")
+	multiMeta.Add("curated_into", pageA)
+	multiMeta.Add("curated_into", pageB)
 	if err := v.UpdateNote(noteMulti, nil, multiMeta); err != nil {
 		t.Fatal(err)
 	}
@@ -539,10 +539,10 @@ func TestIntegration_PageDeleteNoteCleanup(t *testing.T) {
 	// Simulate admin page delete cleanup
 	allNotes, _ := v.ListNotes(0)
 	for _, nm := range allNotes {
-		if nm.Metadata == nil || !nm.Metadata.Has("distilled_into") {
+		if nm.Metadata == nil || !nm.Metadata.Has("curated_into") {
 			continue
 		}
-		vals := nm.Metadata["distilled_into"]
+		vals := nm.Metadata["curated_into"]
 		var remaining []string
 		for _, val := range vals {
 			if val != pageA {
@@ -554,36 +554,36 @@ func TestIntegration_PageDeleteNoteCleanup(t *testing.T) {
 		}
 		updateMeta := make(model.MetaMap)
 		if len(remaining) == 0 {
-			updateMeta["distilled_into"] = nil
-			updateMeta["distilled_at"] = nil
+			updateMeta["curated_into"] = nil
+			updateMeta["curated_at"] = nil
 		} else {
-			updateMeta["distilled_into"] = remaining
+			updateMeta["curated_into"] = remaining
 		}
 		v.UpdateNote(nm.ID, nil, updateMeta)
 	}
 
-	// noteSingle should have distilled_into and distilled_at removed (re-eligible)
+	// noteSingle should have curated_into and curated_at removed (re-eligible)
 	single, err := v.ReadNote(noteSingle)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if single.Metadata.Has("distilled_into") {
-		t.Error("noteSingle should have distilled_into removed")
+	if single.Metadata.Has("curated_into") {
+		t.Error("noteSingle should have curated_into removed")
 	}
-	if single.Metadata.Has("distilled_at") {
-		t.Error("noteSingle should have distilled_at removed")
+	if single.Metadata.Has("curated_at") {
+		t.Error("noteSingle should have curated_at removed")
 	}
 
-	// noteMulti should still have distilled_into=[pageB]
+	// noteMulti should still have curated_into=[pageB]
 	multi, err := v.ReadNote(noteMulti)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !multi.Metadata.Has("distilled_into") {
-		t.Fatal("noteMulti should still have distilled_into")
+	if !multi.Metadata.Has("curated_into") {
+		t.Fatal("noteMulti should still have curated_into")
 	}
-	if len(multi.Metadata["distilled_into"]) != 1 || multi.Metadata["distilled_into"][0] != pageB {
-		t.Errorf("noteMulti distilled_into = %v, want [%s]", multi.Metadata["distilled_into"], pageB)
+	if len(multi.Metadata["curated_into"]) != 1 || multi.Metadata["curated_into"][0] != pageB {
+		t.Errorf("noteMulti curated_into = %v, want [%s]", multi.Metadata["curated_into"], pageB)
 	}
 
 	// noteUnrelated should be unchanged
@@ -591,8 +591,8 @@ func TestIntegration_PageDeleteNoteCleanup(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if unrelated.Metadata.Has("distilled_into") {
-		t.Error("noteUnrelated should not have distilled_into")
+	if unrelated.Metadata.Has("curated_into") {
+		t.Error("noteUnrelated should not have curated_into")
 	}
 
 }

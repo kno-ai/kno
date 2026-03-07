@@ -44,6 +44,12 @@ func registerNoteTools(s *server.MCPServer, a *app.App) {
 		mcp.WithObject("meta", mcp.Description("Metadata key-value pairs to set/update.")),
 	), noteUpdateHandler(a))
 
+	// kno_note_delete
+	s.AddTool(mcp.NewTool("kno_note_delete",
+		mcp.WithDescription("Permanently delete a saved session by ID."),
+		mcp.WithString("id", mcp.Required(), mcp.Description("Note ID to delete.")),
+	), noteDeleteHandler(a))
+
 	// kno_note_search
 	s.AddTool(mcp.NewTool("kno_note_search",
 		mcp.WithDescription("Search notes by text query."),
@@ -73,14 +79,14 @@ func noteCreateHandler(a *app.App) server.ToolHandlerFunc {
 		}
 
 		var autoRemoved string
-		var autoRemovedUndistilled bool
+		var autoRemovedUncurated bool
 		if count >= a.Config.Notes.MaxCount {
-			oldest, err := a.Vault.OldestDistilledNoteID()
+			oldest, err := a.Vault.OldestCuratedNoteID()
 			if err != nil {
 				return mcp.NewToolResultError(fmt.Sprintf("finding removable note: %v", err)), nil
 			}
 			if oldest == "" {
-				// No distilled notes — fall back to oldest note overall
+				// No curated notes — fall back to oldest note overall
 				oldest, err = a.Vault.OldestNoteID()
 				if err != nil {
 					return mcp.NewToolResultError(fmt.Sprintf("finding oldest note: %v", err)), nil
@@ -88,7 +94,7 @@ func noteCreateHandler(a *app.App) server.ToolHandlerFunc {
 				if oldest == "" {
 					return mcp.NewToolResultError(fmt.Sprintf("vault at capacity (%d) with nothing to remove", a.Config.Notes.MaxCount)), nil
 				}
-				autoRemovedUndistilled = true
+				autoRemovedUncurated = true
 			}
 			if err := a.Vault.DeleteNote(oldest); err != nil {
 				return mcp.NewToolResultError(fmt.Sprintf("auto-removing: %v", err)), nil
@@ -122,8 +128,8 @@ func noteCreateHandler(a *app.App) server.ToolHandlerFunc {
 		}
 		if autoRemoved != "" {
 			result["auto_removed"] = autoRemoved
-			if autoRemovedUndistilled {
-				result["auto_removed_undistilled"] = true
+			if autoRemovedUncurated {
+				result["auto_removed_uncurated"] = true
 			}
 		}
 
@@ -247,6 +253,32 @@ func noteUpdateHandler(a *app.App) server.ToolHandlerFunc {
 	}
 }
 
+func noteDeleteHandler(a *app.App) server.ToolHandlerFunc {
+	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		id, err := req.RequireString("id")
+		if err != nil {
+			return mcp.NewToolResultError("id is required"), nil
+		}
+
+		noteMeta, err := a.Vault.ReadNoteMeta(id)
+		if err != nil {
+			return mcp.NewToolResultError(fmt.Sprintf("Not found: note %q", id)), nil
+		}
+
+		if err := a.Vault.DeleteNote(id); err != nil {
+			return mcp.NewToolResultError(fmt.Sprintf("delete failed: %v", err)), nil
+		}
+		a.RemoveNoteFromIndex(id)
+
+		data, _ := json.MarshalIndent(map[string]any{
+			"id":      id,
+			"title":   noteMeta.Title,
+			"deleted": true,
+		}, "", "  ")
+		return mcp.NewToolResultText(string(data)), nil
+	}
+}
+
 func noteSearchHandler(a *app.App) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		query, err := req.RequireString("query")
@@ -328,14 +360,14 @@ func metaMapForMCP(m model.MetaMap) map[string]any {
 }
 
 // noteMetaForMCP converts MetaMap for MCP note JSON output, ensuring
-// distilled_at and distilled_into are always present (null if absent).
+// curated_at and curated_into are always present (null if absent).
 func noteMetaForMCP(m model.MetaMap) map[string]any {
 	out := metaMapForMCP(m)
-	if _, ok := out["distilled_at"]; !ok {
-		out["distilled_at"] = nil
+	if _, ok := out["curated_at"]; !ok {
+		out["curated_at"] = nil
 	}
-	if _, ok := out["distilled_into"]; !ok {
-		out["distilled_into"] = nil
+	if _, ok := out["curated_into"]; !ok {
+		out["curated_into"] = nil
 	}
 	return out
 }

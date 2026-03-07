@@ -11,14 +11,14 @@ import (
 
 func registerPrompts(s *server.MCPServer, a *app.App) {
 	s.AddPrompt(mcp.Prompt{
-		Name:        "kno.save",
-		Description: "Save the current session to your knowledge vault.",
-	}, savePromptHandler(a))
+		Name:        "kno.capture",
+		Description: "Capture the current session to your knowledge vault.",
+	}, capturePromptHandler(a))
 
 	s.AddPrompt(mcp.Prompt{
-		Name:        "kno.distill",
-		Description: "Synthesize undistilled notes into page documents.",
-	}, distillPromptHandler(a))
+		Name:        "kno.curate",
+		Description: "Synthesize uncurated notes into page documents.",
+	}, curatePromptHandler(a))
 
 	s.AddPrompt(mcp.Prompt{
 		Name:        "kno.load",
@@ -50,27 +50,27 @@ func registerPrompts(s *server.MCPServer, a *app.App) {
 	}, statusPromptHandler(a))
 }
 
-func savePromptHandler(a *app.App) server.PromptHandlerFunc {
+func capturePromptHandler(a *app.App) server.PromptHandlerFunc {
 	return func(ctx context.Context, req mcp.GetPromptRequest) (*mcp.GetPromptResult, error) {
-		skill, err := a.Skills.Get("save.md")
+		skill, err := a.Skills.Get("capture.md")
 		if err != nil {
-			return nil, fmt.Errorf("loading save skill: %w", err)
+			return nil, fmt.Errorf("loading capture skill: %w", err)
 		}
 		return &mcp.GetPromptResult{
-			Description: "Save the current session to your knowledge vault.",
+			Description: "Capture the current session to your knowledge vault.",
 			Messages:    []mcp.PromptMessage{mcp.NewPromptMessage(mcp.RoleUser, mcp.NewTextContent(skill))},
 		}, nil
 	}
 }
 
-func distillPromptHandler(a *app.App) server.PromptHandlerFunc {
+func curatePromptHandler(a *app.App) server.PromptHandlerFunc {
 	return func(ctx context.Context, req mcp.GetPromptRequest) (*mcp.GetPromptResult, error) {
-		skill, err := a.Skills.Get("distill.md")
+		skill, err := a.Skills.Get("curate.md")
 		if err != nil {
-			return nil, fmt.Errorf("loading distill skill: %w", err)
+			return nil, fmt.Errorf("loading curate skill: %w", err)
 		}
 		return &mcp.GetPromptResult{
-			Description: "Synthesize undistilled notes into page documents.",
+			Description: "Synthesize uncurated notes into page documents.",
 			Messages:    []mcp.PromptMessage{mcp.NewPromptMessage(mcp.RoleUser, mcp.NewTextContent(skill))},
 		}, nil
 	}

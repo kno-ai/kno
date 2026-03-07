@@ -22,7 +22,9 @@ func newNoteCmd() *cobra.Command {
 		newNoteListCmd(),
 		newNoteShowCmd(),
 		newNoteUpdateCmd(),
+		newNoteDeleteCmd(),
 		newNoteSearchCmd(),
+		newNotePruneCmd(),
 	)
 
 	return cmd
@@ -69,14 +71,14 @@ func newNoteCreateCmd() *cobra.Command {
 
 			var autoRemoved string
 			var autoRemovedTitle string
-			var autoRemovedUndistilled bool
+			var autoRemovedUncurated bool
 			if count >= a.Config.Notes.MaxCount {
-				oldest, err := a.Vault.OldestDistilledNoteID()
+				oldest, err := a.Vault.OldestCuratedNoteID()
 				if err != nil {
 					return err
 				}
 				if oldest == "" {
-					// No distilled notes — fall back to oldest note overall
+					// No curated notes — fall back to oldest note overall
 					oldest, err = a.Vault.OldestNoteID()
 					if err != nil {
 						return err
@@ -84,7 +86,7 @@ func newNoteCreateCmd() *cobra.Command {
 					if oldest == "" {
 						return fmt.Errorf("vault at capacity (%d notes) with nothing to remove", a.Config.Notes.MaxCount)
 					}
-					autoRemovedUndistilled = true
+					autoRemovedUncurated = true
 				}
 				if rm, err := a.Vault.ReadNoteMeta(oldest); err == nil {
 					autoRemovedTitle = rm.Title
@@ -118,8 +120,8 @@ func newNoteCreateCmd() *cobra.Command {
 					"created_at":   now.Format(time.RFC3339),
 					"auto_removed": nilIfEmpty(autoRemoved),
 				}
-				if autoRemovedUndistilled {
-					out["auto_removed_undistilled"] = true
+				if autoRemovedUncurated {
+					out["auto_removed_uncurated"] = true
 				}
 				return printJSON(cmd.OutOrStdout(), out)
 			}
@@ -130,10 +132,10 @@ func newNoteCreateCmd() *cobra.Command {
 				if displayTitle == "" {
 					displayTitle = autoRemoved
 				}
-				if autoRemovedUndistilled {
-					fmt.Fprintf(cmd.ErrOrStderr(), "Removed: %s  [%s]  (oldest — UNDISTILLED, knowledge may be lost. Run /kno.distill)\n", displayTitle, autoRemoved)
+				if autoRemovedUncurated {
+					fmt.Fprintf(cmd.ErrOrStderr(), "Removed: %s  [%s]  (oldest — UNCURATED, knowledge may be lost. Run /kno.curate)\n", displayTitle, autoRemoved)
 				} else {
-					fmt.Fprintf(cmd.ErrOrStderr(), "Removed: %s  [%s]  (oldest distilled — distill backlog reminder)\n", displayTitle, autoRemoved)
+					fmt.Fprintf(cmd.ErrOrStderr(), "Removed: %s  [%s]  (oldest curated — curate backlog reminder)\n", displayTitle, autoRemoved)
 				}
 			}
 			return nil
@@ -217,9 +219,9 @@ func newNoteListCmd() *cobra.Command {
 
 			fmt.Fprintf(cmd.OutOrStdout(), "%-20s  %-40s  %-12s  %s\n", "ID", "TITLE", "CREATED", "STATUS")
 			for _, m := range filtered {
-				status := "not distilled"
-				if m.Metadata.Has("distilled_at") {
-					status = "distilled"
+				status := "not curated"
+				if m.Metadata.Has("curated_at") {
+					status = "curated"
 				}
 				created := m.CreatedAt
 				if t, err := time.Parse(time.RFC3339, m.CreatedAt); err == nil {
@@ -410,7 +412,7 @@ func newNoteSearchCmd() *cobra.Command {
 
 			idx, err := search.Open(a.Vault.IndexDir())
 			if err != nil {
-				return fmt.Errorf("opening search index (try 'kno admin index-rebuild'): %w", err)
+				return fmt.Errorf("opening search index (try 'kno vault rebuild-index'): %w", err)
 			}
 			defer idx.Close()
 
@@ -462,9 +464,9 @@ func newNoteSearchCmd() *cobra.Command {
 
 			fmt.Fprintf(cmd.OutOrStdout(), "%-20s  %-40s  %-6s  %s\n", "ID", "TITLE", "SCORE", "STATUS")
 			for _, r := range output {
-				status := "not distilled"
-				if r.Metadata["distilled_at"] != nil {
-					status = "distilled"
+				status := "not curated"
+				if r.Metadata["curated_at"] != nil {
+					status = "curated"
 				}
 				fmt.Fprintf(cmd.OutOrStdout(), "%-20s  %-40s  %-6.2f  %s\n", r.ID, r.Title, r.Score, status)
 			}
@@ -474,6 +476,148 @@ func newNoteSearchCmd() *cobra.Command {
 
 	cmd.Flags().StringArrayVar(&filterPairs, "filter", nil, "Filter key=value (repeatable)")
 	cmd.Flags().IntVar(&limit, "limit", 0, "Maximum results")
+	cmd.Flags().BoolVar(&jsonOut, "json", false, "Output as JSON")
+	return cmd
+}
+
+func newNoteDeleteCmd() *cobra.Command {
+	var jsonOut bool
+
+	cmd := &cobra.Command{
+		Use:   "delete <id>",
+		Short: "Permanently delete a note",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			a, err := loadApp(cmd)
+			if err != nil {
+				return err
+			}
+
+			id := args[0]
+
+			noteMeta, err := a.Vault.ReadNoteMeta(id)
+			if err != nil {
+				return fmt.Errorf("not found: note %s", id)
+			}
+
+			if err := a.Vault.DeleteNote(id); err != nil {
+				return err
+			}
+			a.RemoveNoteFromIndex(id)
+
+			if jsonOut {
+				return printJSON(cmd.OutOrStdout(), map[string]any{
+					"id":      id,
+					"title":   noteMeta.Title,
+					"deleted": true,
+				})
+			}
+
+			fmt.Fprintf(cmd.OutOrStdout(), "Deleted: %s  [%s]\n", noteMeta.Title, id)
+			return nil
+		},
+	}
+
+	cmd.Flags().BoolVar(&jsonOut, "json", false, "Output as JSON")
+	return cmd
+}
+
+func newNotePruneCmd() *cobra.Command {
+	var (
+		count   int
+		dryRun  bool
+		jsonOut bool
+	)
+
+	cmd := &cobra.Command{
+		Use:   "prune",
+		Short: "Remove oldest notes regardless of curate status",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if count <= 0 {
+				return fmt.Errorf("--count is required")
+			}
+
+			a, err := loadApp(cmd)
+			if err != nil {
+				return err
+			}
+
+			metas, err := a.Vault.ListNotes(0)
+			if err != nil {
+				return err
+			}
+
+			// Reverse to get oldest first
+			for i, j := 0, len(metas)-1; i < j; i, j = i+1, j-1 {
+				metas[i], metas[j] = metas[j], metas[i]
+			}
+
+			if count > len(metas) {
+				count = len(metas)
+			}
+			toRemove := metas[:count]
+
+			if dryRun {
+				if jsonOut {
+					var ids []string
+					for _, m := range toRemove {
+						ids = append(ids, m.ID)
+					}
+					return printJSON(cmd.OutOrStdout(), map[string]any{
+						"dry_run":      true,
+						"would_remove": len(toRemove),
+						"ids":          ids,
+					})
+				}
+				fmt.Fprintf(cmd.OutOrStdout(), "Would remove %d notes (oldest first):\n\n", len(toRemove))
+				for _, m := range toRemove {
+					status := "not curated"
+					if m.Metadata.Has("curated_at") {
+						status = "curated"
+					}
+					created := m.CreatedAt
+					if t, err := time.Parse(time.RFC3339, m.CreatedAt); err == nil {
+						created = t.Format("2006-01-02")
+					}
+					fmt.Fprintf(cmd.OutOrStdout(), "  %s  %-30s  %s  %s\n", m.ID, m.Title, created, status)
+				}
+				fmt.Fprintln(cmd.OutOrStdout(), "\nRun without --dry-run to proceed.")
+				return nil
+			}
+
+			var ids []string
+			for _, m := range toRemove {
+				if err := a.Vault.DeleteNote(m.ID); err != nil {
+					return fmt.Errorf("deleting %s: %w", m.ID, err)
+				}
+				a.RemoveNoteFromIndex(m.ID)
+				ids = append(ids, m.ID)
+			}
+
+			if jsonOut {
+				return printJSON(cmd.OutOrStdout(), map[string]any{
+					"removed": len(ids),
+					"ids":     ids,
+				})
+			}
+			fmt.Fprintf(cmd.OutOrStdout(), "Removed %d notes (oldest first):\n\n", len(toRemove))
+			for _, m := range toRemove {
+				status := "not curated"
+				if m.Metadata.Has("curated_at") {
+					status = "curated"
+				}
+				created := m.CreatedAt
+				if t, err := time.Parse(time.RFC3339, m.CreatedAt); err == nil {
+					created = t.Format("2006-01-02")
+				}
+				fmt.Fprintf(cmd.OutOrStdout(), "  %s  %-30s  %s  %s\n", m.ID, m.Title, created, status)
+			}
+			return nil
+		},
+	}
+
+	cmd.Flags().IntVar(&count, "count", 0, "Number of oldest notes to remove (required)")
+	cmd.Flags().BoolVar(&dryRun, "dry-run", false, "Show what would be removed without removing")
 	cmd.Flags().BoolVar(&jsonOut, "json", false, "Output as JSON")
 	return cmd
 }

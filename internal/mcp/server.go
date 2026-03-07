@@ -46,9 +46,9 @@ func ServeUnconfigured(cause error) error {
 	// Register stubs so Claude can relay the setup message.
 	for _, name := range []string{
 		"kno_note_create", "kno_note_list", "kno_note_show",
-		"kno_note_update", "kno_note_search",
+		"kno_note_update", "kno_note_delete", "kno_note_search",
 		"kno_page_create", "kno_page_list", "kno_page_show",
-		"kno_page_update", "kno_page_search",
+		"kno_page_update", "kno_page_rename", "kno_page_delete", "kno_page_search",
 		"kno_vault_status",
 	} {
 		s.AddTool(mcp.NewTool(name, mcp.WithDescription("kno is not configured.")), handler)

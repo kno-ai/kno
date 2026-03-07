@@ -50,8 +50,8 @@ func TestParseFilterFlags(t *testing.T) {
 		check   func(map[string]string) bool
 	}{
 		{"nil input", nil, false, func(m map[string]string) bool { return m == nil }},
-		{"null filter", []string{"distilled_at=null"}, false, func(m map[string]string) bool {
-			return m["distilled_at"] == "null"
+		{"null filter", []string{"curated_at=null"}, false, func(m map[string]string) bool {
+			return m["curated_at"] == "null"
 		}},
 		{"missing equals", []string{"bad"}, true, nil},
 	}

@@ -24,12 +24,16 @@ The CLI is fully testable without an LLM anywhere near it.
 
 ### MCP Server — exposes the CLI
 
-The MCP server is a thin translation layer. It wraps CLI commands as typed
+The MCP server is a thin translation layer. It wraps CLI operations as typed
 tools and exposes them to Claude Desktop. It contains no logic, makes no
-decisions, and never touches the vault directly. It calls the CLI and returns
-the result.
+decisions, and never touches the vault directly. It calls the vault layer and
+returns the result.
 
-Admin commands are not exposed via MCP — they are CLI-only.
+Most MCP tools are used by skills — the skill orchestrates a sequence of
+tool calls to implement a workflow. Some tools (delete, rename) are used
+directly by the LLM without a skill, for simple operations where
+conversational handling is sufficient. Bulk maintenance commands (prune,
+index rebuild) are CLI-only.
 
 ### Skill — interprets intent
 
@@ -72,12 +76,12 @@ vault stays stable underneath whatever skill layer evolves on top of it.
 
 Notes are structured summaries of LLM sessions. They are ephemeral — the
 durable artifact is the page document. The skill creates notes at the end
-of a session. The CLI stores them. Distillation eventually consumes them.
+of a session. The CLI stores them. Curation eventually consumes them.
 
 Notes are automatically removed when the vault reaches capacity, oldest
-distilled first. If no distilled notes exist, the oldest note is removed
+curated first. If no curated notes exist, the oldest note is removed
 regardless of status — the vault never deadlocks. The response signals when
-undistilled knowledge was lost so the skill can warn the user.
+uncurated knowledge was lost so the skill can warn the user.
 
 ### Pages
 
@@ -86,7 +90,7 @@ content is user-owned and skill-maintained — the CLI stores and returns it
 without interpretation. By convention the skill structures content to begin
 with instructions (what to focus on, what to skip, how to handle
 contradictions), followed by the accumulated knowledge document. The skill
-reads this content before every distill pass and follows the guidance it
+reads this content before every curate pass and follows the guidance it
 finds there.
 
 Pages are created intentionally by the user. They are never created
@@ -102,7 +106,7 @@ independent vault — separate notes, pages, search index, and config.
 
 This is the model for spaces (e.g. work vs. personal). Each vault has its
 own MCP registration in Claude Desktop. The `--name` value becomes the
-skill prefix: a vault named `kno-personal` exposes `/kno-personal.save`,
+skill prefix: a vault named `kno-personal` exposes `/kno-personal.capture`,
 `/kno-personal.load`, etc. Separation is enforced at the filesystem level
 — vaults have no knowledge of each other. Sync and encryption are handled
 outside kno, at the directory level.
@@ -113,10 +117,10 @@ outside kno, at the directory level.
 
 The system supports three primary skill workflows:
 
-**Save** — at the end of a session, the skill synthesizes a summary and
+**Capture** — at the end of a session, the skill synthesizes a summary and
 calls the CLI to store it. One orient call, one write call.
 
-**Distill** — the skill reads undistilled notes and the current page
+**Curate** — the skill reads uncurated notes and the current page
 document, synthesizes an updated document following the guidance in the page's content,
 writes it back, and stamps the consumed notes. Intelligence lives entirely
 in the skill. The CLI provides the read and write primitives.
@@ -145,10 +149,10 @@ Key fields used by the skill:
 |---|---|---|---|
 | tags | note | array | skill at note time |
 | summary | note | scalar | skill at note time |
-| distilled_at | note | scalar | skill after distill |
-| distilled_into | note | array | skill after distill |
+| curated_at | note | scalar | skill after curate |
+| curated_into | note | array | skill after curate |
 | (in content) | page | — | user-authored, skill-maintained |
-| last_distilled_at | page | scalar | skill after distill |
+| last_curated_at | page | scalar | skill after curate |
 
 The CLI has no knowledge of these keys. The skill decides what metadata
 matters and constructs the appropriate commands.
@@ -160,12 +164,12 @@ matters and constructs the appropriate commands.
 > The CLI owns the vault. The MCP exposes it. The skill interprets intent.
 > Intelligence lives only in the skill layer — never in the CLI.
 
-> Notes have no page association until distill runs. distilled_into is
+> Notes have no page association until curate runs. curated_into is
 > the only field that creates a note-to-page relationship, and only the
 > skill writes it — via the CLI.
 
 > Page content is user-owned. By convention it begins with instructions the
-> user has written — guidance the skill follows on every distill pass. A page
+> user has written — guidance the skill follows on every curate pass. A page
 > without any guidance will prompt the skill to ask before proceeding.
 
 > The page list is a table of contents for your knowledge — intentional,
@@ -176,99 +180,54 @@ matters and constructs the appropriate commands.
 
 ---
 
-## MCP Implementation Reference
+## Cross-Layer Mapping
 
-The exact CLI calls each skill makes. Included here as confirmation that
-the CLI contract fully supports each workflow.
+Every operation flows through the same stack: the user (or skill) calls
+an MCP tool, which calls the CLI, which reads or writes the vault.
+Not every CLI command is exposed as an MCP tool. Not every MCP tool has
+a dedicated skill. The table below is the complete mapping.
 
-### /kno.save
+| CLI Command | MCP Tool | Used by |
+|---|---|---|
+| `kno note create` | `kno_note_create` | /kno.capture |
+| `kno note list` | `kno_note_list` | /kno.capture, /kno.curate |
+| `kno note show` | `kno_note_show` | /kno.curate, /kno.load |
+| `kno note update` | `kno_note_update` | /kno.curate |
+| `kno note delete` | `kno_note_delete` | conversational |
+| `kno note search` | `kno_note_search` | /kno.load |
+| `kno note prune` | — | CLI only |
+| `kno page create` | `kno_page_create` | /kno.page |
+| `kno page list` | `kno_page_list` | /kno.page |
+| `kno page show` | `kno_page_show` | /kno.curate, /kno.load |
+| `kno page update` | `kno_page_update` | /kno.curate, /kno.page |
+| `kno page rename` | `kno_page_rename` | conversational |
+| `kno page delete` | `kno_page_delete` | conversational |
+| `kno page search` | `kno_page_search` | /kno.load |
+| `kno vault status` | `kno_vault_status` | all skills |
+| `kno vault rebuild-index` | — | CLI only |
 
-```bash
-# orient before writing
-kno vault status --json
+**"Conversational"** means the LLM uses the tool directly when the user
+asks — no skill needed. Delete and rename are simple enough that a
+slash command would add ceremony without value.
 
-# write the note
-echo "<synthesized content>" | kno note create \
-  --title "RDS slow query debugging" \
-  --meta tags=aws \
-  --meta tags=rds \
-  --meta tags=performance \
-  --meta summary="Query planner regression after minor version upgrade..."
-```
+**"CLI only"** means the operation is not exposed via MCP. Bulk
+maintenance (prune) and index repair are terminal operations.
 
-### /kno.distill
+### Skill workflows
 
-```bash
-# orient
-kno vault status --json
+Each skill is a sequence of tool calls. The skill decides which tools
+to call and in what order based on the conversation.
 
-# find undistilled notes; summaries included for relevance filtering
-kno note list --filter distilled_at=null --json
+**Capture:** orient (`vault status`) → write (`note create`)
 
-# bulk-read the relevant ones
-kno note show <id> <id> <id> --json
+**Curate:** orient (`vault status`) → list uncurated (`note list`) →
+read relevant notes (`note show`) → read page (`page show`) →
+synthesize → write page (`page update`) → stamp notes (`note update`)
 
-# read the current page document
-kno page show <page-id> --json
+**Load:** orient (`vault status`) → search (`page search`, `note search`) →
+read matches (`page show`, `note show`) → inject into conversation
 
-# [skill synthesizes update following guidance in page content]
+**Page:** orient (`vault status`) → create or update (`page create`,
+`page update`, `page rename`)
 
-# write updated page and stamp last_distilled_at
-echo "<updated content>" | kno page update <page-id> \
-  --meta last_distilled_at=2026-03-05T14:22:00Z
-
-# stamp each note
-# if distilled_into is null in the list result, write directly — no pre-read needed
-# only read first when distilled_into is already populated (note belongs to
-# an existing page and we're adding a second)
-kno note update <id> \
-  --meta distilled_at=2026-03-05T14:22:00Z \
-  --meta distilled_into=<page-id>
-
-# if note belongs to multiple pages
-kno note update <id> \
-  --meta distilled_at=2026-03-05T14:22:00Z \
-  --meta distilled_into=<page-id-1> \
-  --meta distilled_into=<page-id-2>
-```
-
-### /kno.load
-
-```bash
-# orient
-kno vault status --json
-
-# search pages and undistilled notes for relevance
-kno page search "connection pool payment service" --json
-kno note search "connection pool payment service" \
-  --filter distilled_at=null --json
-
-# read selected content in full
-kno page show <page-id> --json
-kno note show <id> <id> --json
-```
-
-### /kno.page
-
-```bash
-# create with initial content (guidance + empty knowledge section)
-echo "<guidance + initial content>" | kno page create --name "Kubernetes Migration"
-
-# create empty — content added on first distill
-kno page create --name "Kubernetes Migration"
-
-# list all pages
-kno page list --json
-
-# update content or guidance
-echo "<revised content>" | kno page update <id>
-
-# rename a page (updates files, index, and note references)
-kno page rename <id> --name "New Name"
-```
-
-### /kno.status
-
-```bash
-kno vault status --json
-```
+**Status:** orient (`vault status`)
