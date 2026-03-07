@@ -4,7 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"time"
 
+	"github.com/kno-ai/kno/internal"
+	"github.com/kno-ai/kno/internal/update"
 	"github.com/spf13/cobra"
 )
 
@@ -34,6 +37,18 @@ func NewRootCommand() *cobra.Command {
 
 // Execute runs the root command and handles error output formatting.
 func Execute() {
+	// Check for updates in the background (non-blocking, once per day).
+	// Skip for machine-oriented invocations (mcp, --json).
+	updateMsg := make(chan string, 1)
+	isMachine := len(os.Args) > 1 && os.Args[1] == "mcp"
+	go func() {
+		if isMachine {
+			updateMsg <- ""
+			return
+		}
+		updateMsg <- update.Check(internal.Version)
+	}()
+
 	root := NewRootCommand()
 	if err := root.Execute(); err != nil {
 		// Check if --json flag was set anywhere in the command chain
@@ -51,5 +66,14 @@ func Execute() {
 			fmt.Fprintf(os.Stderr, "\u2717 %s\n", err.Error())
 		}
 		os.Exit(1)
+	}
+
+	select {
+	case msg := <-updateMsg:
+		if msg != "" {
+			fmt.Fprintln(os.Stderr, msg)
+		}
+	case <-time.After(500 * time.Millisecond):
+		// Don't block exit waiting for a slow network.
 	}
 }
