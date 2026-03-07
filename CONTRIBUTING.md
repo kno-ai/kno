@@ -107,6 +107,47 @@ test/
 Makefile                 Build, test, e2e, vet, lint
 ```
 
+## Commit messages
+
+We use [Conventional Commits](https://www.conventionalcommits.org/) to drive
+automated releases. Prefix your commit message with a type:
+
+| Prefix | Meaning | Version bump |
+|---|---|---|
+| `feat:` | New feature or capability | minor (0.2.0 → 0.3.0) |
+| `fix:` | Bug fix | patch (0.2.0 → 0.2.1) |
+| `docs:` | Documentation only | no release |
+| `chore:` | Maintenance, CI, deps | no release |
+| `refactor:` | Code change, no new behavior | no release |
+| `test:` | Adding or updating tests | no release |
+| `feat!:` or `BREAKING CHANGE:` | Breaking change | major (0.2.0 → 1.0.0) |
+
+Examples:
+
+```
+feat: add note export command
+fix: search index not created on fresh vaults
+docs: update MCP setup instructions
+chore: bump mcp-go dependency
+```
+
+## Release process
+
+Releases are fully automated via [release-please](https://github.com/googleapis/release-please):
+
+1. Merge PRs to `main` using conventional commit messages.
+2. release-please opens (or updates) a "Release" PR with a changelog and
+   version bump based on the commit types since the last release.
+3. When you're ready to ship, merge the Release PR.
+4. This creates a git tag → GoReleaser builds binaries → Homebrew tap is
+   updated automatically.
+
+You never need to manually create tags or GitHub releases.
+
+**Version policy:** We follow [semver](https://semver.org/). While pre-1.0,
+minor bumps may include breaking changes. After 1.0, breaking changes require
+a major bump via `feat!:` or `BREAKING CHANGE:` in the commit footer.
+
 ## Language conventions
 
 kno uses different language at different layers:
