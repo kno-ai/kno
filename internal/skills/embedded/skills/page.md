@@ -54,7 +54,9 @@ folded in."
 
 After creating a page, check for undistilled sessions that might be relevant.
 Call `kno_note_list` with `filter: {"distilled_at": null}` and review the
-summaries and tags.
+summaries and tags. Tags are a strong signal — if the new page is
+"AWS Infrastructure" and sessions are tagged "aws", "rds", or "ecs",
+they're almost certainly relevant.
 
 If there are relevant undistilled sessions, offer to distill them now:
 "I found N sessions that look relevant to this page. Want me to distill them
@@ -124,6 +126,20 @@ would populate them with your recent sessions."
      "content": "<revised full content>"
    })
    ```
+
+## Renaming a page
+
+If the user wants to rename a page, call `kno_page_rename`:
+
+```
+kno_page_rename({
+  "id": "<current-page-id>",
+  "name": "New Page Name"
+})
+```
+
+This renames the files, updates the search index, and fixes all note
+references automatically. The response includes both old and new IDs.
 
 ## Deleting a page
 

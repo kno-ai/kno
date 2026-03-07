@@ -42,7 +42,15 @@ func (v *Vault) EnsureLayout() error {
 
 func (v *Vault) WriteNote(note model.Note) (string, error) {
 	if note.ID == "" {
-		note.ID = newNoteID(note.CreatedAt)
+		note.ID = newNoteID(note.CreatedAt, note.Title)
+		// Handle collision: append short random suffix.
+		if dir, err := sanitize.SafeJoin(v.NotesDir(), note.ID); err == nil {
+			if _, err := os.Stat(dir); err == nil {
+				b := make([]byte, 2)
+				rand.Read(b)
+				note.ID = note.ID + "-" + hex.EncodeToString(b)
+			}
+		}
 	}
 
 	dir, err := sanitize.SafeJoin(v.NotesDir(), note.ID)
@@ -240,21 +248,32 @@ func (v *Vault) OldestNoteID() (string, error) {
 
 // --- Page operations ---
 
+// pageContentPath returns the path to a page's content file.
+func (v *Vault) pageContentPath(id string) (string, error) {
+	return sanitize.SafeJoin(v.PagesDir(), id+".md")
+}
+
+// pageMetaPath returns the path to a page's metadata sidecar file.
+func (v *Vault) pageMetaPath(id string) (string, error) {
+	return sanitize.SafeJoin(v.PagesDir(), id+".meta.json")
+}
+
 func (v *Vault) WritePage(page model.Page) (string, error) {
 	if page.ID == "" {
 		page.ID = sanitize.Slugify(page.Name)
 	}
 
-	dir, err := sanitize.SafeJoin(v.PagesDir(), page.ID)
+	contentPath, err := v.pageContentPath(page.ID)
 	if err != nil {
 		return "", err
 	}
-	if err := os.MkdirAll(dir, 0o755); err != nil {
-		return "", fmt.Errorf("creating page dir: %w", err)
+	metaPath, err := v.pageMetaPath(page.ID)
+	if err != nil {
+		return "", err
 	}
 
-	if err := os.WriteFile(filepath.Join(dir, "content.md"), []byte(page.Content), 0o644); err != nil {
-		return "", fmt.Errorf("writing content.md: %w", err)
+	if err := os.WriteFile(contentPath, []byte(page.Content), 0o644); err != nil {
+		return "", fmt.Errorf("writing page content: %w", err)
 	}
 
 	meta := model.PageMeta{
@@ -263,21 +282,28 @@ func (v *Vault) WritePage(page model.Page) (string, error) {
 		CreatedAt: page.CreatedAt.Format(time.RFC3339),
 		Metadata:  page.Metadata,
 	}
-	return page.ID, writeJSON(filepath.Join(dir, "meta.json"), meta)
+	if err := writeJSON(metaPath, meta); err != nil {
+		return "", err
+	}
+
+	return page.ID, nil
 }
 
 func (v *Vault) ReadPage(id string) (model.Page, error) {
-	dir, err := sanitize.SafeJoin(v.PagesDir(), id)
+	metaPath, err := v.pageMetaPath(id)
 	if err != nil {
 		return model.Page{}, err
 	}
-
-	meta, err := readPageMeta(dir)
+	meta, err := readPageMetaFile(metaPath)
 	if err != nil {
 		return model.Page{}, fmt.Errorf("page %q: %w", id, err)
 	}
 
-	content, err := os.ReadFile(filepath.Join(dir, "content.md"))
+	contentPath, err := v.pageContentPath(id)
+	if err != nil {
+		return model.Page{}, err
+	}
+	content, err := os.ReadFile(contentPath)
 	if err != nil {
 		return model.Page{}, fmt.Errorf("page %q content: %w", id, err)
 	}
@@ -294,26 +320,29 @@ func (v *Vault) ReadPage(id string) (model.Page, error) {
 }
 
 func (v *Vault) ReadPageMeta(id string) (model.PageMeta, error) {
-	dir, err := sanitize.SafeJoin(v.PagesDir(), id)
+	metaPath, err := v.pageMetaPath(id)
 	if err != nil {
 		return model.PageMeta{}, err
 	}
-	return readPageMeta(dir)
+	return readPageMetaFile(metaPath)
 }
 
 func (v *Vault) UpdatePage(id string, content *string, meta model.MetaMap) error {
-	dir, err := sanitize.SafeJoin(v.PagesDir(), id)
+	metaPath, err := v.pageMetaPath(id)
 	if err != nil {
 		return err
 	}
-
-	existing, err := readPageMeta(dir)
+	existing, err := readPageMetaFile(metaPath)
 	if err != nil {
 		return fmt.Errorf("page %q: %w", id, err)
 	}
 
 	if content != nil {
-		if err := os.WriteFile(filepath.Join(dir, "content.md"), []byte(*content), 0o644); err != nil {
+		contentPath, err := v.pageContentPath(id)
+		if err != nil {
+			return err
+		}
+		if err := os.WriteFile(contentPath, []byte(*content), 0o644); err != nil {
 			return fmt.Errorf("writing content: %w", err)
 		}
 	}
@@ -325,7 +354,75 @@ func (v *Vault) UpdatePage(id string, content *string, meta model.MetaMap) error
 		existing.Metadata = existing.Metadata.Merge(meta)
 	}
 
-	return writeJSON(filepath.Join(dir, "meta.json"), existing)
+	return writeJSON(metaPath, existing)
+}
+
+func (v *Vault) RenamePage(oldID, newName string) (string, error) {
+	newID := sanitize.Slugify(newName)
+	if newID == oldID {
+		// Name changed but slug didn't — just update the meta.
+		metaPath, err := v.pageMetaPath(oldID)
+		if err != nil {
+			return "", err
+		}
+		meta, err := readPageMetaFile(metaPath)
+		if err != nil {
+			return "", fmt.Errorf("page %q: %w", oldID, err)
+		}
+		meta.Name = newName
+		if err := writeJSON(metaPath, meta); err != nil {
+			return "", err
+		}
+		return oldID, nil
+	}
+
+	// Check new ID doesn't already exist.
+	newContentPath, err := v.pageContentPath(newID)
+	if err != nil {
+		return "", err
+	}
+	if _, err := os.Stat(newContentPath); err == nil {
+		return "", fmt.Errorf("page %q already exists", newID)
+	}
+
+	// Read old page.
+	oldContentPath, err := v.pageContentPath(oldID)
+	if err != nil {
+		return "", err
+	}
+	oldMetaPath, err := v.pageMetaPath(oldID)
+	if err != nil {
+		return "", err
+	}
+
+	meta, err := readPageMetaFile(oldMetaPath)
+	if err != nil {
+		return "", fmt.Errorf("page %q: %w", oldID, err)
+	}
+
+	// Rename files.
+	newMetaPath, err := v.pageMetaPath(newID)
+	if err != nil {
+		return "", err
+	}
+
+	if err := os.Rename(oldContentPath, newContentPath); err != nil {
+		return "", fmt.Errorf("renaming content: %w", err)
+	}
+
+	// Update meta with new ID and name, then write to new path.
+	meta.ID = newID
+	meta.Name = newName
+	if err := writeJSON(newMetaPath, meta); err != nil {
+		// Rollback content rename.
+		os.Rename(newContentPath, oldContentPath)
+		return "", err
+	}
+
+	// Remove old meta file.
+	os.Remove(oldMetaPath)
+
+	return newID, nil
 }
 
 func (v *Vault) ListPages() ([]model.PageMeta, error) {
@@ -339,10 +436,12 @@ func (v *Vault) ListPages() ([]model.PageMeta, error) {
 
 	var metas []model.PageMeta
 	for _, e := range entries {
-		if !e.IsDir() || strings.HasPrefix(e.Name(), ".") {
+		name := e.Name()
+		if e.IsDir() || !strings.HasSuffix(name, ".meta.json") {
 			continue
 		}
-		m, err := readPageMeta(filepath.Join(v.PagesDir(), e.Name()))
+		metaPath := filepath.Join(v.PagesDir(), name)
+		m, err := readPageMetaFile(metaPath)
 		if err != nil {
 			continue
 		}
@@ -352,24 +451,31 @@ func (v *Vault) ListPages() ([]model.PageMeta, error) {
 }
 
 func (v *Vault) DeletePage(id string) error {
-	dir, err := sanitize.SafeJoin(v.PagesDir(), id)
+	contentPath, err := v.pageContentPath(id)
 	if err != nil {
 		return err
 	}
-	if _, err := os.Stat(dir); os.IsNotExist(err) {
-		return fmt.Errorf("page %q not found", id)
+	metaPath, err := v.pageMetaPath(id)
+	if err != nil {
+		return err
 	}
-	return os.RemoveAll(dir)
+
+	if _, err := os.Stat(contentPath); os.IsNotExist(err) {
+		if _, err := os.Stat(metaPath); os.IsNotExist(err) {
+			return fmt.Errorf("page %q not found", id)
+		}
+	}
+
+	os.Remove(contentPath)
+	os.Remove(metaPath)
+	return nil
 }
 
 // --- helpers ---
 
-func newNoteID(t time.Time) string {
-	b := make([]byte, 3)
-	if _, err := rand.Read(b); err != nil {
-		b = []byte{0, 0, 0}
-	}
-	return fmt.Sprintf("%s-%s", t.Format("20060102T150405Z0700"), hex.EncodeToString(b))
+func newNoteID(t time.Time, title string) string {
+	slug := sanitize.Slugify(title)
+	return fmt.Sprintf("%s-%s", t.Format("20060102"), slug)
 }
 
 func writeJSON(path string, v any) error {
@@ -392,8 +498,8 @@ func readNoteMeta(dir string) (model.NoteMeta, error) {
 	return meta, nil
 }
 
-func readPageMeta(dir string) (model.PageMeta, error) {
-	data, err := os.ReadFile(filepath.Join(dir, "meta.json"))
+func readPageMetaFile(path string) (model.PageMeta, error) {
+	data, err := os.ReadFile(path)
 	if err != nil {
 		return model.PageMeta{}, err
 	}

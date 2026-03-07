@@ -72,6 +72,11 @@ written. Confirm each succeeds before proceeding.
    a. Read the page: `kno_page_show({"id": "<page-id>"})`
    b. Read the page's guidance (conventionally at the top of the content).
    c. Review undistilled session summaries and tags for relevance to this page.
+      Tags are the primary relevance signal — a session tagged "aws" or "rds"
+      is very likely relevant to an "AWS Infrastructure" page, even if the
+      summary text doesn't mention it directly. Use tag overlap with the
+      page's theme as a strong positive signal, and lack of any tag overlap
+      as a reason to look more carefully before including a session.
    d. If no sessions are relevant, tell the user: "Nothing new for [page] —
       skipping." Move to the next page.
    e. Read relevant sessions in full: `kno_note_show({"ids": ["id1", "id2"]})`
@@ -88,9 +93,11 @@ written. Confirm each succeeds before proceeding.
    i. Stamp each distilled session with `distilled_at` and `distilled_into`.
 
 7. After all pages are processed, check for orphaned sessions — undistilled
-   sessions that weren't relevant to any page. If there are several on a
-   common theme, suggest a new page: "A few sessions didn't fit any existing
-   page — they seem to be about [theme]. Want to create a page for that?"
+   sessions that weren't relevant to any page. Look at their tags: if
+   several sessions share tags (e.g. 3+ tagged "docker" or "ci-cd") with
+   no matching page, that's a clear cluster. Suggest a new page: "A few
+   sessions didn't fit any existing page — they share tags like [tags].
+   Want to create a page for that?"
 
 ## Handling contradictions
 

@@ -38,6 +38,12 @@ func registerPageTools(s *server.MCPServer, a *app.App) {
 		mcp.WithObject("meta", mcp.Description("Metadata to set/update.")),
 	), pageUpdateHandler(a))
 
+	s.AddTool(mcp.NewTool("kno_page_rename",
+		mcp.WithDescription("Rename a page. Updates files, search index, and note references."),
+		mcp.WithString("id", mcp.Required(), mcp.Description("Current page ID.")),
+		mcp.WithString("name", mcp.Required(), mcp.Description("New page name.")),
+	), pageRenameHandler(a))
+
 	s.AddTool(mcp.NewTool("kno_page_search",
 		mcp.WithDescription("Search pages by text query."),
 		mcp.WithString("query", mcp.Required(), mcp.Description("Search query.")),
@@ -169,6 +175,60 @@ func pageUpdateHandler(a *app.App) server.ToolHandlerFunc {
 		data, _ := json.MarshalIndent(map[string]any{
 			"id":         id,
 			"updated_at": time.Now().Format(time.RFC3339),
+		}, "", "  ")
+		return mcp.NewToolResultText(string(data)), nil
+	}
+}
+
+func pageRenameHandler(a *app.App) server.ToolHandlerFunc {
+	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		id, err := req.RequireString("id")
+		if err != nil {
+			return mcp.NewToolResultError("id is required"), nil
+		}
+		name, err := req.RequireString("name")
+		if err != nil {
+			return mcp.NewToolResultError("name is required"), nil
+		}
+
+		newID, err := a.Vault.RenamePage(id, name)
+		if err != nil {
+			return mcp.NewToolResultError(fmt.Sprintf("rename failed: %v", err)), nil
+		}
+
+		// Update search index.
+		a.RemovePageFromIndex(id)
+		if page, err := a.Vault.ReadPage(newID); err == nil {
+			a.IndexPage(page)
+		}
+
+		// Update distilled_into references on notes.
+		if newID != id {
+			allNotes, _ := a.Vault.ListNotes(0)
+			for _, nm := range allNotes {
+				if nm.Metadata == nil || !nm.Metadata.Has("distilled_into") {
+					continue
+				}
+				vals := nm.Metadata["distilled_into"]
+				changed := false
+				for i, val := range vals {
+					if val == id {
+						vals[i] = newID
+						changed = true
+					}
+				}
+				if changed {
+					updateMeta := make(model.MetaMap)
+					updateMeta["distilled_into"] = vals
+					a.Vault.UpdateNote(nm.ID, nil, updateMeta)
+				}
+			}
+		}
+
+		data, _ := json.MarshalIndent(map[string]any{
+			"old_id": id,
+			"new_id": newID,
+			"name":   name,
 		}, "", "  ")
 		return mcp.NewToolResultText(string(data)), nil
 	}
