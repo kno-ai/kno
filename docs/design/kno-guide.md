@@ -186,6 +186,25 @@ what to skip, how to handle contradictions. That guidance lives at the top
 of the document and shapes every future distill pass. The knowledge content
 grows beneath it as sessions are distilled in.
 
+### Editing page guidance
+
+Your guidance isn't locked in at creation time. As your understanding of a
+subject evolves, update the guidance to change how future distills maintain
+the page. Run `/kno.page` and ask to edit an existing page, or edit the
+guidance section directly.
+
+Examples of guidance you might write:
+
+- "Focus on operational lessons and runbooks. Skip theoretical discussion."
+- "Track decisions with context on why alternatives were rejected."
+- "When new information contradicts existing content, keep both with dates
+  so I can see how my understanding changed."
+- "Keep code snippets minimal — just the commands I'll actually copy-paste."
+- "Organize by service name, not by date."
+
+Good guidance is short and practical. A few sentences is enough — you can
+always refine it after seeing how distill uses it.
+
 See the [Architecture](kno-knowledge-architecture) doc for more on pages,
 metadata, and the mental model behind the knowledge loop.
 
