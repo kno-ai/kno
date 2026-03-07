@@ -4,7 +4,7 @@ layout: default
 
 # kno
 
-**A knowledge vault for your AI conversations.**
+**A knowledge vault for your AI conversations.** &nbsp; [View on GitHub](https://github.com/kno-ai/kno)
 
 Every time you close a chat with Claude, the insights from that session
 disappear. kno fixes that. You capture what you learned, curate it into
