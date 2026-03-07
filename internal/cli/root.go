@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/kno-ai/kno/internal"
@@ -18,6 +19,12 @@ func NewRootCommand() *cobra.Command {
 		Long:          "kno saves and organizes knowledge from LLM sessions into a local vault.",
 		SilenceUsage:  true,
 		SilenceErrors: true,
+		Run: func(cmd *cobra.Command, args []string) {
+			cmd.Help()
+			if !vaultExists(cmd) {
+				fmt.Fprintln(cmd.ErrOrStderr(), "\nGet started: run 'kno setup' to create your vault.")
+			}
+		},
 	}
 
 	root.PersistentFlags().String("vault", "", "Path to the vault directory (default: ~/kno)")
@@ -33,6 +40,19 @@ func NewRootCommand() *cobra.Command {
 	)
 
 	return root
+}
+
+func vaultExists(cmd *cobra.Command) bool {
+	vaultPath, _ := cmd.Flags().GetString("vault")
+	if vaultPath == "" {
+		home, err := os.UserHomeDir()
+		if err != nil {
+			return false
+		}
+		vaultPath = filepath.Join(home, "kno")
+	}
+	_, err := os.Stat(filepath.Join(vaultPath, "config.toml"))
+	return err == nil
 }
 
 // Execute runs the root command and handles error output formatting.
