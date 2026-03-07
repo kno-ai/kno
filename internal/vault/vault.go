@@ -19,8 +19,8 @@ type Vault interface {
 	ListNotes(limit int) ([]model.NoteMeta, error)
 	DeleteNote(id string) error
 	CountNotes() (total int, err error)
-	OldestDistilledNoteID() (string, error) // for auto-removal (distilled first)
-	OldestNoteID() (string, error)          // for auto-removal fallback (any note)
+	OldestCuratedNoteID() (string, error) // for auto-removal (curated first)
+	OldestNoteID() (string, error)        // for auto-removal fallback (any note)
 
 	// Page operations
 

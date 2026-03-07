@@ -21,6 +21,7 @@ func newPageCmd() *cobra.Command {
 		newPageShowCmd(),
 		newPageUpdateCmd(),
 		newPageRenameCmd(),
+		newPageDeleteCmd(),
 		newPageSearchCmd(),
 	)
 
@@ -155,19 +156,19 @@ func newPageListCmd() *cobra.Command {
 				return nil
 			}
 
-			fmt.Fprintf(cmd.OutOrStdout(), "%-20s  %-30s  %s\n", "ID", "NAME", "LAST DISTILLED")
+			fmt.Fprintf(cmd.OutOrStdout(), "%-20s  %-30s  %s\n", "ID", "NAME", "LAST CURATED")
 			for _, m := range filtered {
-				lastDistilled := "—"
+				lastCurated := "—"
 				if m.Metadata != nil {
-					if v := m.Metadata.Get("last_distilled_at"); v != "" {
+					if v := m.Metadata.Get("last_curated_at"); v != "" {
 						if t, err := time.Parse(time.RFC3339, v); err == nil {
-							lastDistilled = t.Format("2006-01-02")
+							lastCurated = t.Format("2006-01-02")
 						} else {
-							lastDistilled = v
+							lastCurated = v
 						}
 					}
 				}
-				fmt.Fprintf(cmd.OutOrStdout(), "%-20s  %-30s  %s\n", m.ID, m.Name, lastDistilled)
+				fmt.Fprintf(cmd.OutOrStdout(), "%-20s  %-30s  %s\n", m.ID, m.Name, lastCurated)
 			}
 
 			return nil
@@ -208,10 +209,10 @@ func newPageShowCmd() *cobra.Command {
 				return printJSON(cmd.OutOrStdout(), out)
 			}
 
-			lastDistilled := formatPageLastDistilled(model.PageMeta{
+			lastCurated := formatPageLastCurated(model.PageMeta{
 				Metadata: page.Metadata,
 			})
-			header := decorativeHeader(fmt.Sprintf("━━━ %s  [%s]  %s ", page.Name, page.ID, lastDistilled), 72)
+			header := decorativeHeader(fmt.Sprintf("━━━ %s  [%s]  %s ", page.Name, page.ID, lastCurated), 72)
 			fmt.Fprintln(cmd.OutOrStdout(), header)
 			fmt.Fprintln(cmd.OutOrStdout())
 			fmt.Fprint(cmd.OutOrStdout(), page.Content)
@@ -326,17 +327,17 @@ func newPageRenameCmd() *cobra.Command {
 				a.IndexPage(page)
 			}
 
-			// Update distilled_into references on notes.
+			// Update curated_into references on notes.
 			if newID != oldID {
 				allNotes, err := a.Vault.ListNotes(0)
 				if err != nil {
 					return err
 				}
 				for _, nm := range allNotes {
-					if nm.Metadata == nil || !nm.Metadata.Has("distilled_into") {
+					if nm.Metadata == nil || !nm.Metadata.Has("curated_into") {
 						continue
 					}
-					vals := nm.Metadata["distilled_into"]
+					vals := nm.Metadata["curated_into"]
 					changed := false
 					for i, val := range vals {
 						if val == oldID {
@@ -346,7 +347,7 @@ func newPageRenameCmd() *cobra.Command {
 					}
 					if changed {
 						updateMeta := make(model.MetaMap)
-						updateMeta["distilled_into"] = vals
+						updateMeta["curated_into"] = vals
 						a.Vault.UpdateNote(nm.ID, nil, updateMeta)
 					}
 				}
@@ -366,6 +367,84 @@ func newPageRenameCmd() *cobra.Command {
 	}
 
 	cmd.Flags().StringVar(&name, "name", "", "New page name (required)")
+	cmd.Flags().BoolVar(&jsonOut, "json", false, "Output as JSON")
+	return cmd
+}
+
+func newPageDeleteCmd() *cobra.Command {
+	var jsonOut bool
+
+	cmd := &cobra.Command{
+		Use:   "delete <id>",
+		Short: "Permanently delete a page",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			a, err := loadApp(cmd)
+			if err != nil {
+				return err
+			}
+
+			pageID := args[0]
+
+			pageMeta, err := a.Vault.ReadPageMeta(pageID)
+			if err != nil {
+				return fmt.Errorf("not found: page %s", pageID)
+			}
+
+			if err := a.Vault.DeletePage(pageID); err != nil {
+				return err
+			}
+			a.RemovePageFromIndex(pageID)
+
+			// Update notes that reference this page in curated_into
+			allNotes, err := a.Vault.ListNotes(0)
+			if err != nil {
+				return err
+			}
+
+			for _, nm := range allNotes {
+				if nm.Metadata == nil || !nm.Metadata.Has("curated_into") {
+					continue
+				}
+
+				vals := nm.Metadata["curated_into"]
+				var remaining []string
+				for _, v := range vals {
+					if v != pageID {
+						remaining = append(remaining, v)
+					}
+				}
+
+				if len(remaining) == len(vals) {
+					continue
+				}
+
+				updateMeta := make(model.MetaMap)
+				if len(remaining) == 0 {
+					updateMeta["curated_into"] = nil
+					updateMeta["curated_at"] = nil
+				} else {
+					updateMeta["curated_into"] = remaining
+				}
+
+				if err := a.Vault.UpdateNote(nm.ID, nil, updateMeta); err != nil {
+					fmt.Fprintf(cmd.ErrOrStderr(), "Warning: failed to update note %s: %v\n", nm.ID, err)
+				}
+			}
+
+			if jsonOut {
+				return printJSON(cmd.OutOrStdout(), map[string]any{
+					"id":      pageID,
+					"name":    pageMeta.Name,
+					"deleted": true,
+				})
+			}
+
+			fmt.Fprintf(cmd.OutOrStdout(), "Deleted: %s  [%s]\n", pageMeta.Name, pageID)
+			return nil
+		},
+	}
+
 	cmd.Flags().BoolVar(&jsonOut, "json", false, "Output as JSON")
 	return cmd
 }
@@ -398,7 +477,7 @@ func newPageSearchCmd() *cobra.Command {
 
 			idx, err := search.Open(a.Vault.IndexDir())
 			if err != nil {
-				return fmt.Errorf("opening search index (try 'kno admin index-rebuild'): %w", err)
+				return fmt.Errorf("opening search index (try 'kno vault rebuild-index'): %w", err)
 			}
 			defer idx.Close()
 

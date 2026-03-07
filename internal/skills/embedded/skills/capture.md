@@ -1,11 +1,11 @@
-# Save Session Skill
+# Capture Session Skill
 
-You are saving a session summary to the user's knowledge vault. Review the
+You are capturing a session summary to the user's knowledge vault. Review the
 conversation, produce a structured summary, and save it.
 
 **Skill prefix:** When referencing other slash commands (e.g. `/kno.load`,
-`/kno.distill`), match the prefix the user used to invoke this skill. If
-they invoked `/kno-personal.save`, reference `/kno-personal.load`, not
+`/kno.curate`), match the prefix the user used to invoke this skill. If
+they invoked `/kno-personal.capture`, reference `/kno-personal.load`, not
 `/kno.load`. The examples below use `/kno.*` as a placeholder — always
 substitute the actual prefix.
 
@@ -40,7 +40,7 @@ to impress.
 
 6. Write a concise summary (1-2 sentences) for the `summary` metadata field.
 
-7. **Choose tags carefully.** Tags are the primary signal that load and distill
+7. **Choose tags carefully.** Tags are the primary signal that load and curate
    use to match sessions to pages and queries. Good tags make sessions
    findable; inconsistent tags make them invisible.
    - If the user included #hashtags in their message, use those.
@@ -62,7 +62,7 @@ to impress.
 
 10. On confirmation, call `kno_note_create` exactly once (see "Tool calls").
 
-**Mid-conversation saves:** If the user runs `/kno.save` in the middle of a
+**Mid-conversation captures:** If the user runs `/kno.capture` in the middle of a
 conversation rather than at the end, save what's happened so far. Don't
 flag the timing in the summary — just save whatever's worth saving. The user
 may have a reason for saving now.
@@ -107,42 +107,42 @@ Call it once. If the call succeeds, the session is saved — do not call it
 again. If the call fails, report the error to the user rather than retrying
 silently.
 
-Always include `summary` and `tags` in the metadata. The load and distill
+Always include `summary` and `tags` in the metadata. The load and curate
 skills use these fields to assess relevance without reading full content.
 
-## After saving
+## After capturing
 
 Check the vault status response from step 4 and gently surface what's useful.
 Tailor the message to where the user is in their journey:
 
-**First save (1 total session in the vault):**
+**First capture (1 total session in the vault):**
 This is the user's first time. Connect what they just did to what comes next.
 Something like: "That's saved. Next time you start a session on this area,
 run `/kno.load` and I'll have this context ready — no need to re-explain
-your setup." Keep it warm and brief. Don't mention distill yet — one habit
+your setup." Keep it warm and brief. Don't mention curate yet — one habit
 at a time.
 
-**Early saves (2-4 sessions):**
+**Early captures (2-4 sessions):**
 Reinforce the load habit: "You've got a few sessions saved now. Remember to
 `/kno.load` at the start of your next session — it makes a real difference."
 If sessions share a theme, plant the seed: "When you've built up a few more
-sessions, `/kno.distill` will synthesize them into a page document you can
+sessions, `/kno.curate` will synthesize them into a page document you can
 load instantly."
 
-**Growing backlog (5+ undistilled sessions):**
-Shift to distill nudges: "You've got N sessions saved but not yet distilled
-— running `/kno.distill` when you have a moment would fold them into your
+**Growing backlog (5+ uncurated sessions):**
+Shift to curate nudges: "You've got N sessions captured but not yet curated
+— running `/kno.curate` when you have a moment would fold them into your
 pages." If pages exist, mention which ones would benefit.
 
-**Significant backlog (10+ undistilled sessions):**
-If the vault status shows many undistilled sessions and no page seems to
+**Significant backlog (10+ uncurated sessions):**
+If the vault status shows many uncurated sessions and no page seems to
 cover their themes, suggest creating one: "You've got a lot of sessions
 building up — might be worth creating a page to give them a home." Only
 suggest this when the mismatch is obvious from the status alone.
 
 **Capacity pressure:**
-If `auto_removed_undistilled` is true, let the user know an older session
-was removed to make room, and that running `/kno.distill` would protect
+If `auto_removed_uncurated` is true, let the user know an older session
+was removed to make room, and that running `/kno.curate` would protect
 their knowledge by folding it into pages before it ages out.
 
 **Page suggestions:** Don't suggest creating a page until you can see a
@@ -151,7 +151,7 @@ this concrete: if 4 sessions are all tagged "aws" or "rds" and no page
 covers that area, that's a clear signal. One or two sessions isn't a trend.
 Let the user build up history first.
 
-Keep post-save suggestions brief. One or two lines, not a lecture.
+Keep post-capture suggestions brief. One or two lines, not a lecture.
 
 ## Guidelines
 

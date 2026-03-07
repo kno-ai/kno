@@ -3,7 +3,7 @@
 A knowledge vault for your AI conversations.
 
 Every time you close a chat with Claude, the insights from that session
-disappear. kno fixes that. You save what you learned, distill it into
+disappear. kno fixes that. You capture what you learned, curate it into
 living page documents, and load the right context into your next session.
 The knowledge compounds because you curate it — 30 seconds of attention
 per session is what turns scattered conversations into documents you'd
@@ -13,12 +13,12 @@ hand to a colleague.
 
 Three commands. One habit.
 
-- **`/kno.save`** — End of session. Review and confirm a structured summary with tags.
-- **`/kno.distill`** — Periodically. Synthesize sessions into living page documents.
+- **`/kno.capture`** — End of session. Review and confirm a structured summary with tags.
+- **`/kno.curate`** — Periodically. Synthesize sessions into living page documents.
 - **`/kno.load`** — Start of session. Load relevant knowledge before you begin.
 
-Each pass through the loop makes the next one better. Sessions feed distill.
-Distilled pages make load richer. Better load means better sessions.
+Each pass through the loop makes the next one better. Sessions feed curate.
+Curated pages make load richer. Better load means better sessions.
 
 ## Quick start
 
@@ -36,14 +36,14 @@ kno setup
 ```
 
 Restart Claude Desktop after setup. Five slash commands appear automatically:
-`/kno.save`, `/kno.load`, `/kno.distill`, `/kno.page`, `/kno.status`.
+`/kno.capture`, `/kno.load`, `/kno.curate`, `/kno.page`, `/kno.status`.
 
 ## What it feels like
 
 ```
-/kno.save — #aws #rds, the parameter group fix was the key thing
+/kno.capture — #aws #rds, the parameter group fix was the key thing
 
-Here's what I'll save from this session:
+Here's what I'll capture from this session:
 
   Title:    RDS slow query debugging
   Summary:  Query planner regression after minor version upgrade.
@@ -63,7 +63,7 @@ What are you working on?
 > debugging a connection pool issue in our payment service
 
 Found:
-  Pages (1):     Payment Processing — last distilled 2 weeks ago
+  Pages (1):     Payment Processing — last curated 2 weeks ago
   Sessions (2,   matched by tags: payments, mysql, connection-pool):
                  ACH return handling (3 days ago)
                  MySQL connection pool (1 week ago)

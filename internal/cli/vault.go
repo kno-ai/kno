@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/kno-ai/kno/internal/model"
+	"github.com/kno-ai/kno/internal/search"
 	"github.com/spf13/cobra"
 )
 
@@ -15,7 +16,7 @@ func newVaultCmd() *cobra.Command {
 		Short: "Vault operations",
 	}
 
-	cmd.AddCommand(newVaultStatusCmd())
+	cmd.AddCommand(newVaultStatusCmd(), newVaultRebuildIndexCmd())
 	return cmd
 }
 
@@ -38,18 +39,18 @@ func newVaultStatusCmd() *cobra.Command {
 				return err
 			}
 
-			// Count distilled vs undistilled
+			// Count curated vs uncurated
 			allNotes, err := a.Vault.ListNotes(0)
 			if err != nil {
 				return err
 			}
-			distilled := 0
+			curated := 0
 			for _, c := range allNotes {
-				if c.Metadata.Has("distilled_at") {
-					distilled++
+				if c.Metadata.Has("curated_at") {
+					curated++
 				}
 			}
-			undistilled := total - distilled
+			uncurated := total - curated
 			remaining := a.Config.Notes.MaxCount - total
 			if remaining < 0 {
 				remaining = 0
@@ -81,11 +82,11 @@ func newVaultStatusCmd() *cobra.Command {
 				out := map[string]any{
 					"vault_path": absPath,
 					"notes": map[string]int{
-						"total":       total,
-						"max_count":   a.Config.Notes.MaxCount,
-						"remaining":   remaining,
-						"distilled":   distilled,
-						"undistilled": undistilled,
+						"total":     total,
+						"max_count": a.Config.Notes.MaxCount,
+						"remaining": remaining,
+						"curated":   curated,
+						"uncurated": uncurated,
 					},
 					"pages":  pageInfos,
 					"config": a.Config,
@@ -95,14 +96,14 @@ func newVaultStatusCmd() *cobra.Command {
 
 			fmt.Fprintf(cmd.OutOrStdout(), "Vault: %s\n\n", absPath)
 			fmt.Fprintf(cmd.OutOrStdout(), "Notes: %d / %d  (%d remaining)\n", total, a.Config.Notes.MaxCount, remaining)
-			fmt.Fprintf(cmd.OutOrStdout(), "  Distilled:   %d\n", distilled)
-			fmt.Fprintf(cmd.OutOrStdout(), "  Undistilled: %d\n", undistilled)
+			fmt.Fprintf(cmd.OutOrStdout(), "  Curated:   %d\n", curated)
+			fmt.Fprintf(cmd.OutOrStdout(), "  Uncurated: %d\n", uncurated)
 
 			if len(pages) > 0 {
 				fmt.Fprintf(cmd.OutOrStdout(), "\nPages:\n")
 				for _, p := range pages {
-					lastDistilled := formatPageLastDistilled(p)
-					fmt.Fprintf(cmd.OutOrStdout(), "  %s  %-25s  %s\n", p.ID, p.Name, lastDistilled)
+					lastCurated := formatPageLastCurated(p)
+					fmt.Fprintf(cmd.OutOrStdout(), "  %s  %-25s  %s\n", p.ID, p.Name, lastCurated)
 				}
 			} else {
 				fmt.Fprintln(cmd.OutOrStdout(), "\nNo pages yet.")
@@ -113,7 +114,7 @@ func newVaultStatusCmd() *cobra.Command {
 			fmt.Fprintf(cmd.OutOrStdout(), "  notes.default_list_limit     %d\n", a.Config.Notes.DefaultListLimit)
 			fmt.Fprintf(cmd.OutOrStdout(), "  notes.summary_max_tokens     %d\n", a.Config.Notes.SummaryMaxTokens)
 			fmt.Fprintf(cmd.OutOrStdout(), "  pages.max_content_tokens     %d\n", a.Config.Pages.MaxContentTokens)
-			fmt.Fprintf(cmd.OutOrStdout(), "  distill.max_notes_per_run    %d\n", a.Config.Distill.MaxNotesPerRun)
+			fmt.Fprintf(cmd.OutOrStdout(), "  curate.max_notes_per_run     %d\n", a.Config.Curate.MaxNotesPerRun)
 			fmt.Fprintf(cmd.OutOrStdout(), "  search.default_limit         %d\n", a.Config.Search.DefaultLimit)
 
 			return nil
@@ -124,17 +125,59 @@ func newVaultStatusCmd() *cobra.Command {
 	return cmd
 }
 
-func formatPageLastDistilled(p model.PageMeta) string {
-	if p.Metadata == nil {
-		return "(never distilled)"
+func newVaultRebuildIndexCmd() *cobra.Command {
+	var jsonOut bool
+
+	cmd := &cobra.Command{
+		Use:   "rebuild-index",
+		Short: "Rebuild the full-text search index",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			a, err := loadApp(cmd)
+			if err != nil {
+				return err
+			}
+
+			if !jsonOut {
+				fmt.Fprintln(cmd.OutOrStdout(), "Rebuilding index...")
+			}
+
+			idx, err := search.Rebuild(a.Vault)
+			if err != nil {
+				return fmt.Errorf("rebuilding index: %w", err)
+			}
+			defer idx.Close()
+
+			notes, _ := a.Vault.ListNotes(0)
+			pages, _ := a.Vault.ListPages()
+
+			if jsonOut {
+				return printJSON(cmd.OutOrStdout(), map[string]any{
+					"status": "ok",
+					"notes":  len(notes),
+					"pages":  len(pages),
+				})
+			}
+			fmt.Fprintf(cmd.OutOrStdout(), "Indexed %d notes, %d pages.\n", len(notes), len(pages))
+			fmt.Fprintln(cmd.OutOrStdout(), "Done.")
+			return nil
+		},
 	}
-	lastAt := p.Metadata.Get("last_distilled_at")
+
+	cmd.Flags().BoolVar(&jsonOut, "json", false, "Output as JSON")
+	return cmd
+}
+
+func formatPageLastCurated(p model.PageMeta) string {
+	if p.Metadata == nil {
+		return "(never curated)"
+	}
+	lastAt := p.Metadata.Get("last_curated_at")
 	if lastAt == "" {
-		return "(never distilled)"
+		return "(never curated)"
 	}
 	parsed, err := time.Parse(time.RFC3339, lastAt)
 	if err != nil {
 		return lastAt
 	}
-	return "last distilled " + parsed.Format("2006-01-02")
+	return "last curated " + parsed.Format("2006-01-02")
 }

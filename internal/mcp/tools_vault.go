@@ -37,10 +37,10 @@ func vaultStatusHandler(a *app.App) server.ToolHandlerFunc {
 		if err != nil {
 			return mcp.NewToolResultError(fmt.Sprintf("listing: %v", err)), nil
 		}
-		distilled := 0
+		curated := 0
 		for _, c := range allNotes {
-			if c.Metadata.Has("distilled_at") {
-				distilled++
+			if c.Metadata.Has("curated_at") {
+				curated++
 			}
 		}
 
@@ -74,11 +74,11 @@ func vaultStatusHandler(a *app.App) server.ToolHandlerFunc {
 		out := map[string]any{
 			"vault_path": absPath,
 			"notes": map[string]int{
-				"total":       total,
-				"max_count":   a.Config.Notes.MaxCount,
-				"remaining":   remaining,
-				"distilled":   distilled,
-				"undistilled": total - distilled,
+				"total":     total,
+				"max_count": a.Config.Notes.MaxCount,
+				"remaining": remaining,
+				"curated":   curated,
+				"uncurated": total - curated,
 			},
 			"pages":  pageInfos,
 			"config": a.Config,

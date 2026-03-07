@@ -200,7 +200,7 @@ func (v *Vault) CountNotes() (int, error) {
 	return count, nil
 }
 
-func (v *Vault) OldestDistilledNoteID() (string, error) {
+func (v *Vault) OldestCuratedNoteID() (string, error) {
 	entries, err := os.ReadDir(v.NotesDir())
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -222,7 +222,7 @@ func (v *Vault) OldestDistilledNoteID() (string, error) {
 		if err != nil {
 			continue
 		}
-		if m.Metadata.Has("distilled_at") {
+		if m.Metadata.Has("curated_at") {
 			return m.ID, nil
 		}
 	}

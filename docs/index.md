@@ -7,7 +7,7 @@ layout: default
 **A knowledge vault for your AI conversations.**
 
 Every time you close a chat with Claude, the insights from that session
-disappear. kno fixes that. You save what you learned, distill it into
+disappear. kno fixes that. You capture what you learned, curate it into
 living page documents, and load the right context into your next session.
 The knowledge compounds because you curate it — 30 seconds of attention
 per session turns scattered conversations into documents you trust.
@@ -19,21 +19,21 @@ per session turns scattered conversations into documents you trust.
 Three commands. One habit.
 
 ```
-  /kno.save                /kno.distill              /kno.load
+  /kno.capture                /kno.curate              /kno.load
   ─────────                ────────────              ─────────
   End of session      →     Periodically        →     Start of session
 
-  Save what you             Synthesize sessions       Load what's relevant
+  Capture what you          Synthesize sessions       Load what's relevant
   learned before            into living page         before you start,
   you close the tab.        documents.                not after.
 ```
 
-**`/kno.save`** — At the end of a session, kno reviews the conversation and
+**`/kno.capture`** — At the end of a session, kno reviews the conversation and
 proposes a structured summary with title, tags, and key points. You confirm,
 edit, or skip — that moment of curation is what makes the knowledge findable
 later. Use #hashtags to steer tags directly.
 
-**`/kno.distill`** — Periodically, kno reads your saved sessions and folds
+**`/kno.curate`** — Periodically, kno reads your saved sessions and folds
 them into page documents. Each page reflects everything you've learned about
 a subject — organized the way you think about it, following guidance you've
 written.
@@ -64,7 +64,7 @@ kno setup
 ```
 
 Restart Claude Desktop after setup. Five slash commands appear automatically:
-`/kno.save`, `/kno.load`, `/kno.distill`, `/kno.page`, `/kno.status`.
+`/kno.capture`, `/kno.load`, `/kno.curate`, `/kno.page`, `/kno.status`.
 
 See the [User Guide](design/kno-guide) for the full walkthrough.
 
@@ -78,7 +78,7 @@ kno has three layers:
   on your filesystem. Deterministic, testable, no AI involved.
 - **The MCP server** exposes the CLI to Claude Desktop as typed tools.
 - **The skills** are the conversational layer — they interpret your intent,
-  propose what to save, and guide you through the knowledge loop.
+  propose what to capture, and guide you through the knowledge loop.
 
 Your vault is just a folder of markdown files. Sync it with git, Dropbox,
 iCloud — or browse it in Obsidian alongside your other notes.
@@ -89,10 +89,10 @@ iCloud — or browse it in Obsidian alongside your other notes.
   notes/
     20260305-rds-slow-query-debugging/
       content.md       # structured session summary
-      meta.json        # title, tags, summary, distill status
+      meta.json        # title, tags, summary, curate status
   pages/
     aws-infrastructure.md          # living knowledge document
-    aws-infrastructure.meta.json   # name, last_distilled_at
+    aws-infrastructure.meta.json   # name, last_curated_at
 ```
 
 ---
@@ -108,7 +108,7 @@ iCloud — or browse it in Obsidian alongside your other notes.
 
 ## Project status
 
-kno is in active development. The knowledge loop — save, distill, load —
+kno is in active development. The knowledge loop — capture, curate, load —
 is functional end-to-end with Claude Desktop integration.
 
 <p style="margin-top: 3rem; color: #666; font-size: 0.85rem;">
