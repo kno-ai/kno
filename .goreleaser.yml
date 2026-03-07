@@ -39,5 +39,7 @@ brews:
     license: MIT
     install: |
       bin.install "kno"
+    caveats: |
+      Run 'kno setup' to create your vault and register with Claude Desktop.
     test: |
       assert_match version.to_s, shell_output("#{bin}/kno version").strip
