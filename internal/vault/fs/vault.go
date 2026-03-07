@@ -250,57 +250,6 @@ func (v *Vault) pageMetaPath(id string) (string, error) {
 	return sanitize.SafeJoin(v.PagesDir(), id+".meta.json")
 }
 
-// isLegacyPage checks if a page exists in the old folder-based layout.
-func (v *Vault) isLegacyPage(id string) bool {
-	dir, err := sanitize.SafeJoin(v.PagesDir(), id)
-	if err != nil {
-		return false
-	}
-	info, err := os.Stat(dir)
-	return err == nil && info.IsDir()
-}
-
-// migrateLegacyPage converts a page from the old folder layout to the new
-// flat layout. Returns true if migration occurred.
-func (v *Vault) migrateLegacyPage(id string) bool {
-	dir, err := sanitize.SafeJoin(v.PagesDir(), id)
-	if err != nil {
-		return false
-	}
-
-	// Read from old layout
-	oldContent := filepath.Join(dir, "content.md")
-	oldMeta := filepath.Join(dir, "meta.json")
-
-	content, errC := os.ReadFile(oldContent)
-	metaData, errM := os.ReadFile(oldMeta)
-	if errC != nil || errM != nil {
-		return false
-	}
-
-	// Write to new layout
-	contentPath, err := v.pageContentPath(id)
-	if err != nil {
-		return false
-	}
-	metaPath, err := v.pageMetaPath(id)
-	if err != nil {
-		return false
-	}
-
-	if err := os.WriteFile(contentPath, content, 0o644); err != nil {
-		return false
-	}
-	if err := os.WriteFile(metaPath, metaData, 0o644); err != nil {
-		os.Remove(contentPath) // rollback
-		return false
-	}
-
-	// Remove old directory
-	os.RemoveAll(dir)
-	return true
-}
-
 func (v *Vault) WritePage(page model.Page) (string, error) {
 	if page.ID == "" {
 		page.ID = sanitize.Slugify(page.Name)
@@ -333,11 +282,6 @@ func (v *Vault) WritePage(page model.Page) (string, error) {
 }
 
 func (v *Vault) ReadPage(id string) (model.Page, error) {
-	// Migrate legacy layout if needed.
-	if v.isLegacyPage(id) {
-		v.migrateLegacyPage(id)
-	}
-
 	metaPath, err := v.pageMetaPath(id)
 	if err != nil {
 		return model.Page{}, err
@@ -368,11 +312,6 @@ func (v *Vault) ReadPage(id string) (model.Page, error) {
 }
 
 func (v *Vault) ReadPageMeta(id string) (model.PageMeta, error) {
-	// Migrate legacy layout if needed.
-	if v.isLegacyPage(id) {
-		v.migrateLegacyPage(id)
-	}
-
 	metaPath, err := v.pageMetaPath(id)
 	if err != nil {
 		return model.PageMeta{}, err
@@ -381,11 +320,6 @@ func (v *Vault) ReadPageMeta(id string) (model.PageMeta, error) {
 }
 
 func (v *Vault) UpdatePage(id string, content *string, meta model.MetaMap) error {
-	// Migrate legacy layout if needed.
-	if v.isLegacyPage(id) {
-		v.migrateLegacyPage(id)
-	}
-
 	metaPath, err := v.pageMetaPath(id)
 	if err != nil {
 		return err
@@ -424,19 +358,6 @@ func (v *Vault) ListPages() ([]model.PageMeta, error) {
 		return nil, fmt.Errorf("reading pages dir: %w", err)
 	}
 
-	// Migrate any legacy pages first.
-	for _, e := range entries {
-		if e.IsDir() && !strings.HasPrefix(e.Name(), ".") {
-			v.migrateLegacyPage(e.Name())
-		}
-	}
-
-	// Re-read after migration.
-	entries, err = os.ReadDir(v.PagesDir())
-	if err != nil {
-		return nil, fmt.Errorf("reading pages dir: %w", err)
-	}
-
 	var metas []model.PageMeta
 	for _, e := range entries {
 		name := e.Name()
@@ -454,15 +375,6 @@ func (v *Vault) ListPages() ([]model.PageMeta, error) {
 }
 
 func (v *Vault) DeletePage(id string) error {
-	// Handle legacy layout.
-	if v.isLegacyPage(id) {
-		dir, err := sanitize.SafeJoin(v.PagesDir(), id)
-		if err != nil {
-			return err
-		}
-		return os.RemoveAll(dir)
-	}
-
 	contentPath, err := v.pageContentPath(id)
 	if err != nil {
 		return err
