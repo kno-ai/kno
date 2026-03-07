@@ -377,15 +377,15 @@ the document reflects how *you* think about the subject — not a generic summar
 
 What area of knowledge do you want to track?
 
-> kubernetes-migration
+> our kubernetes migration
 
 Good. I'll follow your guidance each time I update this page. What should
 I focus on? What can I skip? How should I handle contradictions between
 sessions?
 
-> Focus on process improvements and lessons from batches that went wrong.
-> Skip equipment specs — I know those. Flag anything that contradicts
-> a previous decision.
+> Focus on migration blockers, service-by-service lessons, and networking
+> gotchas. Skip basic k8s concepts — I know those. Flag anything that
+> contradicts a previous decision.
 
 Creating page: Kubernetes Migration
 
