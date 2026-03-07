@@ -349,6 +349,74 @@ func (v *Vault) UpdatePage(id string, content *string, meta model.MetaMap) error
 	return writeJSON(metaPath, existing)
 }
 
+func (v *Vault) RenamePage(oldID, newName string) (string, error) {
+	newID := sanitize.Slugify(newName)
+	if newID == oldID {
+		// Name changed but slug didn't — just update the meta.
+		metaPath, err := v.pageMetaPath(oldID)
+		if err != nil {
+			return "", err
+		}
+		meta, err := readPageMetaFile(metaPath)
+		if err != nil {
+			return "", fmt.Errorf("page %q: %w", oldID, err)
+		}
+		meta.Name = newName
+		if err := writeJSON(metaPath, meta); err != nil {
+			return "", err
+		}
+		return oldID, nil
+	}
+
+	// Check new ID doesn't already exist.
+	newContentPath, err := v.pageContentPath(newID)
+	if err != nil {
+		return "", err
+	}
+	if _, err := os.Stat(newContentPath); err == nil {
+		return "", fmt.Errorf("page %q already exists", newID)
+	}
+
+	// Read old page.
+	oldContentPath, err := v.pageContentPath(oldID)
+	if err != nil {
+		return "", err
+	}
+	oldMetaPath, err := v.pageMetaPath(oldID)
+	if err != nil {
+		return "", err
+	}
+
+	meta, err := readPageMetaFile(oldMetaPath)
+	if err != nil {
+		return "", fmt.Errorf("page %q: %w", oldID, err)
+	}
+
+	// Rename files.
+	newMetaPath, err := v.pageMetaPath(newID)
+	if err != nil {
+		return "", err
+	}
+
+	if err := os.Rename(oldContentPath, newContentPath); err != nil {
+		return "", fmt.Errorf("renaming content: %w", err)
+	}
+
+	// Update meta with new ID and name, then write to new path.
+	meta.ID = newID
+	meta.Name = newName
+	if err := writeJSON(newMetaPath, meta); err != nil {
+		// Rollback content rename.
+		os.Rename(newContentPath, oldContentPath)
+		return "", err
+	}
+
+	// Remove old meta file.
+	os.Remove(oldMetaPath)
+
+	return newID, nil
+}
+
 func (v *Vault) ListPages() ([]model.PageMeta, error) {
 	entries, err := os.ReadDir(v.PagesDir())
 	if err != nil {

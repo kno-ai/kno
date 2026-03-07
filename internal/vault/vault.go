@@ -28,6 +28,7 @@ type Vault interface {
 	ReadPage(id string) (model.Page, error)
 	ReadPageMeta(id string) (model.PageMeta, error)
 	UpdatePage(id string, content *string, meta model.MetaMap) error
+	RenamePage(oldID, newName string) (newID string, err error)
 	ListPages() ([]model.PageMeta, error)
 	DeletePage(id string) error
 

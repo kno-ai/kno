@@ -125,6 +125,20 @@ would populate them with your recent sessions."
    })
    ```
 
+## Renaming a page
+
+If the user wants to rename a page, call `kno_page_rename`:
+
+```
+kno_page_rename({
+  "id": "<current-page-id>",
+  "name": "New Page Name"
+})
+```
+
+This renames the files, updates the search index, and fixes all note
+references automatically. The response includes both old and new IDs.
+
 ## Deleting a page
 
 Page deletion is an admin operation — it's not available through this skill.
