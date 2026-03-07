@@ -1,51 +1,36 @@
 package fs
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
 	"sort"
 	"strings"
+	"time"
 
-	"github.com/kno-ai/kno/internal/capture"
 	"github.com/kno-ai/kno/internal/model"
 	"github.com/kno-ai/kno/internal/vault/sanitize"
 )
 
-// Vault is a filesystem-based vault adapter.
+// Vault is a filesystem-based vault implementation.
 type Vault struct {
-	root      string
-	knoSubdir string
+	root string
 }
 
-// New creates a new filesystem Vault adapter.
-func New(root, knoSubdir string) *Vault {
-	return &Vault{
-		root:      root,
-		knoSubdir: knoSubdir,
-	}
+func New(root string) *Vault {
+	return &Vault{root: root}
 }
 
-func (v *Vault) Root() string {
-	return v.root
-}
+func (v *Vault) Root() string     { return v.root }
+func (v *Vault) NotesDir() string { return filepath.Join(v.root, "notes") }
+func (v *Vault) PagesDir() string { return filepath.Join(v.root, "pages") }
+func (v *Vault) IndexDir() string { return filepath.Join(v.root, "index") }
 
-func (v *Vault) KnoDir() string {
-	return filepath.Join(v.root, v.knoSubdir)
-}
-
-func (v *Vault) capturesDir() string {
-	return filepath.Join(v.KnoDir(), "captures")
-}
-
-// EnsureLayout creates the kno directory structure if missing.
 func (v *Vault) EnsureLayout() error {
-	dirs := []string{
-		filepath.Join(v.KnoDir(), "captures"),
-		filepath.Join(v.KnoDir(), "knowledge"),
-	}
-	for _, d := range dirs {
+	for _, d := range []string{v.NotesDir(), v.PagesDir()} {
 		if err := os.MkdirAll(d, 0o755); err != nil {
 			return fmt.Errorf("creating directory %s: %w", d, err)
 		}
@@ -53,115 +38,368 @@ func (v *Vault) EnsureLayout() error {
 	return nil
 }
 
-// WriteCapture creates a capture directory with capture.md and meta.json.
-func (v *Vault) WriteCapture(note model.CaptureNote) (model.CaptureWriteResult, error) {
-	dirName := capture.DirName(note)
+// --- Note operations ---
 
-	// Verify the path stays within captures dir.
-	dirPath, err := sanitize.SafeJoin(v.capturesDir(), dirName)
+func (v *Vault) WriteNote(note model.Note) (string, error) {
+	if note.ID == "" {
+		note.ID = newNoteID(note.CreatedAt)
+	}
+
+	dir, err := sanitize.SafeJoin(v.NotesDir(), note.ID)
 	if err != nil {
-		return model.CaptureWriteResult{}, err
+		return "", err
+	}
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		return "", fmt.Errorf("creating note dir: %w", err)
 	}
 
-	if err := os.MkdirAll(dirPath, 0o755); err != nil {
-		return model.CaptureWriteResult{}, fmt.Errorf("creating capture dir: %w", err)
+	if err := os.WriteFile(filepath.Join(dir, "content.md"), []byte(note.Content), 0o644); err != nil {
+		return "", fmt.Errorf("writing content.md: %w", err)
 	}
 
-	// Write capture.md
-	md := capture.RenderMarkdown(note)
-	mdPath := filepath.Join(dirPath, "capture.md")
-	if err := os.WriteFile(mdPath, []byte(md), 0o644); err != nil {
-		return model.CaptureWriteResult{}, fmt.Errorf("writing capture.md: %w", err)
+	meta := model.NoteMeta{
+		ID:        note.ID,
+		Title:     note.Title,
+		CreatedAt: note.CreatedAt.Format(time.RFC3339),
+		Metadata:  note.Metadata,
+	}
+	if err := writeJSON(filepath.Join(dir, "meta.json"), meta); err != nil {
+		return "", err
 	}
 
-	// Write meta.json
-	meta := capture.RenderMeta(note)
-	metaData, err := json.MarshalIndent(meta, "", "  ")
+	return note.ID, nil
+}
+
+func (v *Vault) ReadNote(id string) (model.Note, error) {
+	dir, err := sanitize.SafeJoin(v.NotesDir(), id)
 	if err != nil {
-		return model.CaptureWriteResult{}, fmt.Errorf("marshalling meta: %w", err)
-	}
-	metaPath := filepath.Join(dirPath, "meta.json")
-	if err := os.WriteFile(metaPath, metaData, 0o644); err != nil {
-		return model.CaptureWriteResult{}, fmt.Errorf("writing meta.json: %w", err)
+		return model.Note{}, err
 	}
 
-	return model.CaptureWriteResult{
-		Path:    dirPath,
-		ID:      note.ID,
-		Created: note.CreatedAt,
+	meta, err := readNoteMeta(dir)
+	if err != nil {
+		return model.Note{}, fmt.Errorf("note %q: %w", id, err)
+	}
+
+	content, err := os.ReadFile(filepath.Join(dir, "content.md"))
+	if err != nil {
+		return model.Note{}, fmt.Errorf("note %q content: %w", id, err)
+	}
+
+	createdAt, _ := time.Parse(time.RFC3339, meta.CreatedAt)
+
+	return model.Note{
+		ID:        meta.ID,
+		CreatedAt: createdAt,
+		Title:     meta.Title,
+		Content:   string(content),
+		Metadata:  meta.Metadata,
 	}, nil
 }
 
-// WriteFile writes content to a path relative to the kno subdirectory.
-func (v *Vault) WriteFile(relPath string, content []byte) error {
-	dest, err := sanitize.SafeJoin(v.KnoDir(), relPath)
+func (v *Vault) ReadNoteMeta(id string) (model.NoteMeta, error) {
+	dir, err := sanitize.SafeJoin(v.NotesDir(), id)
+	if err != nil {
+		return model.NoteMeta{}, err
+	}
+	return readNoteMeta(dir)
+}
+
+func (v *Vault) UpdateNote(id string, content *string, meta model.MetaMap) error {
+	dir, err := sanitize.SafeJoin(v.NotesDir(), id)
 	if err != nil {
 		return err
 	}
-	if err := os.MkdirAll(filepath.Dir(dest), 0o755); err != nil {
-		return fmt.Errorf("creating parent dirs: %w", err)
-	}
-	return os.WriteFile(dest, content, 0o644)
-}
 
-// ReadFile reads a file at a path relative to the kno subdirectory.
-func (v *Vault) ReadFile(relPath string) ([]byte, error) {
-	src, err := sanitize.SafeJoin(v.KnoDir(), relPath)
+	existing, err := readNoteMeta(dir)
 	if err != nil {
-		return nil, err
+		return fmt.Errorf("note %q: %w", id, err)
 	}
-	return os.ReadFile(src)
+
+	if content != nil {
+		if err := os.WriteFile(filepath.Join(dir, "content.md"), []byte(*content), 0o644); err != nil {
+			return fmt.Errorf("writing content: %w", err)
+		}
+	}
+
+	if meta != nil {
+		if existing.Metadata == nil {
+			existing.Metadata = make(model.MetaMap)
+		}
+		existing.Metadata = existing.Metadata.Merge(meta)
+	}
+
+	return writeJSON(filepath.Join(dir, "meta.json"), existing)
 }
 
-// ListCaptures returns capture directory names sorted newest-first.
-// If limit <= 0, all captures are returned.
-func (v *Vault) ListCaptures(limit int) ([]string, error) {
-	entries, err := os.ReadDir(v.capturesDir())
+func (v *Vault) ListNotes(limit int) ([]model.NoteMeta, error) {
+	entries, err := os.ReadDir(v.NotesDir())
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil, nil
 		}
-		return nil, fmt.Errorf("reading captures dir: %w", err)
+		return nil, fmt.Errorf("reading notes dir: %w", err)
 	}
 
-	var names []string
+	var dirs []string
 	for _, e := range entries {
 		if e.IsDir() && !strings.HasPrefix(e.Name(), ".") {
-			names = append(names, e.Name())
+			dirs = append(dirs, e.Name())
+		}
+	}
+	sort.Sort(sort.Reverse(sort.StringSlice(dirs)))
+
+	if limit > 0 && len(dirs) > limit {
+		dirs = dirs[:limit]
+	}
+
+	metas := make([]model.NoteMeta, 0, len(dirs))
+	for _, d := range dirs {
+		m, err := readNoteMeta(filepath.Join(v.NotesDir(), d))
+		if err != nil {
+			continue
+		}
+		metas = append(metas, m)
+	}
+	return metas, nil
+}
+
+func (v *Vault) DeleteNote(id string) error {
+	dir, err := sanitize.SafeJoin(v.NotesDir(), id)
+	if err != nil {
+		return err
+	}
+	if _, err := os.Stat(dir); os.IsNotExist(err) {
+		return fmt.Errorf("note %q not found", id)
+	}
+	return os.RemoveAll(dir)
+}
+
+func (v *Vault) CountNotes() (int, error) {
+	entries, err := os.ReadDir(v.NotesDir())
+	if err != nil {
+		if os.IsNotExist(err) {
+			return 0, nil
+		}
+		return 0, err
+	}
+	count := 0
+	for _, e := range entries {
+		if e.IsDir() && !strings.HasPrefix(e.Name(), ".") {
+			count++
+		}
+	}
+	return count, nil
+}
+
+func (v *Vault) OldestDistilledNoteID() (string, error) {
+	entries, err := os.ReadDir(v.NotesDir())
+	if err != nil {
+		if os.IsNotExist(err) {
+			return "", nil
+		}
+		return "", err
+	}
+
+	var dirs []string
+	for _, e := range entries {
+		if e.IsDir() && !strings.HasPrefix(e.Name(), ".") {
+			dirs = append(dirs, e.Name())
+		}
+	}
+	sort.Strings(dirs) // oldest first
+
+	for _, d := range dirs {
+		m, err := readNoteMeta(filepath.Join(v.NotesDir(), d))
+		if err != nil {
+			continue
+		}
+		if m.Metadata.Has("distilled_at") {
+			return m.ID, nil
+		}
+	}
+	return "", nil
+}
+
+func (v *Vault) OldestNoteID() (string, error) {
+	entries, err := os.ReadDir(v.NotesDir())
+	if err != nil {
+		if os.IsNotExist(err) {
+			return "", nil
+		}
+		return "", err
+	}
+
+	for _, e := range entries {
+		if e.IsDir() && !strings.HasPrefix(e.Name(), ".") {
+			return e.Name(), nil // dir names sort oldest first
+		}
+	}
+	return "", nil
+}
+
+// --- Page operations ---
+
+func (v *Vault) WritePage(page model.Page) (string, error) {
+	if page.ID == "" {
+		page.ID = sanitize.Slugify(page.Name)
+	}
+
+	dir, err := sanitize.SafeJoin(v.PagesDir(), page.ID)
+	if err != nil {
+		return "", err
+	}
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		return "", fmt.Errorf("creating page dir: %w", err)
+	}
+
+	if err := os.WriteFile(filepath.Join(dir, "content.md"), []byte(page.Content), 0o644); err != nil {
+		return "", fmt.Errorf("writing content.md: %w", err)
+	}
+
+	meta := model.PageMeta{
+		ID:        page.ID,
+		Name:      page.Name,
+		CreatedAt: page.CreatedAt.Format(time.RFC3339),
+		Metadata:  page.Metadata,
+	}
+	return page.ID, writeJSON(filepath.Join(dir, "meta.json"), meta)
+}
+
+func (v *Vault) ReadPage(id string) (model.Page, error) {
+	dir, err := sanitize.SafeJoin(v.PagesDir(), id)
+	if err != nil {
+		return model.Page{}, err
+	}
+
+	meta, err := readPageMeta(dir)
+	if err != nil {
+		return model.Page{}, fmt.Errorf("page %q: %w", id, err)
+	}
+
+	content, err := os.ReadFile(filepath.Join(dir, "content.md"))
+	if err != nil {
+		return model.Page{}, fmt.Errorf("page %q content: %w", id, err)
+	}
+
+	createdAt, _ := time.Parse(time.RFC3339, meta.CreatedAt)
+
+	return model.Page{
+		ID:        meta.ID,
+		Name:      meta.Name,
+		CreatedAt: createdAt,
+		Content:   string(content),
+		Metadata:  meta.Metadata,
+	}, nil
+}
+
+func (v *Vault) ReadPageMeta(id string) (model.PageMeta, error) {
+	dir, err := sanitize.SafeJoin(v.PagesDir(), id)
+	if err != nil {
+		return model.PageMeta{}, err
+	}
+	return readPageMeta(dir)
+}
+
+func (v *Vault) UpdatePage(id string, content *string, meta model.MetaMap) error {
+	dir, err := sanitize.SafeJoin(v.PagesDir(), id)
+	if err != nil {
+		return err
+	}
+
+	existing, err := readPageMeta(dir)
+	if err != nil {
+		return fmt.Errorf("page %q: %w", id, err)
+	}
+
+	if content != nil {
+		if err := os.WriteFile(filepath.Join(dir, "content.md"), []byte(*content), 0o644); err != nil {
+			return fmt.Errorf("writing content: %w", err)
 		}
 	}
 
-	// Directory names are timestamp-prefixed, so lexicographic = chronological.
-	sort.Sort(sort.Reverse(sort.StringSlice(names)))
-
-	if limit > 0 && len(names) > limit {
-		names = names[:limit]
+	if meta != nil {
+		if existing.Metadata == nil {
+			existing.Metadata = make(model.MetaMap)
+		}
+		existing.Metadata = existing.Metadata.Merge(meta)
 	}
 
-	return names, nil
+	return writeJSON(filepath.Join(dir, "meta.json"), existing)
 }
 
-// ReadCapture reads a capture's meta.json and capture.md by directory name.
-func (v *Vault) ReadCapture(dirName string) (model.CaptureMeta, string, error) {
-	dirPath, err := sanitize.SafeJoin(v.capturesDir(), dirName)
+func (v *Vault) ListPages() ([]model.PageMeta, error) {
+	entries, err := os.ReadDir(v.PagesDir())
 	if err != nil {
-		return model.CaptureMeta{}, "", err
+		if os.IsNotExist(err) {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("reading pages dir: %w", err)
 	}
 
-	metaData, err := os.ReadFile(filepath.Join(dirPath, "meta.json"))
+	var metas []model.PageMeta
+	for _, e := range entries {
+		if !e.IsDir() || strings.HasPrefix(e.Name(), ".") {
+			continue
+		}
+		m, err := readPageMeta(filepath.Join(v.PagesDir(), e.Name()))
+		if err != nil {
+			continue
+		}
+		metas = append(metas, m)
+	}
+	return metas, nil
+}
+
+func (v *Vault) DeletePage(id string) error {
+	dir, err := sanitize.SafeJoin(v.PagesDir(), id)
 	if err != nil {
-		return model.CaptureMeta{}, "", fmt.Errorf("reading meta.json: %w", err)
+		return err
 	}
-
-	var meta model.CaptureMeta
-	if err := json.Unmarshal(metaData, &meta); err != nil {
-		return model.CaptureMeta{}, "", fmt.Errorf("parsing meta.json: %w", err)
+	if _, err := os.Stat(dir); os.IsNotExist(err) {
+		return fmt.Errorf("page %q not found", id)
 	}
+	return os.RemoveAll(dir)
+}
 
-	mdData, err := os.ReadFile(filepath.Join(dirPath, "capture.md"))
+// --- helpers ---
+
+func newNoteID(t time.Time) string {
+	b := make([]byte, 3)
+	if _, err := rand.Read(b); err != nil {
+		b = []byte{0, 0, 0}
+	}
+	return fmt.Sprintf("%s-%s", t.Format("20060102T150405Z0700"), hex.EncodeToString(b))
+}
+
+func writeJSON(path string, v any) error {
+	data, err := json.MarshalIndent(v, "", "  ")
 	if err != nil {
-		return model.CaptureMeta{}, "", fmt.Errorf("reading capture.md: %w", err)
+		return fmt.Errorf("marshalling JSON: %w", err)
 	}
+	return os.WriteFile(path, data, 0o644)
+}
 
-	return meta, string(mdData), nil
+func readNoteMeta(dir string) (model.NoteMeta, error) {
+	data, err := os.ReadFile(filepath.Join(dir, "meta.json"))
+	if err != nil {
+		return model.NoteMeta{}, err
+	}
+	var meta model.NoteMeta
+	if err := json.Unmarshal(data, &meta); err != nil {
+		return model.NoteMeta{}, err
+	}
+	return meta, nil
+}
+
+func readPageMeta(dir string) (model.PageMeta, error) {
+	data, err := os.ReadFile(filepath.Join(dir, "meta.json"))
+	if err != nil {
+		return model.PageMeta{}, err
+	}
+	var meta model.PageMeta
+	if err := json.Unmarshal(data, &meta); err != nil {
+		return model.PageMeta{}, err
+	}
+	return meta, nil
 }

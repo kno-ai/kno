@@ -12,7 +12,6 @@ import (
 //go:embed all:skills
 var skillsFS embed.FS
 
-// Store serves skill docs embedded in the binary.
 type Store struct{}
 
 var _ skills.Store = (*Store)(nil)

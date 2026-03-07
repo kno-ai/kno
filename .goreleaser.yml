@@ -1,0 +1,43 @@
+version: 2
+
+project_name: kno
+
+builds:
+  - main: ./cmd/kno
+    binary: kno
+    goos:
+      - darwin
+      - linux
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w -X github.com/kno-ai/kno/internal.Version={{.Version}}
+
+archives:
+  - format: tar.gz
+    name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"
+
+checksum:
+  name_template: "checksums.txt"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^ci:"
+
+brews:
+  - repository:
+      owner: kno-ai
+      name: homebrew-tap
+      token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
+    homepage: https://github.com/kno-ai/kno
+    description: "A knowledge vault for your AI conversations"
+    license: MIT
+    install: |
+      bin.install "kno"
+    test: |
+      assert_match version.to_s, shell_output("#{bin}/kno version").strip

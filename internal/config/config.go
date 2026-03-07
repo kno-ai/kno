@@ -1,80 +1,118 @@
 package config
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
+
+	"github.com/BurntSushi/toml"
 )
 
 type Config struct {
-	VaultPath string        `json:"vault_path"`
-	KnoSubdir string        `json:"kno_subdir"`
-	Capture   CaptureConfig `json:"capture"`
+	Notes   NotesConfig   `toml:"notes" json:"notes"`
+	Pages   PagesConfig   `toml:"pages" json:"pages"`
+	Distill DistillConfig `toml:"distill" json:"distill"`
+	Search  SearchConfig  `toml:"search" json:"search"`
 }
 
-type CaptureConfig struct {
-	MaxBodyBytes int `json:"max_body_bytes"`
+type NotesConfig struct {
+	MaxCount         int `toml:"max_count" json:"max_count"`
+	DefaultListLimit int `toml:"default_list_limit" json:"default_list_limit"`
+	SummaryMaxTokens int `toml:"summary_max_tokens" json:"summary_max_tokens"`
+}
+
+type PagesConfig struct {
+	MaxContentTokens int `toml:"max_content_tokens" json:"max_content_tokens"`
+}
+
+type DistillConfig struct {
+	MaxNotesPerRun int `toml:"max_notes_per_run" json:"max_notes_per_run"`
+}
+
+type SearchConfig struct {
+	DefaultLimit int `toml:"default_limit" json:"default_limit"`
 }
 
 func DefaultConfig() Config {
 	return Config{
-		KnoSubdir: ".",
-		Capture: CaptureConfig{
-			MaxBodyBytes: 60000,
+		Notes: NotesConfig{
+			MaxCount:         200,
+			DefaultListLimit: 50,
+			SummaryMaxTokens: 100,
+		},
+		Pages: PagesConfig{
+			MaxContentTokens: 8000,
+		},
+		Distill: DistillConfig{
+			MaxNotesPerRun: 50,
+		},
+		Search: SearchConfig{
+			DefaultLimit: 5,
 		},
 	}
 }
 
-func Dir() (string, error) {
-	configDir, err := os.UserConfigDir()
-	if err != nil {
-		return "", fmt.Errorf("resolving config dir: %w", err)
-	}
-	return filepath.Join(configDir, "kno"), nil
+func ConfigPath(vaultPath string) string {
+	return filepath.Join(vaultPath, "config.toml")
 }
 
-func Path() (string, error) {
-	dir, err := Dir()
-	if err != nil {
-		return "", err
-	}
-	return filepath.Join(dir, "config.json"), nil
-}
+// Load reads config.toml from inside the vault directory.
+// Missing keys get default values.
+func Load(vaultPath string) (Config, error) {
+	cfg := DefaultConfig()
+	p := ConfigPath(vaultPath)
 
-func Load() (Config, error) {
-	p, err := Path()
-	if err != nil {
-		return Config{}, err
-	}
 	data, err := os.ReadFile(p)
 	if err != nil {
+		if os.IsNotExist(err) {
+			return cfg, nil
+		}
 		return Config{}, fmt.Errorf("reading config: %w", err)
 	}
-	var cfg Config
-	if err := json.Unmarshal(data, &cfg); err != nil {
+
+	if err := toml.Unmarshal(data, &cfg); err != nil {
 		return Config{}, fmt.Errorf("parsing config: %w", err)
 	}
-	if cfg.KnoSubdir == "" {
-		cfg.KnoSubdir = "."
-	}
-	if cfg.Capture.MaxBodyBytes == 0 {
-		cfg.Capture.MaxBodyBytes = 60000
-	}
+
+	applyDefaults(&cfg)
 	return cfg, nil
 }
 
-func Save(cfg Config) error {
-	p, err := Path()
-	if err != nil {
-		return err
-	}
+// Save writes config.toml inside the vault directory.
+func Save(vaultPath string, cfg Config) error {
+	p := ConfigPath(vaultPath)
 	if err := os.MkdirAll(filepath.Dir(p), 0o755); err != nil {
 		return fmt.Errorf("creating config dir: %w", err)
 	}
-	data, err := json.MarshalIndent(cfg, "", "  ")
+
+	f, err := os.Create(p)
 	if err != nil {
-		return fmt.Errorf("marshalling config: %w", err)
+		return fmt.Errorf("creating config file: %w", err)
 	}
-	return os.WriteFile(p, data, 0o644)
+	defer f.Close()
+
+	enc := toml.NewEncoder(f)
+	return enc.Encode(cfg)
+}
+
+func applyDefaults(cfg *Config) {
+	d := DefaultConfig()
+	if cfg.Notes.MaxCount == 0 {
+		cfg.Notes.MaxCount = d.Notes.MaxCount
+	}
+	if cfg.Notes.DefaultListLimit == 0 {
+		cfg.Notes.DefaultListLimit = d.Notes.DefaultListLimit
+	}
+	if cfg.Notes.SummaryMaxTokens == 0 {
+		cfg.Notes.SummaryMaxTokens = d.Notes.SummaryMaxTokens
+	}
+	if cfg.Pages.MaxContentTokens == 0 {
+		cfg.Pages.MaxContentTokens = d.Pages.MaxContentTokens
+	}
+	if cfg.Distill.MaxNotesPerRun == 0 {
+		cfg.Distill.MaxNotesPerRun = d.Distill.MaxNotesPerRun
+	}
+	if cfg.Search.DefaultLimit == 0 {
+		cfg.Search.DefaultLimit = d.Search.DefaultLimit
+	}
 }

@@ -20,12 +20,10 @@ func knownMCPConfigs() []string {
 
 	candidates := []string{
 		filepath.Join(home, "Library", "Application Support", "Claude", "claude_desktop_config.json"),
-		// Future: Cursor, Windsurf, etc.
 	}
 
 	var found []string
 	for _, c := range candidates {
-		// Check if the parent directory exists (i.e. the app is installed).
 		if info, err := os.Stat(filepath.Dir(c)); err == nil && info.IsDir() {
 			found = append(found, c)
 		}
@@ -33,10 +31,9 @@ func knownMCPConfigs() []string {
 	return found
 }
 
-// registerMCP registers kno as an MCP server with the given config path,
-// or auto-detects installed clients if path is empty.
+// registerMCP registers kno as an MCP server.
 // Returns the list of config files that were successfully updated.
-func registerMCP(explicitPath string) []string {
+func registerMCP(explicitPath, vaultPath, serverName string) []string {
 	var targets []string
 	if explicitPath != "" {
 		targets = []string{explicitPath}
@@ -46,15 +43,14 @@ func registerMCP(explicitPath string) []string {
 
 	var registered []string
 	for _, path := range targets {
-		if err := registerMCPAt(path); err == nil {
+		if err := registerMCPAt(path, vaultPath, serverName); err == nil {
 			registered = append(registered, path)
 		}
 	}
 	return registered
 }
 
-func registerMCPAt(configPath string) error {
-	// Load existing config or start fresh.
+func registerMCPAt(configPath, vaultPath, serverName string) error {
 	var clientConfig map[string]any
 	data, err := os.ReadFile(configPath)
 	if err != nil {
@@ -68,21 +64,19 @@ func registerMCPAt(configPath string) error {
 		}
 	}
 
-	// Resolve the kno binary path.
 	knoBin, err := os.Executable()
 	if err != nil {
 		knoBin = "kno"
 	}
 
-	// Ensure mcpServers key exists.
 	servers, ok := clientConfig["mcpServers"].(map[string]any)
 	if !ok {
 		servers = make(map[string]any)
 	}
 
-	servers["kno"] = map[string]any{
+	servers[serverName] = map[string]any{
 		"command": knoBin,
-		"args":    []string{"mcp"},
+		"args":    []string{"--vault", vaultPath, "mcp"},
 	}
 	clientConfig["mcpServers"] = servers
 
