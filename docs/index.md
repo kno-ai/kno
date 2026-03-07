@@ -1,7 +1,3 @@
----
-layout: default
----
-
 # kno
 
 **A knowledge vault for your AI conversations.** &nbsp; [View on GitHub](https://github.com/kno-ai/kno)
