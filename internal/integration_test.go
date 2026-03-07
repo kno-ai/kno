@@ -597,6 +597,75 @@ func TestIntegration_PageDeleteNoteCleanup(t *testing.T) {
 
 }
 
+func TestIntegration_PageFlatLayout(t *testing.T) {
+	v := setupVault(t)
+
+	id, err := v.WritePage(model.Page{
+		Name:      "Test Page",
+		CreatedAt: time.Now(),
+		Content:   "test content",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Verify flat layout: pages/test-page.md and pages/test-page.meta.json
+	contentPath := filepath.Join(v.Root(), "pages", id+".md")
+	metaPath := filepath.Join(v.Root(), "pages", id+".meta.json")
+
+	if _, err := os.Stat(contentPath); err != nil {
+		t.Errorf("expected %s to exist", contentPath)
+	}
+	if _, err := os.Stat(metaPath); err != nil {
+		t.Errorf("expected %s to exist", metaPath)
+	}
+
+	// Verify no directory was created
+	dirPath := filepath.Join(v.Root(), "pages", id)
+	if info, err := os.Stat(dirPath); err == nil && info.IsDir() {
+		t.Errorf("expected no directory at %s", dirPath)
+	}
+}
+
+func TestIntegration_PageLegacyMigration(t *testing.T) {
+	v := setupVault(t)
+
+	// Manually create a legacy folder-based page
+	id := "legacy-page"
+	legacyDir := filepath.Join(v.Root(), "pages", id)
+	if err := os.MkdirAll(legacyDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(legacyDir, "content.md"), []byte("legacy content"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	metaJSON := `{"id":"legacy-page","name":"Legacy Page","created_at":"2026-01-01T00:00:00Z"}`
+	if err := os.WriteFile(filepath.Join(legacyDir, "meta.json"), []byte(metaJSON), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Reading should trigger migration
+	page, err := v.ReadPage(id)
+	if err != nil {
+		t.Fatalf("ReadPage: %v", err)
+	}
+	if page.Content != "legacy content" {
+		t.Errorf("Content = %q", page.Content)
+	}
+	if page.Name != "Legacy Page" {
+		t.Errorf("Name = %q", page.Name)
+	}
+
+	// Verify old directory is gone and new files exist
+	if _, err := os.Stat(legacyDir); !os.IsNotExist(err) {
+		t.Error("expected legacy directory to be removed")
+	}
+	contentPath := filepath.Join(v.Root(), "pages", id+".md")
+	if _, err := os.Stat(contentPath); err != nil {
+		t.Errorf("expected flat content file at %s", contentPath)
+	}
+}
+
 func TestIntegration_NoteUpdatePreservesExistingMeta(t *testing.T) {
 	v := setupVault(t)
 
