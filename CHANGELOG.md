@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.0](https://github.com/kno-ai/kno/compare/v0.5.0...v0.6.0) (2026-03-07)
+
+
+### Features
+
+* enforce content size limits, deduplicate metadata, consolidate auto-removal ([3fa393a](https://github.com/kno-ai/kno/commit/3fa393a10aecfafdb199e5d0316fa94f8ab36a40))
+
 ## [0.5.0](https://github.com/kno-ai/kno/compare/v0.4.0...v0.5.0) (2026-03-07)
 
 
