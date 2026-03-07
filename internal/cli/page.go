@@ -193,7 +193,7 @@ func newPageShowCmd() *cobra.Command {
 
 			page, err := a.Vault.ReadPage(args[0])
 			if err != nil {
-				return fmt.Errorf("Not found: page %s", args[0])
+				return fmt.Errorf("not found: page %s", args[0])
 			}
 
 			if jsonOut {
@@ -257,14 +257,14 @@ func newPageUpdateCmd() *cobra.Command {
 			}
 
 			if content == nil && meta == nil {
-				return fmt.Errorf("Nothing to update; provide content on stdin or --meta flags")
+				return fmt.Errorf("nothing to update; provide content on stdin or --meta flags")
 			}
 
 			id := args[0]
 
 			pageMeta, err := a.Vault.ReadPageMeta(id)
 			if err != nil {
-				return fmt.Errorf("Not found: page %s", id)
+				return fmt.Errorf("not found: page %s", id)
 			}
 
 			if err := a.Vault.UpdatePage(id, content, meta); err != nil {
