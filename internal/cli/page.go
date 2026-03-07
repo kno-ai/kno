@@ -58,6 +58,12 @@ func newPageCreateCmd() *cobra.Command {
 				return fmt.Errorf("reading stdin: %w", err)
 			}
 
+			if content != "" {
+				if err := a.ValidatePageContent(content); err != nil {
+					return err
+				}
+			}
+
 			now := time.Now()
 			page := model.Page{
 				Name:      name,
@@ -263,6 +269,12 @@ func newPageUpdateCmd() *cobra.Command {
 			}
 
 			id := args[0]
+
+			if content != nil {
+				if err := a.ValidatePageContent(*content); err != nil {
+					return err
+				}
+			}
 
 			pageMeta, err := a.Vault.ReadPageMeta(id)
 			if err != nil {

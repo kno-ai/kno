@@ -72,34 +72,13 @@ func noteCreateHandler(a *app.App) server.ToolHandlerFunc {
 
 		meta := extractMeta(req.GetArguments(), "meta")
 
-		// Check capacity
-		count, err := a.Vault.CountNotes()
-		if err != nil {
-			return mcp.NewToolResultError(fmt.Sprintf("counting notes: %v", err)), nil
+		if err := a.ValidateNoteContent(content); err != nil {
+			return mcp.NewToolResultError(err.Error()), nil
 		}
 
-		var autoRemoved string
-		var autoRemovedUncurated bool
-		if count >= a.Config.Notes.MaxCount {
-			oldest, err := a.Vault.OldestCuratedNoteID()
-			if err != nil {
-				return mcp.NewToolResultError(fmt.Sprintf("finding removable note: %v", err)), nil
-			}
-			if oldest == "" {
-				// No curated notes — fall back to oldest note overall
-				oldest, err = a.Vault.OldestNoteID()
-				if err != nil {
-					return mcp.NewToolResultError(fmt.Sprintf("finding oldest note: %v", err)), nil
-				}
-				if oldest == "" {
-					return mcp.NewToolResultError(fmt.Sprintf("vault at capacity (%d) with nothing to remove", a.Config.Notes.MaxCount)), nil
-				}
-				autoRemovedUncurated = true
-			}
-			if err := a.Vault.DeleteNote(oldest); err != nil {
-				return mcp.NewToolResultError(fmt.Sprintf("auto-removing: %v", err)), nil
-			}
-			autoRemoved = oldest
+		removed, err := a.AutoRemoveOldestNote()
+		if err != nil {
+			return mcp.NewToolResultError(err.Error()), nil
 		}
 
 		note := model.Note{
@@ -116,19 +95,15 @@ func noteCreateHandler(a *app.App) server.ToolHandlerFunc {
 		note.ID = id
 		a.IndexNote(note)
 
-		if autoRemoved != "" {
-			a.RemoveNoteFromIndex(autoRemoved)
-		}
-
 		result := map[string]any{
 			"id":           id,
 			"title":        title,
 			"created_at":   note.CreatedAt.Format(time.RFC3339),
 			"auto_removed": nil,
 		}
-		if autoRemoved != "" {
-			result["auto_removed"] = autoRemoved
-			if autoRemovedUncurated {
+		if removed != nil {
+			result["auto_removed"] = removed.ID
+			if removed.Uncurated {
 				result["auto_removed_uncurated"] = true
 			}
 		}
@@ -235,6 +210,12 @@ func noteUpdateHandler(a *app.App) server.ToolHandlerFunc {
 
 		if content == nil && meta == nil {
 			return mcp.NewToolResultError("nothing to update"), nil
+		}
+
+		if content != nil {
+			if err := a.ValidateNoteContent(*content); err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
 		}
 
 		if err := a.Vault.UpdateNote(id, content, meta); err != nil {

@@ -113,6 +113,7 @@ func newVaultStatusCmd() *cobra.Command {
 			fmt.Fprintf(cmd.OutOrStdout(), "  notes.max_count              %d\n", a.Config.Notes.MaxCount)
 			fmt.Fprintf(cmd.OutOrStdout(), "  notes.default_list_limit     %d\n", a.Config.Notes.DefaultListLimit)
 			fmt.Fprintf(cmd.OutOrStdout(), "  notes.summary_max_tokens     %d\n", a.Config.Notes.SummaryMaxTokens)
+			fmt.Fprintf(cmd.OutOrStdout(), "  notes.max_content_tokens     %d\n", a.Config.Notes.MaxContentTokens)
 			fmt.Fprintf(cmd.OutOrStdout(), "  pages.max_content_tokens     %d\n", a.Config.Pages.MaxContentTokens)
 			fmt.Fprintf(cmd.OutOrStdout(), "  curate.max_notes_per_run     %d\n", a.Config.Curate.MaxNotesPerRun)
 			fmt.Fprintf(cmd.OutOrStdout(), "  search.default_limit         %d\n", a.Config.Search.DefaultLimit)

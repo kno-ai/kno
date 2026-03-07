@@ -67,6 +67,12 @@ func pageCreateHandler(a *app.App) server.ToolHandlerFunc {
 		content := req.GetString("content", "")
 		meta := extractMeta(req.GetArguments(), "meta")
 
+		if content != "" {
+			if err := a.ValidatePageContent(content); err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+		}
+
 		page := model.Page{
 			Name:      name,
 			CreatedAt: time.Now(),
@@ -167,6 +173,12 @@ func pageUpdateHandler(a *app.App) server.ToolHandlerFunc {
 
 		if content == nil && meta == nil {
 			return mcp.NewToolResultError("nothing to update"), nil
+		}
+
+		if content != nil {
+			if err := a.ValidatePageContent(*content); err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
 		}
 
 		if err := a.Vault.UpdatePage(id, content, meta); err != nil {

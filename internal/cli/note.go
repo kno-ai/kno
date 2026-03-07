@@ -63,39 +63,13 @@ func newNoteCreateCmd() *cobra.Command {
 				return err
 			}
 
-			// Check capacity and auto-remove if needed.
-			count, err := a.Vault.CountNotes()
-			if err != nil {
+			if err := a.ValidateNoteContent(string(content)); err != nil {
 				return err
 			}
 
-			var autoRemoved string
-			var autoRemovedTitle string
-			var autoRemovedUncurated bool
-			if count >= a.Config.Notes.MaxCount {
-				oldest, err := a.Vault.OldestCuratedNoteID()
-				if err != nil {
-					return err
-				}
-				if oldest == "" {
-					// No curated notes — fall back to oldest note overall
-					oldest, err = a.Vault.OldestNoteID()
-					if err != nil {
-						return err
-					}
-					if oldest == "" {
-						return fmt.Errorf("vault at capacity (%d notes) with nothing to remove", a.Config.Notes.MaxCount)
-					}
-					autoRemovedUncurated = true
-				}
-				if rm, err := a.Vault.ReadNoteMeta(oldest); err == nil {
-					autoRemovedTitle = rm.Title
-				}
-				if err := a.Vault.DeleteNote(oldest); err != nil {
-					return fmt.Errorf("auto-removing note: %w", err)
-				}
-				a.RemoveNoteFromIndex(oldest)
-				autoRemoved = oldest
+			removed, err := a.AutoRemoveOldestNote()
+			if err != nil {
+				return err
 			}
 
 			now := time.Now()
@@ -118,24 +92,27 @@ func newNoteCreateCmd() *cobra.Command {
 					"id":           id,
 					"title":        title,
 					"created_at":   now.Format(time.RFC3339),
-					"auto_removed": nilIfEmpty(autoRemoved),
+					"auto_removed": nil,
 				}
-				if autoRemovedUncurated {
-					out["auto_removed_uncurated"] = true
+				if removed != nil {
+					out["auto_removed"] = removed.ID
+					if removed.Uncurated {
+						out["auto_removed_uncurated"] = true
+					}
 				}
 				return printJSON(cmd.OutOrStdout(), out)
 			}
 
 			fmt.Fprintf(cmd.OutOrStdout(), "Created: %s  [%s]\n", title, id)
-			if autoRemoved != "" {
-				displayTitle := autoRemovedTitle
+			if removed != nil {
+				displayTitle := removed.Title
 				if displayTitle == "" {
-					displayTitle = autoRemoved
+					displayTitle = removed.ID
 				}
-				if autoRemovedUncurated {
-					fmt.Fprintf(cmd.ErrOrStderr(), "Removed: %s  [%s]  (oldest — UNCURATED, knowledge may be lost. Run /kno.curate)\n", displayTitle, autoRemoved)
+				if removed.Uncurated {
+					fmt.Fprintf(cmd.ErrOrStderr(), "Removed: %s  [%s]  (oldest — UNCURATED, knowledge may be lost. Run /kno.curate)\n", displayTitle, removed.ID)
 				} else {
-					fmt.Fprintf(cmd.ErrOrStderr(), "Removed: %s  [%s]  (oldest curated — curate backlog reminder)\n", displayTitle, autoRemoved)
+					fmt.Fprintf(cmd.ErrOrStderr(), "Removed: %s  [%s]  (oldest curated — curate backlog reminder)\n", displayTitle, removed.ID)
 				}
 			}
 			return nil
@@ -348,6 +325,12 @@ func newNoteUpdateCmd() *cobra.Command {
 
 			if content == nil && meta == nil {
 				return fmt.Errorf("nothing to update; provide content on stdin or --meta flags")
+			}
+
+			if content != nil {
+				if err := a.ValidateNoteContent(*content); err != nil {
+					return err
+				}
 			}
 
 			id := args[0]

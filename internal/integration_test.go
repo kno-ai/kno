@@ -396,8 +396,11 @@ func TestIntegration_Config(t *testing.T) {
 	if loaded.Notes.MaxCount != 500 {
 		t.Errorf("MaxCount = %d", loaded.Notes.MaxCount)
 	}
+	if loaded.Notes.MaxContentTokens != 3000 {
+		t.Errorf("Notes.MaxContentTokens = %d", loaded.Notes.MaxContentTokens)
+	}
 	if loaded.Pages.MaxContentTokens != 12000 {
-		t.Errorf("MaxContentTokens = %d", loaded.Pages.MaxContentTokens)
+		t.Errorf("Pages.MaxContentTokens = %d", loaded.Pages.MaxContentTokens)
 	}
 }
 

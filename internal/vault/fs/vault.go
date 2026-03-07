@@ -135,6 +135,7 @@ func (v *Vault) UpdateNote(id string, content *string, meta model.MetaMap) error
 			existing.Metadata = make(model.MetaMap)
 		}
 		existing.Metadata = existing.Metadata.Merge(meta)
+		existing.Metadata.Deduplicate()
 	}
 
 	return writeJSON(filepath.Join(dir, "meta.json"), existing)
@@ -352,6 +353,7 @@ func (v *Vault) UpdatePage(id string, content *string, meta model.MetaMap) error
 			existing.Metadata = make(model.MetaMap)
 		}
 		existing.Metadata = existing.Metadata.Merge(meta)
+		existing.Metadata.Deduplicate()
 	}
 
 	return writeJSON(metaPath, existing)
