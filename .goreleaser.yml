@@ -33,6 +33,7 @@ brews:
   - repository:
       owner: kno-ai
       name: homebrew-tap
+      directory: Formula
       token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
     homepage: https://github.com/kno-ai/kno
     description: "A knowledge vault for your AI conversations"
