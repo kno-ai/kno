@@ -224,6 +224,49 @@ page, the raw session can safely be recycled.
 
 ---
 
+## Vault location
+
+By default kno creates your vault at `~/kno`. But the vault is just a
+directory of plain files — markdown, TOML config, and a search index. You
+can put it anywhere.
+
+### Why move your vault?
+
+- **Obsidian / other editors.** Place your vault inside an Obsidian vault
+  and your pages and sessions become browsable, searchable, and linkable
+  alongside your other notes. kno writes standard markdown — no proprietary
+  format.
+- **Sync.** Put your vault in a synced folder (iCloud, Dropbox, Syncthing)
+  and your knowledge follows you across machines. kno doesn't manage sync —
+  it just reads and writes files, so any sync tool works.
+- **Backup.** A vault in your existing backup path gets backed up
+  automatically.
+- **Organization.** Keep your vault next to related projects or notes
+  instead of buried in your home directory.
+
+### Moving an existing vault
+
+```bash
+# Move the directory
+mv ~/kno ~/obsidian-vault/kno
+
+# Re-run setup to update the MCP registration
+kno setup --vault ~/obsidian-vault/kno
+
+# Restart Claude Desktop
+```
+
+Setup detects the existing vault and preserves your data — it only updates
+the MCP registration so Claude Desktop points to the new location.
+
+### Creating a new vault in a custom location
+
+```bash
+kno setup --vault ~/obsidian-vault/kno
+```
+
+---
+
 ## Multiple vaults
 
 If you want complete separation between work and personal knowledge — for
