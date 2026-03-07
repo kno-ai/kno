@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.5.0](https://github.com/kno-ai/kno/compare/v0.4.0...v0.5.0) (2026-03-07)
+
+
+### Features
+
+* add page rename with file and reference updates ([993201b](https://github.com/kno-ai/kno/commit/993201b8f34b5d15b5ba0822a6d7548b0f016705))
+* flatten page storage for Obsidian browsability ([e5250d7](https://github.com/kno-ai/kno/commit/e5250d7dd3e3f581e1a6e718b9fc514e829870b8))
+* readable note IDs, doc consistency pass, remove personal references ([dbb059c](https://github.com/kno-ai/kno/commit/dbb059c341e0d08959d517fa8aaba805202e857e))
+
+
+### Bug Fixes
+
+* place Homebrew formula in Formula/ directory ([338e579](https://github.com/kno-ai/kno/commit/338e579575ac7a826b25c178bd1c2f9e5cdd245b))
+
 ## [0.4.0](https://github.com/kno-ai/kno/compare/v0.3.0...v0.4.0) (2026-03-07)
 
 
