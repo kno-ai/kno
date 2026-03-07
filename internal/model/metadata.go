@@ -27,6 +27,34 @@ func (m MetaMap) Add(key, value string) {
 	m[key] = append(m[key], value)
 }
 
+// AddUnique appends a value to a key only if it's not already present.
+func (m MetaMap) AddUnique(key, value string) {
+	for _, v := range m[key] {
+		if v == value {
+			return
+		}
+	}
+	m[key] = append(m[key], value)
+}
+
+// Deduplicate removes duplicate values from all multi-value keys.
+func (m MetaMap) Deduplicate() {
+	for k, vs := range m {
+		if len(vs) <= 1 {
+			continue
+		}
+		seen := make(map[string]bool, len(vs))
+		unique := vs[:0]
+		for _, v := range vs {
+			if !seen[v] {
+				seen[v] = true
+				unique = append(unique, v)
+			}
+		}
+		m[k] = unique
+	}
+}
+
 // Has returns true if the key exists.
 func (m MetaMap) Has(key string) bool {
 	_, ok := m[key]

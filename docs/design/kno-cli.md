@@ -848,6 +848,7 @@ Config:
   notes.max_count           500
   notes.default_list_limit   50
   notes.summary_max_tokens  100
+  notes.max_content_tokens  3000
   pages.max_content_tokens   12000
   curate.max_notes_per_run  50
   search.default_limit          10
@@ -885,7 +886,8 @@ Config:
     "notes": {
       "max_count": 500,
       "default_list_limit": 50,
-      "summary_max_tokens": 100
+      "summary_max_tokens": 100,
+      "max_content_tokens": 3000
     },
     "pages": {
       "max_content_tokens": 12000
@@ -935,19 +937,14 @@ Done.
 [notes]
 max_count = 500                  # vault capacity; oldest curated removed first
 default_list_limit = 50          # default for kno note list
-summary_max_tokens = 100         # target length for note summaries
+summary_max_tokens = 100         # hint to skill: target summary length
+max_content_tokens = 3000        # hard limit on note content (~12KB)
 
 [pages]
-max_content_tokens = 12000        # soft cap on page document size; content
-                                 # exceeding this limit is truncated with a
-                                 # warning — never a hard failure
+max_content_tokens = 12000        # hard limit on page content (~48KB)
 
 [curate]
-max_notes_per_run = 50        # max notes processed in a single curate
-                                 # pass. Set high enough to cover typical
-                                 # backlogs in one run. If backlog exceeds
-                                 # this limit, curate reports how many remain
-                                 # and a follow-up run can be prompted.
+max_notes_per_run = 50        # max notes processed in a single curate pass
 
 [search]
 default_limit = 10                # default result count for all search commands
@@ -959,7 +956,8 @@ within default limits always knows the upper bound of what it will receive.
 Key behaviors:
 - Exceeding `notes.max_count` at create time removes the oldest curated
   note. If none exist, the oldest note is removed regardless of status.
-- Exceeding `pages.max_content_tokens` truncates with a warning — never
-  a hard failure.
+- Exceeding `notes.max_content_tokens` or `pages.max_content_tokens`
+  rejects the write with an error. Content limits are enforced on both
+  create and update.
 - Exceeding `curate.max_notes_per_run` processes up to the limit and
   reports how many notes remain for a follow-up run.

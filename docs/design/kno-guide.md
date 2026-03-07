@@ -454,9 +454,10 @@ kno --vault ~/kno-work vault status
 max_count = 500                  # vault capacity
 default_list_limit = 50
 summary_max_tokens = 100         # hint to skill: target summary length
+max_content_tokens = 3000        # hard limit on note content size
 
 [pages]
-max_content_tokens = 12000        # soft cap; content truncated with warning
+max_content_tokens = 12000        # hard limit on page content size
 
 [curate]
 max_notes_per_run = 50        # max sessions processed per curate run

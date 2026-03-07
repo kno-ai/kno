@@ -19,6 +19,7 @@ type NotesConfig struct {
 	MaxCount         int `toml:"max_count" json:"max_count"`
 	DefaultListLimit int `toml:"default_list_limit" json:"default_list_limit"`
 	SummaryMaxTokens int `toml:"summary_max_tokens" json:"summary_max_tokens"`
+	MaxContentTokens int `toml:"max_content_tokens" json:"max_content_tokens"`
 }
 
 type PagesConfig struct {
@@ -39,6 +40,7 @@ func DefaultConfig() Config {
 			MaxCount:         500,
 			DefaultListLimit: 50,
 			SummaryMaxTokens: 100,
+			MaxContentTokens: 3000,
 		},
 		Pages: PagesConfig{
 			MaxContentTokens: 12000,
@@ -105,6 +107,9 @@ func applyDefaults(cfg *Config) {
 	}
 	if cfg.Notes.SummaryMaxTokens == 0 {
 		cfg.Notes.SummaryMaxTokens = d.Notes.SummaryMaxTokens
+	}
+	if cfg.Notes.MaxContentTokens == 0 {
+		cfg.Notes.MaxContentTokens = d.Notes.MaxContentTokens
 	}
 	if cfg.Pages.MaxContentTokens == 0 {
 		cfg.Pages.MaxContentTokens = d.Pages.MaxContentTokens
