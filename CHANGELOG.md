@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.6.0](https://github.com/kno-ai/kno/compare/v0.5.0...v0.6.0) (2026-03-07)
+
+
+### ⚠ BREAKING CHANGES
+
+* Metadata fields renamed (distilled_at → curated_at, distilled_into → curated_into, last_distilled_at → last_curated_at). Config section renamed ([distill] → [curate]). Skills renamed (save → capture, distill → curate).
+
+### Features
+
+* rename knowledge loop to capture/curate/load, flatten CLI, add delete tools ([61e8528](https://github.com/kno-ai/kno/commit/61e852821edd3fc8c2b942db24785853ef0d6917))
+
+
+### Bug Fixes
+
+* use manifest mode for release-please to respect bump-minor-pre-major ([13eb73c](https://github.com/kno-ai/kno/commit/13eb73c87decad3ea4f45509a4ccbf7127e1ef6e))
+
 ## [0.5.0](https://github.com/kno-ai/kno/compare/v0.4.0...v0.5.0) (2026-03-07)
 
 
