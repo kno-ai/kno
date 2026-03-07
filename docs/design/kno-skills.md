@@ -99,7 +99,10 @@ it takes is the entire foundation of the knowledge loop.
 **How it works**
 
 The skill reviews the conversation, proposes a title, summary, and tags,
-then asks you to confirm before writing anything.
+then asks you to confirm before writing anything. Tags are the primary
+signal that load and distill use to match sessions to pages and queries
+— the skill checks existing tags from recent sessions to suggest
+consistent tagging.
 
 ```
 /kno.save
@@ -155,12 +158,12 @@ Noted. You now have 18 undistilled notes.
 Consider running /kno.distill to compress them into your pages.
 ```
 
-If several notes share a theme but no page exists for it, the skill
-may suggest creating one:
+If several notes share tags but no page exists for them, the skill
+suggests creating one:
 
 ```
-You've noted 4 sessions related to RDS and database performance with
-no matching page. Would you like to create one before we distill?
+You've saved 4 sessions tagged "rds" and "database-performance" with
+no matching page. Want to create one?
 ```
 
 ---
@@ -206,10 +209,12 @@ Distill all, or start with one?
 ```
 
 In both modes, the skill works the same way per page: it scans all
-undistilled notes and decides which are relevant to that page.
-"Distill all" cycles through every page in turn. "Start with one"
-does the same scan for that page only — the rest of the notes stay
-undistilled until the next run.
+undistilled notes and matches them to pages using tags and content.
+Sessions tagged "aws" or "rds" match an AWS Infrastructure page;
+sessions tagged "payments" match Payment Processing. Tag overlap is
+the primary relevance signal. "Distill all" cycles through every page
+in turn. "Start with one" does the same scan for that page only — the
+rest of the notes stay undistilled until the next run.
 
 For each page, the skill synthesizes the update from the notes it
 found relevant, shows you what changed, and asks for confirmation before
@@ -303,7 +308,7 @@ Found:
     Payment Processing  — last distilled 2 weeks ago
     "...connection pool tuning, retry logic, ACH return handling..."
 
-  Recent notes (2, undistilled):
+  Recent sessions (2, matched by tags: payments, mysql, connection-pool):
     ACH return handling — error retry logic         3 days ago
     MySQL connection pool — max_connections         1 week ago
 
@@ -328,8 +333,11 @@ The skill searches immediately and presents what it finds.
 
 The skill balances relevance against context budget. It searches pages
 first (distilled, durable knowledge), then recent undistilled notes
-(fresh, not yet integrated). It reads summaries to decide what's worth
-loading in full before fetching the content.
+(fresh, not yet integrated). It uses tag overlap as a primary relevance
+signal — sessions tagged with terms matching your query or a page's
+theme rank higher than those with only generic text matches. It reads
+summaries and tags to decide what's worth loading in full before
+fetching the content.
 
 ---
 

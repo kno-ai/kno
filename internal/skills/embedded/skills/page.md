@@ -54,7 +54,9 @@ folded in."
 
 After creating a page, check for undistilled sessions that might be relevant.
 Call `kno_note_list` with `filter: {"distilled_at": null}` and review the
-summaries and tags.
+summaries and tags. Tags are a strong signal — if the new page is
+"AWS Infrastructure" and sessions are tagged "aws", "rds", or "ecs",
+they're almost certainly relevant.
 
 If there are relevant undistilled sessions, offer to distill them now:
 "I found N sessions that look relevant to this page. Want me to distill them

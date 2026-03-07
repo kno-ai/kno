@@ -30,18 +30,29 @@ to impress.
 3. Work backwards from outcomes to identify the reasoning, tradeoffs, and
    alternatives considered.
 
-4. Call `kno_vault_status` to see existing pages and vault state. Use page
-   names to inform your tag suggestions — if a page named "AWS Infrastructure"
-   exists and this session involved RDS, include "aws." Hold onto the status
-   response for the post-save nudge.
+4. Call `kno_vault_status` to see existing pages and vault state. Also call
+   `kno_note_list({"limit": 10})` to see recent sessions and their tags.
+   Hold onto both responses — you'll use them for tag suggestions and
+   the post-save nudge.
 
 5. Generate a short, descriptive title (e.g. "SQS retry strategy",
    "React auth flow with refresh tokens").
 
 6. Write a concise summary (1-2 sentences) for the `summary` metadata field.
 
-7. Identify relevant tags, informed by existing pages and conversation content.
-   If the user included #hashtags in their message, use those as tags.
+7. **Choose tags carefully.** Tags are the primary signal that load and distill
+   use to match sessions to pages and queries. Good tags make sessions
+   findable; inconsistent tags make them invisible.
+   - If the user included #hashtags in their message, use those.
+   - Check existing tags from recent sessions (step 4) and reuse them where
+     they fit. If prior sessions used "aws", don't introduce "amazon" or "AWS"
+     — use "aws" for consistency.
+   - Use page names to inform tags — if a page named "AWS Infrastructure"
+     exists and this session involved RDS, include "aws".
+   - Prefer specific over vague: "rds", "connection-pool" over "databases",
+     "infrastructure".
+   - 2-5 tags is the sweet spot. One tag is too few to be useful; ten tags
+     dilute relevance.
 
 8. Present the proposal to the user: title, summary, tags, and the structured
    content.
@@ -135,8 +146,10 @@ was removed to make room, and that running `/kno.distill` would protect
 their knowledge by folding it into pages before it ages out.
 
 **Page suggestions:** Don't suggest creating a page until you can see a
-real pattern — 3+ sessions on a similar theme. One or two sessions isn't a
-trend. Let the user build up history first.
+real pattern — 3+ sessions sharing tags with no matching page. Tags make
+this concrete: if 4 sessions are all tagged "aws" or "rds" and no page
+covers that area, that's a clear signal. One or two sessions isn't a trend.
+Let the user build up history first.
 
 Keep post-save suggestions brief. One or two lines, not a lecture.
 

@@ -51,7 +51,9 @@ Open Claude Desktop, have a conversation, then at the end:
 ```
 
 kno reviews the conversation, proposes a title, summary, and tags, and
-asks you to confirm. That's it — the session is saved.
+asks you to confirm. Tags matter — they're how load and distill match
+sessions to your pages and queries. Use #hashtags in your message to
+steer them, or edit the proposal before confirming.
 
 **4. Create a page**
 
@@ -75,11 +77,13 @@ that are relevant — so your page starts with real knowledge, not empty.
 /kno.distill
 ```
 
-kno scans your undistilled sessions, finds what's relevant to each page,
-synthesizes an updated document, shows you what changed, and asks for
-confirmation before writing. The result is a maintained page document
-that represents everything you've learned — in your own words, organized
-the way you think about it.
+kno scans your undistilled sessions, matches them to pages by tags and
+content, synthesizes an updated document, shows you what changed, and asks
+for confirmation before writing. Sessions tagged "aws" or "rds" match
+your AWS Infrastructure page; sessions tagged "payments" match Payment
+Processing. The result is a maintained page document that represents
+everything you've learned — in your own words, organized the way you
+think about it.
 
 **6. Load knowledge into your next session**
 
@@ -156,7 +160,10 @@ What are you working on today?
 
 Found:
   Pages (1):    Payment Processing  — last distilled 2 weeks ago
-  Sessions (2):  ACH return handling (3 days ago)
+                "...connection pool tuning, retry logic, ACH return handling..."
+
+  Sessions (2, matched by tags: payments, mysql, connection-pool):
+                 ACH return handling (3 days ago)
                  MySQL connection pool (1 week ago)
 
 Load all 3? [yes / pick / skip]
@@ -330,6 +337,39 @@ you're in by which command you type.
 Each vault directory is a plain folder. Sync and encryption are handled
 outside kno — point a sync tool or encryption layer at the directory and
 kno doesn't need to know about it.
+
+---
+
+## Tags
+
+Tags are the connective tissue of your vault. When you save a session,
+kno proposes tags based on the conversation. When you load or distill,
+kno uses those tags to match sessions to your pages and queries. Good
+tags make sessions findable; inconsistent tags make them invisible.
+
+**Use #hashtags to steer tags.** When you run `/kno.save`, any #hashtags
+in your message become tags automatically:
+
+```
+/kno.save — #aws #rds, the parameter group fix was the big lesson
+```
+
+**Be consistent.** kno shows you existing tags from recent sessions so
+you can reuse them. If prior sessions used "aws", stick with "aws" —
+don't introduce "amazon" or "AWS". Consistent tags mean better matching
+across load, distill, and page suggestions.
+
+**Be specific.** "rds" and "connection-pool" are more useful than
+"databases" and "infrastructure." Specific tags create tight clusters
+that distill can match confidently.
+
+**2-5 tags per session.** One tag is too few to be useful. Ten tags
+dilute relevance. Aim for the tags you'd use to find this session
+six months from now.
+
+**Tags drive page suggestions.** When kno notices 3+ sessions sharing
+tags with no matching page, it suggests creating one. Good tags make
+this signal clear; vague tags make it noisy.
 
 ---
 
