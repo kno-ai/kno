@@ -20,6 +20,7 @@ func newSetupCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "setup",
 		Short: "Initialize a kno vault",
+		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			vaultPath := resolveVault(cmd)
 			if vaultPath == "" {
