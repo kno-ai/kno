@@ -2,6 +2,7 @@ package cli
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -46,16 +47,18 @@ func knownMCPClients() []mcpClient {
 }
 
 // registerMCPClients registers kno with the given MCP clients.
-// If clients is nil, registers with all detected clients.
-// Returns the list of clients that were successfully registered.
-func registerMCPClients(clients []mcpClient, vaultPath, serverName string) []mcpClient {
+// Returns the list of clients that were successfully registered and any errors.
+func registerMCPClients(clients []mcpClient, vaultPath, serverName string) ([]mcpClient, []error) {
 	var registered []mcpClient
+	var errs []error
 	for _, c := range clients {
-		if err := registerMCPAt(c.ConfigPath, vaultPath, serverName); err == nil {
+		if err := registerMCPAt(c.ConfigPath, vaultPath, serverName); err != nil {
+			errs = append(errs, fmt.Errorf("%s: %w", c.Name, err))
+		} else {
 			registered = append(registered, c)
 		}
 	}
-	return registered
+	return registered, errs
 }
 
 func registerMCPAt(configPath, vaultPath, serverName string) error {
@@ -97,5 +100,6 @@ func registerMCPAt(configPath, vaultPath, serverName string) error {
 		return err
 	}
 
+	out = append(out, '\n')
 	return os.WriteFile(configPath, out, 0o644)
 }

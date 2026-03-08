@@ -112,13 +112,16 @@ func newSetupCmd() *cobra.Command {
 					clients = filtered
 				}
 
-				registered := registerMCPClients(clients, vaultPath, serverName)
+				registered, regErrors := registerMCPClients(clients, vaultPath, serverName)
+				for _, e := range regErrors {
+					fmt.Fprintf(cmd.ErrOrStderr(), "⚠  MCP registration failed: %v\n", e)
+				}
 				if len(registered) > 0 {
 					for _, c := range registered {
 						fmt.Fprintf(cmd.OutOrStdout(), "✓  MCP server %q registered with %s\n", serverName, c.Name)
 					}
 					fmt.Fprintf(cmd.OutOrStdout(), "\nRestart your client, then enter /kno in a chat to connect.\n")
-				} else {
+				} else if len(regErrors) == 0 {
 					fmt.Fprintln(cmd.OutOrStdout(), "—  No supported clients found — skipping MCP registration")
 					fmt.Fprintln(cmd.OutOrStdout(), "\nTo register manually, add the following to your client's MCP config:")
 					fmt.Fprintln(cmd.OutOrStdout())
