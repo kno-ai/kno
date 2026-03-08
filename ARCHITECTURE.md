@@ -153,8 +153,11 @@ awareness settings.
 This is the model for spaces (e.g. work vs. personal). Each vault has its
 own MCP registration. The `--name` value becomes the skill prefix: a vault
 named `kno-personal` exposes `/kno-personal.start`, `/kno-personal.capture`,
-`/kno-personal.load`, etc. Each vault's awareness operates independently. Separation is enforced
-at the filesystem level — vaults have no knowledge of each other. Sync
+`/kno-personal.load`, etc. The separator between server name and skill name
+varies by client — Claude Desktop uses a dot (`/kno.start`), Claude Code
+uses a colon (`/kno:start`). Each vault's awareness operates independently.
+Separation is enforced at the filesystem level — vaults have no knowledge
+of each other. Sync
 and encryption are handled outside kno, at the directory level.
 
 ---

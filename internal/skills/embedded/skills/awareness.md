@@ -239,3 +239,9 @@ The user can invoke `/kno.start`, `/kno.capture`, `/kno.load`, `/kno.curate`,
 `/kno.page`, and `/kno.status` at any time for explicit control. These
 activate detailed skill prompts. Your awareness nudges complement them —
 they don't replace them.
+
+**Naming varies by client.** Claude Desktop uses a dot separator
+(`/kno.start`). Claude Code uses a colon (`/kno:start`). When referencing
+slash commands in conversation, match whatever separator the user's client
+uses — if you see the user invoke `/kno:capture`, use `:` in your
+responses. If you see `/kno.capture`, use `.`.

@@ -66,7 +66,9 @@ go build -o /tmp/kno ./cmd/kno
 # Set up a test vault with MCP registration (registers with all detected clients)
 /tmp/kno setup --vault /tmp/kno-dev --name kno-dev
 
-# Restart your client — /kno-dev.start, /kno-dev.capture, etc. will appear
+# Restart your client — slash commands will appear
+# Claude Desktop: /kno-dev.start, /kno-dev.capture, etc.
+# Claude Code: /kno-dev:start, /kno-dev:capture, etc.
 ```
 
 The MCP registration points your client at `/tmp/kno` with
@@ -75,7 +77,7 @@ The MCP registration points your client at `/tmp/kno` with
 To remove the test registration, delete the `kno-dev` entry from your
 client config:
 - Claude Desktop: `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS)
-- Claude Code: `~/.claude/settings.json`
+- Claude Code: `~/.claude.json`
 
 ## Run the MCP server manually
 
@@ -164,7 +166,7 @@ kno uses different language at different layers:
 |---|---|---|---|
 | CLI / data model | note, page | create, list, show, update, search | `kno note create` |
 | MCP tools | note, page | create, list, show, update, search | `kno_note_create` |
-| MCP prompts / skills | session, page | start, capture, curate, load | `/kno.start`, `/kno.capture` |
+| MCP prompts / skills | session, page | start, capture, curate, load | `/kno.start` (Desktop), `/kno:start` (Code) |
 
 - **CLI and MCP tools** use "note" — the data resource in the vault.
 - **Skills and user-facing text** use "capture" (verb) and "session" (noun) — what the user experiences.

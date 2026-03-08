@@ -39,6 +39,10 @@ Start a conversation and type `/kno.start`. kno checks your vault and shows
 your pages — if you have any, it offers to load relevant context. Say yes
 or just start working. That's the only step you need to remember.
 
+> **Claude Code users:** Claude Code uses a colon separator instead of a
+> dot — type `/kno:start` instead of `/kno.start`. The same applies to
+> all kno commands: `/kno:capture`, `/kno:curate`, `/kno:load`, etc.
+
 From there, kno stays attentive. When something worth keeping happens — a
 decision, a debugging insight, a design that settled — kno notices and
 offers:
@@ -178,7 +182,7 @@ still work — you're just driving manually.
 Most users won't need to change this. The default balances being helpful
 without being noisy.
 
-## Developer workflows
+## Developer workflows (Claude Code)
 
 kno works especially well in coding sessions. When it detects a git
 repository (via Claude Code), everything you save gets tagged with the

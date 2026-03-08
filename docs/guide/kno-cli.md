@@ -91,8 +91,10 @@ with any detected clients.
     --name <name>           MCP server name registered with clients.
                             Default: kno. Use a distinct name for each
                             additional vault (e.g. kno-personal). The name
-                            becomes the skill prefix:
-                            /kno-personal.start, /kno-personal.capture, etc.
+                            becomes the skill prefix. The separator varies
+                            by client: Claude Desktop uses a dot
+                            (/kno-personal.start), Claude Code uses a colon
+                            (/kno-personal:start).
 
     --vault <path>          Vault directory path. Default: ~/kno for
                             the first vault. Use a distinct path for each
@@ -157,7 +159,7 @@ To register manually, add the following to your client's MCP config:
 
 - Claude Desktop is registered by writing to
   `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS).
-  Claude Code is registered by writing to `~/.claude/settings.json`.
+  Claude Code is registered by writing to `~/.claude.json`.
 - Clients must be restarted after setup for the MCP server to activate
 - Running `kno setup` a second time with a different `--name` and `--vault`
   creates an independent vault without affecting existing ones. Each vault

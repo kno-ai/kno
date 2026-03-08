@@ -82,9 +82,10 @@ kno setup
 ```
 
 Restart your client (Claude Desktop or Claude Code). Enter `/kno.start` in a
-chat to connect — kno shows your pages and offers to bring in relevant
-context. From there, it stays attentive: noticing when something's worth
-keeping and offering to load what you already know.
+chat to connect (in Claude Code, use `/kno:start`) — kno shows your pages
+and offers to bring in relevant context. From there, it stays attentive:
+noticing when something's worth keeping and offering to load what you
+already know.
 
 See the [User Guide](guide/kno-guide) for the full walkthrough.
 

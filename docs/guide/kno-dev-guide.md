@@ -43,6 +43,10 @@ access, which is how kno detects `.git` and reads the `.kno` config
 file. Claude Desktop gets the standard kno experience without project
 detection.
 
+> **Slash command naming:** Claude Code uses a colon separator for
+> commands — `/kno:start`, `/kno:capture`, etc. — instead of the dot
+> used by Claude Desktop (`/kno.start`). The commands work the same way.
+
 ---
 
 ## What changes in dev context

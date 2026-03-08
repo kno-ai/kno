@@ -11,6 +11,11 @@ nudge is identical to one initiated by `/kno.capture` — same structure,
 same metadata, same confirmation step. The trigger changes, the execution
 path does not.
 
+> **Naming varies by client.** Claude Desktop uses a dot separator
+> (`/kno.capture`). Claude Code uses a colon (`/kno:capture`). This
+> documentation uses the dot convention. The behavior is identical
+> regardless of separator.
+
 ---
 
 ## Design Principles

@@ -33,7 +33,7 @@ func knownMCPClients() []mcpClient {
 	// Claude Code — cross-platform
 	clients = append(clients, mcpClient{
 		Name:       "claude-code",
-		ConfigPath: filepath.Join(home, ".claude", "settings.local.json"),
+		ConfigPath: filepath.Join(home, ".claude.json"),
 	})
 
 	// Filter to clients whose parent directory exists.
@@ -86,8 +86,10 @@ func registerMCPAt(configPath, vaultPath, serverName string) error {
 	}
 
 	servers[serverName] = map[string]any{
+		"type":    "stdio",
 		"command": knoBin,
 		"args":    []string{"--vault", vaultPath, "mcp"},
+		"env":     map[string]string{},
 	}
 	clientConfig["mcpServers"] = servers
 
