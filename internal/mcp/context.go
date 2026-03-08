@@ -12,7 +12,7 @@ import (
 // SessionContext holds session-scoped state detected at MCP server init.
 // It is distinct from *app.App which holds vault-scoped state.
 type SessionContext struct {
-	Git        *GitContext         // nil if no .git detected
+	Git        *GitContext        // nil if no .git detected
 	RepoConfig *config.RepoConfig // nil if no .kno file found
 }
 

@@ -45,7 +45,6 @@ func knownMCPClients() []mcpClient {
 	return found
 }
 
-
 // registerMCPClients registers kno with the given MCP clients.
 // If clients is nil, registers with all detected clients.
 // Returns the list of clients that were successfully registered.
