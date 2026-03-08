@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/kno-ai/kno/internal/config"
 	"github.com/kno-ai/kno/internal/vault/fs"
@@ -12,9 +13,10 @@ import (
 
 func newSetupCmd() *cobra.Command {
 	var (
-		name            string
-		noClaudeDesktop bool
-		publishPath     string
+		name        string
+		registerCSV string
+		noRegister  bool
+		publishPath string
 	)
 
 	cmd := &cobra.Command{
@@ -87,18 +89,38 @@ func newSetupCmd() *cobra.Command {
 				}
 			}
 
-			if !noClaudeDesktop {
+			if !noRegister {
 				serverName := "kno"
 				if name != "" {
 					serverName = name
 				}
-				results := registerMCP("", vaultPath, serverName)
-				if len(results) > 0 {
-					fmt.Fprintf(cmd.OutOrStdout(), "✓  MCP server %q registered with Claude Desktop\n", serverName)
-					fmt.Fprintf(cmd.OutOrStdout(), "\nRestart Claude Desktop, then enter /kno in a chat to connect.\n")
+
+				// Determine which clients to register with.
+				clients := knownMCPClients()
+				if registerCSV != "" {
+					// Filter to only the requested clients.
+					requested := parseCSV(registerCSV)
+					var filtered []mcpClient
+					for _, c := range clients {
+						for _, r := range requested {
+							if c.Name == r {
+								filtered = append(filtered, c)
+								break
+							}
+						}
+					}
+					clients = filtered
+				}
+
+				registered := registerMCPClients(clients, vaultPath, serverName)
+				if len(registered) > 0 {
+					for _, c := range registered {
+						fmt.Fprintf(cmd.OutOrStdout(), "✓  MCP server %q registered with %s\n", serverName, c.Name)
+					}
+					fmt.Fprintf(cmd.OutOrStdout(), "\nRestart your client, then enter /kno in a chat to connect.\n")
 				} else {
-					fmt.Fprintln(cmd.OutOrStdout(), "—  Claude Desktop not found — skipping MCP registration")
-					fmt.Fprintln(cmd.OutOrStdout(), "\nTo register manually, add the following to your Claude Desktop config:")
+					fmt.Fprintln(cmd.OutOrStdout(), "—  No supported clients found — skipping MCP registration")
+					fmt.Fprintln(cmd.OutOrStdout(), "\nTo register manually, add the following to your client's MCP config:")
 					fmt.Fprintln(cmd.OutOrStdout())
 					fmt.Fprintln(cmd.OutOrStdout(), "  {")
 					fmt.Fprintln(cmd.OutOrStdout(), "    \"mcpServers\": {")
@@ -127,8 +149,21 @@ func newSetupCmd() *cobra.Command {
 	}
 
 	cmd.Flags().StringVar(&name, "name", "", "MCP server name (default: kno)")
-	cmd.Flags().BoolVar(&noClaudeDesktop, "no-claude-desktop", false, "Skip Claude Desktop MCP registration")
+	cmd.Flags().StringVar(&registerCSV, "register", "", "Register with specific clients only (comma-separated: claude-desktop,claude-code)")
+	cmd.Flags().BoolVar(&noRegister, "no-register", false, "Skip all client MCP registration")
 	cmd.Flags().StringVar(&publishPath, "publish", "", "Publish curated pages to this directory")
 
 	return cmd
+}
+
+// parseCSV splits a comma-separated string into trimmed, non-empty tokens.
+func parseCSV(s string) []string {
+	var out []string
+	for _, part := range strings.Split(s, ",") {
+		part = strings.TrimSpace(part)
+		if part != "" {
+			out = append(out, part)
+		}
+	}
+	return out
 }

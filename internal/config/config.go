@@ -13,7 +13,7 @@ type Config struct {
 	Pages   PagesConfig   `toml:"pages" json:"pages"`
 	Curate  CurateConfig  `toml:"curate" json:"curate"`
 	Search  SearchConfig  `toml:"search" json:"search"`
-	Nudges  NudgesConfig  `toml:"nudges" json:"nudges"`
+	Skill   SkillConfig   `toml:"skill" json:"skill"`
 	Publish PublishConfig `toml:"publish" json:"publish"`
 }
 
@@ -54,8 +54,8 @@ type SearchConfig struct {
 	DefaultLimit int `toml:"default_limit" json:"default_limit"`
 }
 
-type NudgesConfig struct {
-	Level string `toml:"level" json:"level"`
+type SkillConfig struct {
+	NudgeLevel string `toml:"nudge_level" json:"nudge_level"`
 }
 
 // ValidNudgeLevel reports whether level is a recognized nudge setting.
@@ -84,8 +84,8 @@ func DefaultConfig() Config {
 		Search: SearchConfig{
 			DefaultLimit: 10,
 		},
-		Nudges: NudgesConfig{
-			Level: "light",
+		Skill: SkillConfig{
+			NudgeLevel: "light",
 		},
 	}
 }
@@ -156,7 +156,7 @@ func applyDefaults(cfg *Config) {
 	if cfg.Search.DefaultLimit == 0 {
 		cfg.Search.DefaultLimit = d.Search.DefaultLimit
 	}
-	if cfg.Nudges.Level == "" {
-		cfg.Nudges.Level = d.Nudges.Level
+	if cfg.Skill.NudgeLevel == "" {
+		cfg.Skill.NudgeLevel = d.Skill.NudgeLevel
 	}
 }

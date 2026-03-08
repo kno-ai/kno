@@ -152,8 +152,34 @@ to mention. Pick one:
   use `/kno.curate`."
 - **No matching page, early:** "Saved — kno will fold this into a page
   when you curate. Just ask, or use `/kno.curate`."
-- **First capture ever:** "Saved — that's your first one. As you build
-  up more, ask kno to curate them into lasting pages."
+- **First capture ever (no pages):** This is the most important post-save
+  message — it's the user's first experience with kno doing something.
+  Paint a concrete picture of the value, then offer to start a page.
+
+  General context: "Saved — that's your first one. Next time you're
+  working on this topic, kno will offer to load this so you pick up
+  where you left off. Want to start a page for [topic area from tags]?
+  Pages collect related sessions so kno loads them automatically."
+
+  Developer context: "Saved — that's your first [repo_name] capture.
+  Next time you're in this project, kno will surface this context.
+  Want to create a [repo_name] project page? It'll collect decisions,
+  issues, and solutions across sessions."
+
+  If the user says yes, transition to the page creation flow — present
+  the appropriate template (see page skill) and create the page. If they
+  say no, that's fine: "No problem — `/kno.page` whenever you're ready."
+
+- **First capture for this repo (dev context, pages exist for other repos):**
+  "Saved — first capture for [repo_name]. Want to create a project page
+  for it, or keep building notes first?"
+
+- **Notes accumulating for a topic/repo, no page yet:** When 2+ uncurated
+  notes share tags (or share a repo in dev context) and no matching page
+  exists, suggest one: "Saved. You've got N notes on [repo_name or topic]
+  now — want to create a page so kno can load this automatically? Or
+  `/kno.page` later." This fills the gap between first-capture (which
+  offers a page) and established vault (which has pages).
 
 The status line is one or two sentences. Prefer conversational framing
 ("ask kno to curate") and mention the slash command as an alternative.
@@ -202,9 +228,11 @@ preserved long-term — ask kno to curate, or use `/kno.curate`."
 
 **Page suggestions:** If 2+ uncurated sessions share tags with no matching
 page, mention it: "You're building up notes on [tags] — want to give
-them a page? Or use `/kno.page` later." Only suggest when the pattern is
-obvious from the tags alone. Do not propose page names — that's the
-page skill's job.
+them a page? Or use `/kno.page` later." Prioritize clusters that include
+the current capture's tags. Only mention unrelated clusters if the current
+capture has no cluster affinity. Only suggest when the pattern is obvious
+from the tags alone. Do not propose page names — that's the page skill's
+job.
 
 ### Keep it brief
 
@@ -214,6 +242,66 @@ a page would contain, do not editorialize about which notes "belong
 together." The user just finished capturing — they want confirmation,
 not commentary. Prefer conversational offers ("want to curate now?")
 with the slash command as a fallback ("or use `/kno.curate` later").
+
+## Type vocabulary
+
+When capturing, assign a `type` value in the metadata based on the
+conversation content. This helps curate organize notes and awareness
+match them to relevant contexts.
+
+### General types (all contexts)
+
+| `type` | When Applied |
+|--------|-------------|
+| `decision` | A conclusion reached with reasoning — "We'll use X because Y" |
+| `insight` | Something understood that wasn't before |
+| `question` | An open question worth tracking |
+| `reference` | Something to find again |
+| `process` | A how-to, steps, or method that worked |
+
+### Developer types (git context only)
+
+Apply these when `vault_status` includes a `git` field:
+
+| `type` | When Applied |
+|--------|-------------|
+| `decision` | Design or architectural conclusion with rationale. Signal: resolution, not exploration. |
+| `debt` | Known issue, workaround, or deferred improvement. Defaults to `status: open`. |
+| `runbook` | Non-obvious operational knowledge: setup steps, environment config, deployment quirks. |
+| `bug` | Hard problem solved. The solution path is the content, not just the fix. Always `status: resolved`. |
+| `dependency` | Library, version, or dependency choice made with rationale. |
+
+### Status tags (git context)
+
+| `status` | Applied To |
+|----------|-----------|
+| `open` | Default for `debt` at capture |
+| `resolved` | Default for `bug`. Can be applied to `debt` when resolved. |
+
+### Mandatory developer metadata
+
+In a git context, always include `repo` in the metadata with the repo name
+from `vault_status.git.repo_name`. Use lowercase for all tag values by
+convention.
+
+```
+kno_note_create({
+  "title": "descriptive title",
+  "content": "the structured markdown content",
+  "meta": {
+    "tags": ["tag1", "tag2"],
+    "summary": "one-line summary",
+    "type": "decision",
+    "repo": "payments-service"
+  }
+})
+```
+
+Type inference is the hardest part of this spec. When uncertain whether a
+conversation has resolved a decision versus still exploring, err on the
+side of not assigning a type rather than misclassifying. A false positive
+that costs one keypress to dismiss is acceptable; a pattern of
+misclassification is not.
 
 ## Guidelines
 

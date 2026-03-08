@@ -54,7 +54,7 @@ VAULT=$(mktemp -d /tmp/kno-e2e-vault.XXXXXX)
 rm -rf "$VAULT"  # setup expects to create it
 
 echo "Setup"
-assert_contains "setup creates vault" "Vault created" "$KNO" setup --vault "$VAULT" --no-claude-desktop
+assert_contains "setup creates vault" "Vault created" "$KNO" setup --vault "$VAULT" --no-register
 test -f "$VAULT/config.toml" && pass "config.toml exists" || fail "config.toml missing"
 
 # --- Setup --publish ---
@@ -63,7 +63,7 @@ echo "Setup publish"
 SETUP_PUB_VAULT=$(mktemp -d /tmp/kno-e2e-setup-pub.XXXXXX)
 rm -rf "$SETUP_PUB_VAULT"
 SETUP_PUB_DIR=$(mktemp -d /tmp/kno-e2e-setup-pubdir.XXXXXX)
-assert_contains "setup --publish" "Publish target added" "$KNO" setup --vault "$SETUP_PUB_VAULT" --no-claude-desktop --publish "$SETUP_PUB_DIR"
+assert_contains "setup --publish" "Publish target added" "$KNO" setup --vault "$SETUP_PUB_VAULT" --no-register --publish "$SETUP_PUB_DIR"
 grep -q "frontmatter" "$SETUP_PUB_VAULT/config.toml" && pass "publish config written" || fail "publish config missing"
 rm -rf "$SETUP_PUB_VAULT" "$SETUP_PUB_DIR"
 
@@ -296,11 +296,11 @@ echo "Setup idempotency"
 
 IDEM_VAULT=$(mktemp -d /tmp/kno-e2e-idem.XXXXXX)
 rm -rf "$IDEM_VAULT"
-"$KNO" setup --vault "$IDEM_VAULT" --no-claude-desktop >/dev/null 2>&1
+"$KNO" setup --vault "$IDEM_VAULT" --no-register >/dev/null 2>&1
 # Add a note to the vault
 echo "Test note." | "$KNO" --vault "$IDEM_VAULT" note create --title "Before re-setup" >/dev/null 2>&1
 # Run setup again on the same vault
-IDEM_OUT=$("$KNO" setup --vault "$IDEM_VAULT" --no-claude-desktop 2>&1) || true
+IDEM_OUT=$("$KNO" setup --vault "$IDEM_VAULT" --no-register 2>&1) || true
 # Note should still be there
 "$KNO" --vault "$IDEM_VAULT" note list 2>&1 | grep -q "Before re-setup" && pass "setup idempotent preserves data" || fail "setup idempotent lost data"
 rm -rf "$IDEM_VAULT"

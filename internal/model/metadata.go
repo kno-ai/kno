@@ -121,7 +121,7 @@ func (m MetaMap) MatchesFilter(filters map[string]string) bool {
 		}
 		found := false
 		for _, v := range vals {
-			if v == want {
+			if strings.EqualFold(v, want) {
 				found = true
 				break
 			}
@@ -145,6 +145,7 @@ func ParseMetaFlags(pairs []string) (MetaMap, error) {
 		if !ok {
 			return nil, &InvalidFlagError{Flag: "--meta", Value: p, Reason: "expected key=value"}
 		}
+		k = strings.ToLower(k)
 		m.Add(k, v)
 	}
 	return m, nil

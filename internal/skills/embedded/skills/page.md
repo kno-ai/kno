@@ -24,11 +24,22 @@ get out of the way. If they're unsure, offer examples rather than rules.
    ops lessons," you already have what you need. Don't ask questions they've
    already answered.
 
-2. **Guidance:** If the user hasn't specified, ask what the page should focus
-   on and what it can skip. Frame it as one question, not an interrogation:
-   "What should I focus on when updating this page, and is there anything
-   I should skip?" If they give a brief answer, that's fine — you can always refine
-   guidance later.
+2. **Present a template as a starting point.** Rather than asking open-ended
+   questions about guidance, show the user what a page looks like. This
+   reduces friction — they can react to something concrete instead of
+   imagining from scratch.
+
+   **Developer context** (git detected, or user mentions a project/repo):
+   Present the developer template with the repo name filled in. Frame it as:
+   "Here's a starting point for [repo_name] — covers decisions, known issues,
+   setup, and solved problems. Want to use this, tweak it, or start fresh?"
+
+   **General context:** Present the general template. Frame it as:
+   "Here's a starting point — focuses on durable insights, conclusions with
+   reasoning, and open questions. Want to use this, tweak it, or start fresh?"
+
+   If the user wants to customize, ask what to focus on and what to skip.
+   If they accept the template as-is, use it directly.
 
 3. Generate a clear, descriptive name (e.g. "AWS Infrastructure",
    "Auth System Design", "CNC Machine Maintenance").

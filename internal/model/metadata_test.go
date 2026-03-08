@@ -104,6 +104,54 @@ func TestMetaMapMergePreservesUntouched(t *testing.T) {
 	}
 }
 
+func TestParseMetaFlagsLowercaseKeys(t *testing.T) {
+	m, err := ParseMetaFlags([]string{"Type=decision", "STATUS=open"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := m["type"]; !ok {
+		t.Error("expected lowercase key 'type'")
+	}
+	if _, ok := m["status"]; !ok {
+		t.Error("expected lowercase key 'status'")
+	}
+	if m.Get("type") != "decision" {
+		t.Errorf("type = %q, want 'decision'", m.Get("type"))
+	}
+	if m.Get("status") != "open" {
+		t.Errorf("status = %q, want 'open'", m.Get("status"))
+	}
+}
+
+func TestMetaMapMatchesFilterCaseInsensitive(t *testing.T) {
+	m := make(MetaMap)
+	m.Set("status", "active")
+
+	// Filter with uppercase value should match lowercase stored value
+	if !m.MatchesFilter(map[string]string{"status": "Active"}) {
+		t.Error("should match case-insensitively: stored 'active' vs filter 'Active'")
+	}
+
+	// Reverse: uppercase stored, lowercase filter
+	m2 := make(MetaMap)
+	m2.Set("status", "Active")
+	if !m2.MatchesFilter(map[string]string{"status": "active"}) {
+		t.Error("should match case-insensitively: stored 'Active' vs filter 'active'")
+	}
+
+	// "null" sentinel must remain case-sensitive (absent key check)
+	m3 := make(MetaMap)
+	// key is absent, so filtering for "null" should match
+	if !m3.MatchesFilter(map[string]string{"missing_key": "null"}) {
+		t.Error("null sentinel should match absent key")
+	}
+	// key is present, so filtering for "null" should NOT match
+	m3.Set("missing_key", "something")
+	if m3.MatchesFilter(map[string]string{"missing_key": "null"}) {
+		t.Error("null sentinel should not match present key")
+	}
+}
+
 func TestMetaMapMatchesFilterMultiple(t *testing.T) {
 	m := make(MetaMap)
 	m.Set("status", "active")

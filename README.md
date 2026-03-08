@@ -2,14 +2,46 @@
 
 A knowledge vault for your AI conversations.
 
-Your AI conversations are disconnected — each one starts from scratch.
-The debugging breakthrough, the design decision, the config that finally
-worked — none of it carries forward. kno pays attention so you don't
-have to. It notices when something worth preserving happens, offers to
-capture it, and loads relevant context into future sessions automatically.
-Your knowledge compounds across every conversation.
+Your AI conversations reset every session. The insight you reached, the
+decision you worked through, the solution that finally clicked — none of
+it carries forward. kno pays attention so you don't have to. It notices
+when something worth preserving happens and offers to save it. When
+you're revisiting familiar territory, kno offers to bring back what
+you already know. Your knowledge compounds across every
+conversation.
 
-**[Project page](https://kno-ai.github.io/kno/)** — examples, docs, and getting started.
+**[Getting started, examples, and docs →](https://kno-ai.github.io/kno/)**
+
+---
+
+## A conversation with kno
+
+You've just tracked down a tricky issue. Before you move on:
+
+> **kno:** That root cause was non-obvious — want to add it to your vault?
+>
+> **You:** yes
+>
+> **kno:** Here's what I'll save:
+>
+>   Title:    RDS slow query debugging
+>   Summary:  Query planner regression after minor version upgrade.
+>             Fixed by pinning the parameter group.
+>   Tags:     aws, rds, performance
+>
+> Save this? [yes / edit / skip]
+
+Two weeks later, you're back in familiar territory:
+
+> **kno:** You have notes on this — want to load your AWS Infrastructure page?
+>
+> **You:** yes
+>
+> *Session starts with full context from prior work. No re-explaining your setup.*
+
+You decide what matters. kno makes sure you don't lose it.
+
+---
 
 ## Quick start
 
@@ -19,61 +51,100 @@ brew install kno
 kno setup
 ```
 
-Restart Claude Desktop. Enter `/kno` in a chat to connect.
+Restart your client (Claude Desktop or Claude Code). Start a chat and
+enter `/kno` to connect. It's the only command you need — kno will
+notice what matters from there.
 
-To publish curated pages to Obsidian or another markdown viewer:
+---
+
+## How it works
+
+**Start every chat with `/kno`.** kno checks your vault, shows your
+pages, and offers to bring in relevant context. Say yes or just start
+working — kno stays attentive from there.
+
+**kno notices when something's worth keeping** — a decision reached, a
+root cause found, a design that settled — and kno offers to save it. You
+confirm, and kno saves the insight with a title, summary, and tags. Ten
+seconds. The cost of preserving what you learned drops from "remember
+to do it later" to "say yes."
+
+**kno recognizes familiar territory** — when your conversation touches
+something already in your vault, kno offers to load that context.
+Sessions start informed instead of cold.
+
+**kno turns notes into knowledge** — periodically, kno offers to weave
+your saved notes into a living page document. Each page reflects
+everything you've learned about a subject, in your own words, organized
+the way you think about it. This is the one intentional step — and the
+one that makes your vault worth returning to.
+
+---
+
+## Connects to Obsidian and the tools you already use
+
+kno works alongside your existing knowledge tools — it doesn't replace
+them. Connect kno to Obsidian and your pages flow there automatically
+after every update, with tags, links, and metadata already in place.
+Your AI conversations become part of your knowledge base, browsable and
+searchable alongside everything else you've written.
 
 ```bash
 kno setup --publish ~/obsidian/kno
 ```
 
-## How it works
+Works with any markdown tool that supports frontmatter. No extra steps
+once it's set up.
 
-Start every chat with `/kno`. kno checks your vault and offers to load
-relevant context. From there, it stays aware — noticing knowledge
-checkpoints and offering to capture them, recognizing familiar topics
-and suggesting loads.
+---
 
-Over time, kno prompts you to curate your captures into **page
-documents** — living, readable files that reflect everything you've
-learned about a subject. Pages can be published to Obsidian or any
-markdown tool that supports frontmatter — your knowledge becomes
-browsable outside of AI conversations.
+## For developers
 
-The loop is capture, curate, load — and kno drives it. Slash commands
-are there when you want explicit control.
+In Claude Code, kno detects git repositories automatically. Everything
+you save gets tagged with the project name. kno tracks the knowledge
+that actually matters in a codebase: decisions with dates and rationale,
+known issues with open/resolved status, non-obvious setup, hard problems
+solved.
 
-## Your vault
+Project settings travel with the repo in a `.kno` file — commit it to
+share with your team. A well-curated project page is the onboarding
+document you wish existed when you joined.
 
-Your vault is just a folder of markdown files — no database, no cloud
-service, no lock-in. Sync it with git, Dropbox, iCloud — or publish
-curated pages to Obsidian with frontmatter, tags, and wikilinks. kno
-works with Claude Desktop today, with more AI clients coming soon.
+See the [Developer Guide](docs/guide/kno-dev-guide.md) for the full story.
+
+---
+
+## Your knowledge is yours
+
+No database, no cloud service, no lock-in. Everything kno builds for
+you lives in plain markdown files — readable, portable, and fully under
+your control.
 
 ```
 ~/kno/
   config.toml
   notes/
     20260305-rds-slow-query-debugging/
-      content.md       # structured session summary
-      meta.json        # title, tags, summary, curate status
-    20260301-onboarding-handoff-failures/
       content.md
       meta.json
   pages/
-    aws-infrastructure.md          # living knowledge document
-    aws-infrastructure.meta.json   # name, summary, last_curated_at
-    customer-onboarding.md
-    customer-onboarding.meta.json
+    aws-infrastructure.md
+    aws-infrastructure.meta.json
 ```
 
-## Documentation
+Sync it with git, Dropbox, or iCloud. Works with Claude Desktop,
+Claude Code, and any AI client that supports MCP.
 
-- [User Guide](docs/design/kno-guide.md) — getting started and vault management
-- [Architecture](docs/design/kno-knowledge-architecture.md) — design principles, layers, and knowledge model
-- [Skills Reference](docs/design/kno-skills.md) — skill behavior and slash command details
-- [CLI Reference](docs/design/kno-cli.md) — complete command specification
+---
 
-## License
+## Status
 
-[MIT](LICENSE)
+kno is in early development but ready to try. We're continuing to refine
+the experience — feedback and ideas welcome via
+[issues](https://github.com/kno-ai/kno/issues).
+
+---
+
+Your knowledge shouldn't reset every session. Give kno a try.
+
+[User Guide](docs/guide/kno-guide.md) · [Developer Guide](docs/guide/kno-dev-guide.md) · [CLI Reference](docs/guide/kno-cli.md) · [MIT License](LICENSE)

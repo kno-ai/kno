@@ -30,13 +30,53 @@ If there are also uncurated notes, add one line:
 
 ### Vault has notes but no pages
 
+If there are 3 or more notes, actively suggest page creation — notes
+without pages can't be loaded automatically in future sessions:
+
+> Your vault has N notes but no pages yet. Pages collect related sessions
+> so kno can load them automatically — want to create one now?
+> Otherwise just start working — `/kno.page` when you're ready.
+
+If fewer than 3, keep it lighter:
+
 > Your vault has N notes but no pages yet. Just start working —
-> `/kno.curate` will turn them into pages when you're ready.
+> `/kno.page` or `/kno.curate` when you're ready.
 
 ### Empty vault
 
-> Your vault is empty — just start working and kno will notice when
-> something worth keeping comes up.
+> Your vault is empty. As we work, I'll spot decisions, insights, and
+> solutions worth keeping and offer to save them. Just start working.
+
+## Developer context
+
+When `vault_status` includes a `git` field, this is a project session.
+Adjust the response to acknowledge the detected repo.
+
+### Vault has pages matching the repo
+
+> kno active — detected: [repo_name].
+> Your vault has **[matching page]** and **[other pages]**. Want me to load any?
+
+### No matching pages but vault has other pages
+
+> kno active — detected: [repo_name]. No project page yet.
+> Your vault has **[other pages]**. Want me to load any?
+> Otherwise just start working — kno will capture as we go.
+
+### Notes but no pages in git context
+
+If there are 3 or more notes (especially if any are tagged with the repo name),
+suggest a project page:
+
+> kno active — detected: [repo_name]. You have N notes but no project page yet.
+> Want to create one? It'll give future sessions on [repo_name] a head start.
+> Otherwise just start working — `/kno.page` when you're ready.
+
+### Empty vault in git context
+
+> kno active — detected: [repo_name]. Vault is empty. As we work, I'll
+> spot decisions, solutions, and project knowledge worth keeping. Just
+> start working.
 
 ## Rules
 
@@ -47,7 +87,7 @@ If there are also uncurated notes, add one line:
   or via `/kno.load`.
 - **Do not explain the knowledge loop.** The user installed kno. They want
   to use it, not learn about it.
-- **If `nudges.level` is `off`**, append: "Suggestions are off — use
+- **If `skill.nudge_level` is `off`**, append: "Suggestions are off — use
   slash commands for captures and loads." This sets expectations so the
   user doesn't wonder why kno is quiet.
 - **After the response, you're done.** kno takes over from here.

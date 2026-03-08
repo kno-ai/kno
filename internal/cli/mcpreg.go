@@ -7,44 +7,53 @@ import (
 	"runtime"
 )
 
-// knownMCPConfigs returns paths to known MCP client config files
-// that exist on this system.
-func knownMCPConfigs() []string {
-	if runtime.GOOS != "darwin" {
-		return nil
-	}
+// mcpClient describes a known MCP client that kno can register with.
+type mcpClient struct {
+	Name       string // user-facing name for --register flag
+	ConfigPath string // absolute path to config file
+}
+
+// knownMCPClients returns all known MCP client configurations on this system.
+func knownMCPClients() []mcpClient {
 	home, err := os.UserHomeDir()
 	if err != nil {
 		return nil
 	}
 
-	candidates := []string{
-		filepath.Join(home, "Library", "Application Support", "Claude", "claude_desktop_config.json"),
+	var clients []mcpClient
+
+	if runtime.GOOS == "darwin" {
+		clients = append(clients, mcpClient{
+			Name:       "claude-desktop",
+			ConfigPath: filepath.Join(home, "Library", "Application Support", "Claude", "claude_desktop_config.json"),
+		})
 	}
 
-	var found []string
-	for _, c := range candidates {
-		if info, err := os.Stat(filepath.Dir(c)); err == nil && info.IsDir() {
+	// Claude Code — cross-platform
+	clients = append(clients, mcpClient{
+		Name:       "claude-code",
+		ConfigPath: filepath.Join(home, ".claude", "settings.json"),
+	})
+
+	// Filter to clients whose parent directory exists.
+	var found []mcpClient
+	for _, c := range clients {
+		if info, err := os.Stat(filepath.Dir(c.ConfigPath)); err == nil && info.IsDir() {
 			found = append(found, c)
 		}
 	}
 	return found
 }
 
-// registerMCP registers kno as an MCP server.
-// Returns the list of config files that were successfully updated.
-func registerMCP(explicitPath, vaultPath, serverName string) []string {
-	var targets []string
-	if explicitPath != "" {
-		targets = []string{explicitPath}
-	} else {
-		targets = knownMCPConfigs()
-	}
 
-	var registered []string
-	for _, path := range targets {
-		if err := registerMCPAt(path, vaultPath, serverName); err == nil {
-			registered = append(registered, path)
+// registerMCPClients registers kno with the given MCP clients.
+// If clients is nil, registers with all detected clients.
+// Returns the list of clients that were successfully registered.
+func registerMCPClients(clients []mcpClient, vaultPath, serverName string) []mcpClient {
+	var registered []mcpClient
+	for _, c := range clients {
+		if err := registerMCPAt(c.ConfigPath, vaultPath, serverName); err == nil {
+			registered = append(registered, c)
 		}
 	}
 	return registered

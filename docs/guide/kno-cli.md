@@ -2,8 +2,8 @@
 
 kno is a local-first knowledge vault for LLM conversations. The CLI provides
 deterministic, testable CRUD operations against the vault. The CLI owns the
-data — it has no knowledge of awareness, nudges, or skills. Those concerns
-live in the MCP and skill layers above.
+data — it has no knowledge of skill behaviors, nudges, or workflows. Those
+concerns live in the MCP and skill layers above.
 
 All commands support `--json` for machine-readable output. Human-readable
 output is the default.
@@ -62,49 +62,48 @@ Setup is a one-time installation step and the first thing every user runs.
 ### kno setup
 
 ```
-kno setup  [--name <name>]  [--vault <path>]  [--no-claude-desktop]  [--publish <path>]
+kno setup  [--name <name>]  [--vault <path>]  [--register <clients>]  [--no-register]  [--publish <path>]
 ```
 
-Initialize a kno vault and register it as an MCP server with Claude Desktop.
-Running `kno setup` once is all a first-time user needs. Running it again
-with a different `--name` and `--vault` creates a second independent vault
-without affecting the first — this is how multiple spaces (e.g. work vs.
-personal) are managed.
-
-Running setup a second time with a different `--name` and `--vault` creates
-an independent vault — a separate space with its own pages, notes, search
-index, and MCP registration. Existing vaults are not affected.
+Initialize a kno vault and register it as an MCP server with detected
+clients (Claude Desktop, Claude Code). Running `kno setup` once is all a
+first-time user needs. Running it again with a different `--name` and
+`--vault` creates a second independent vault without affecting the first —
+this is how multiple spaces (e.g. work vs. personal) are managed.
 
 **What it does**
 
 1. Creates the vault directory (default: `~/kno`)
 2. Writes a default `config.toml` to the vault
-3. Detects Claude Desktop and registers the vault as an MCP server using
-   the provided name (default: `kno`)
+3. Detects supported clients (Claude Desktop, Claude Code) and registers
+   the vault as an MCP server using the provided name (default: `kno`)
 4. Prints a confirmation summary and next steps
 
-If Claude Desktop is not installed, step 3 is skipped silently. The vault
-is still created and fully functional via the CLI.
+If no supported clients are detected, step 3 is skipped silently. The
+vault is still created and fully functional via the CLI.
 
 If `kno setup` has already been run, it is safe to run again — it will not
 overwrite an existing vault or config, but will re-register the MCP server
-if Claude Desktop is detected.
+with any detected clients.
 
 **Options**
 
-    --name <name>           MCP server name registered with Claude Desktop.
+    --name <name>           MCP server name registered with clients.
                             Default: kno. Use a distinct name for each
                             additional vault (e.g. kno-personal). The name
-                            becomes the skill prefix in Claude Desktop:
+                            becomes the skill prefix:
                             /kno-personal.capture, /kno-personal.load, etc.
 
     --vault <path>          Vault directory path. Default: ~/kno for
                             the first vault. Use a distinct path for each
                             additional vault (e.g. ~/kno-personal).
 
-    --no-claude-desktop     Skip Claude Desktop detection and MCP
-                            registration. Useful in headless or CI
-                            environments.
+    --register <clients>    Register with specific clients only
+                            (comma-separated: claude-desktop,claude-code).
+                            By default, all detected clients are registered.
+
+    --no-register           Skip all client MCP registration. Useful in
+                            headless or CI environments.
 
     --publish <path>        Add a publish target directory. Pages will be
                             automatically published here after each curate.
@@ -117,9 +116,10 @@ if Claude Desktop is detected.
 ```
 ✓  Vault created at ~/kno
 ✓  Config written to ~/kno/config.toml
-✓  MCP server "kno" registered with Claude Desktop  (name: kno)
+✓  Registered with Claude Desktop  (name: kno)
+✓  Registered with Claude Code  (name: kno)
 
-Restart Claude Desktop, then enter /kno in a chat to connect.
+Restart your client, then enter /kno in a chat to connect.
 ```
 
 **Output (with --publish)**
@@ -128,19 +128,20 @@ Restart Claude Desktop, then enter /kno in a chat to connect.
 ✓  Vault created at ~/kno
 ✓  Config written to ~/kno/config.toml
 ✓  Publish target added: ~/obsidian/kno
-✓  MCP server "kno" registered with Claude Desktop
+✓  Registered with Claude Desktop  (name: kno)
+✓  Registered with Claude Code  (name: kno)
 
-Restart Claude Desktop, then enter /kno in a chat to connect.
+Restart your client, then enter /kno in a chat to connect.
 ```
 
-**Output (Claude Desktop not found)**
+**Output (no clients found)**
 
 ```
 ✓  Vault created at ~/kno
 ✓  Config written to ~/kno/config.toml
-—  Claude Desktop not found — skipping MCP registration
+—  No supported clients found — skipping MCP registration
 
-To register manually, add the following to your Claude Desktop config:
+To register manually, add the following to your client's MCP config:
 
   {
     "mcpServers": {
@@ -154,10 +155,10 @@ To register manually, add the following to your Claude Desktop config:
 
 **Notes**
 
-- The MCP server is registered by writing to Claude Desktop's
-  `claude_desktop_config.json`. On macOS this is:
-  `~/Library/Application Support/Claude/claude_desktop_config.json`
-- Claude Desktop must be restarted after setup for the MCP server to activate
+- Claude Desktop is registered by writing to
+  `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS).
+  Claude Code is registered by writing to `~/.claude/settings.json`.
+- Clients must be restarted after setup for the MCP server to activate
 - Running `kno setup` a second time with a different `--name` and `--vault`
   creates an independent vault without affecting existing ones. Each vault
   gets its own MCP registration, config, and search index. Sync and
@@ -1051,8 +1052,8 @@ max_notes_per_run = 50        # max notes processed in a single curate pass
 [search]
 default_limit = 10                # default result count for all search commands
 
-[nudges]
-level = "light"                   # "off" | "light" | "active"
+[skill]
+nudge_level = "light"             # "off" | "light" | "active"
                                   # off: no awareness, slash commands only
                                   # light: high-signal nudges only (default)
                                   # active: broader nudging
@@ -1073,3 +1074,10 @@ Key behaviors:
   create and update.
 - Exceeding `curate.max_notes_per_run` processes up to the limit and
   reports how many notes remain for a follow-up run.
+
+### Project-specific settings (`.kno`)
+
+In git repositories, a `.kno` file at the repo root can override skill
+settings per project. This file is read by the MCP server when it detects
+a git context (Claude Code only). See the
+[Developer Guide](kno-dev-guide) for available keys and usage.

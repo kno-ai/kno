@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/kno-ai/kno/internal/app"
@@ -364,6 +365,7 @@ func extractMeta(args map[string]any, key string) model.MetaMap {
 	}
 	meta := make(model.MetaMap, len(m))
 	for k, v := range m {
+		k = strings.ToLower(k)
 		switch val := v.(type) {
 		case string:
 			meta[k] = []string{val}
