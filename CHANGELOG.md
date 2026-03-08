@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.0](https://github.com/kno-ai/kno/compare/v0.6.0...v0.7.0) (2026-03-08)
+
+
+### Features
+
+* add active awareness, refine voice and docs for all audiences ([7fbba6e](https://github.com/kno-ai/kno/commit/7fbba6e2be20bb4efa3b8832f442f6253d3391c3))
+
 ## [0.6.0](https://github.com/kno-ai/kno/compare/v0.5.0...v0.6.0) (2026-03-07)
 
 
