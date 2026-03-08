@@ -9,12 +9,12 @@ import (
 )
 
 type Config struct {
-	Notes   NotesConfig     `toml:"notes" json:"notes"`
-	Pages   PagesConfig     `toml:"pages" json:"pages"`
-	Curate  CurateConfig    `toml:"curate" json:"curate"`
-	Search  SearchConfig    `toml:"search" json:"search"`
-	Nudges  NudgesConfig    `toml:"nudges" json:"nudges"`
-	Publish PublishConfig   `toml:"publish" json:"publish"`
+	Notes   NotesConfig   `toml:"notes" json:"notes"`
+	Pages   PagesConfig   `toml:"pages" json:"pages"`
+	Curate  CurateConfig  `toml:"curate" json:"curate"`
+	Search  SearchConfig  `toml:"search" json:"search"`
+	Nudges  NudgesConfig  `toml:"nudges" json:"nudges"`
+	Publish PublishConfig `toml:"publish" json:"publish"`
 }
 
 type PublishTarget struct {
