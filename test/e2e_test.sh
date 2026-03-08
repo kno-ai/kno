@@ -70,12 +70,12 @@ echo "Note operations"
 NOTE1_OUT=$(echo "## TL;DR\nDebugged connection pool exhaustion." | "$KNO" --vault "$VAULT" note create --title "Connection pool debugging" --meta tags=aws --meta tags=rds --meta summary="Pool exhaustion fix" 2>&1)
 echo "$NOTE1_OUT" | grep -q "Created" && pass "note create 1" || fail "note create 1"
 
-NOTE2_OUT=$(echo "## TL;DR\nACH return retry logic." | "$KNO" --vault "$VAULT" note create --title "ACH return handling" --meta tags=payments --meta summary="Retry logic" 2>&1)
+NOTE2_OUT=$(echo "## TL;DR\nSpindle bearing diagnosis on CNC mill #3." | "$KNO" --vault "$VAULT" note create --title "Spindle bearing diagnosis" --meta tags=cnc --meta tags=maintenance --meta summary="Bearing replacement procedure" 2>&1)
 echo "$NOTE2_OUT" | grep -q "Created" && pass "note create 2" || fail "note create 2"
 
 # Extract IDs from JSON by title (list order is not guaranteed)
 NOTE1=$("$KNO" --vault "$VAULT" note list --json 2>&1 | python3 -c "import sys,json; notes=json.load(sys.stdin); print(next(n['id'] for n in notes if 'Connection' in n['title']))")
-NOTE2=$("$KNO" --vault "$VAULT" note list --json 2>&1 | python3 -c "import sys,json; notes=json.load(sys.stdin); print(next(n['id'] for n in notes if 'ACH' in n['title']))")
+NOTE2=$("$KNO" --vault "$VAULT" note list --json 2>&1 | python3 -c "import sys,json; notes=json.load(sys.stdin); print(next(n['id'] for n in notes if 'Spindle' in n['title']))")
 
 assert_contains "note list shows 2 notes" "Connection pool" "$KNO" --vault "$VAULT" note list
 assert_contains "note show" "Pool exhaustion fix" "$KNO" --vault "$VAULT" note show "$NOTE1"
@@ -100,7 +100,7 @@ echo ""
 echo "Page operations"
 
 assert_contains "page create with content" "Created" bash -c "echo 'Focus on operational lessons.' | '$KNO' --vault '$VAULT' page create --name 'AWS Infrastructure'"
-assert_contains "page create empty" "Created" "$KNO" --vault "$VAULT" page create --name "Payment Processing"
+assert_contains "page create empty" "Created" "$KNO" --vault "$VAULT" page create --name "CNC Machine Maintenance"
 assert_contains "page list shows 2" "AWS Infrastructure" "$KNO" --vault "$VAULT" page list
 assert_contains "page show content" "operational lessons" "$KNO" --vault "$VAULT" page show aws-infrastructure
 
@@ -113,7 +113,7 @@ echo "Search"
 
 # Search should work without index rebuild — index is created on first write
 assert_contains "note search finds result" "Connection pool" "$KNO" --vault "$VAULT" note search "pool"
-assert_contains "note search finds second" "ACH" "$KNO" --vault "$VAULT" note search "ACH"
+assert_contains "note search finds second" "Spindle" "$KNO" --vault "$VAULT" note search "spindle"
 assert_contains "page search finds result" "aws-infrastructure" "$KNO" --vault "$VAULT" page search "AWS"
 
 # --- Vault status (populated) ---
@@ -140,8 +140,8 @@ echo ""
 echo "Delete and prune"
 
 assert_contains "prune dry-run" "Would remove" "$KNO" --vault "$VAULT" note prune --count 1 --dry-run
-assert_exit_0 "page delete" "$KNO" --vault "$VAULT" page delete payment-processing
-assert_not_contains "page gone after delete" "Payment Processing" "$KNO" --vault "$VAULT" page list
+assert_exit_0 "page delete" "$KNO" --vault "$VAULT" page delete cnc-machine-maintenance
+assert_not_contains "page gone after delete" "CNC Machine Maintenance" "$KNO" --vault "$VAULT" page list
 
 # --- Error cases ---
 echo ""

@@ -12,7 +12,7 @@ accumulate but are never synthesized.
 
 ## Voice
 
-You're a competent colleague helping someone set up a filing system that
+You're a knowledgeable colleague helping someone set up a filing system that
 actually works. Creating a page is an intentional act — help them think about
 what they want to track, but don't overthink it. If they know what they want,
 get out of the way. If they're unsure, offer examples rather than rules.
@@ -31,7 +31,7 @@ get out of the way. If they're unsure, offer examples rather than rules.
    guidance later.
 
 3. Generate a clear, descriptive name (e.g. "AWS Infrastructure",
-   "Auth System Design", "Payment Processing").
+   "Auth System Design", "CNC Machine Maintenance").
 
 4. Present the proposed page to the user. Wait for confirmation.
 
@@ -66,13 +66,18 @@ If the user agrees, run the curate flow for this single page:
 1. Read relevant sessions in full: `kno_note_show({"ids": [...]})`
 2. Synthesize initial content, following the guidance just written.
 3. Show the proposed content to the user.
-4. On confirmation, update the page and stamp the sessions — exactly as the
-   curate skill would:
+4. On confirmation, update the page and stamp the sessions. Include a
+   `summary` in the page metadata — a one-line description of what the
+   page now covers. This summary powers topic awareness, letting kno
+   recognize when future conversations overlap with this page:
    ```
    kno_page_update({
      "id": "<page-id>",
      "content": "<guidance + synthesized knowledge>",
-     "meta": {"last_curated_at": "<ISO8601>"}
+     "meta": {
+       "last_curated_at": "<ISO8601>",
+       "summary": "<one-line summary of what this page now covers>"
+     }
    })
    ```
    Then for each session:
@@ -97,8 +102,8 @@ Help the user find the right level if they seem unsure:
   document. Suggest narrowing to areas they actually work on.
 - **Too narrow** (e.g. "MySQL 8.0.32 index hint behavior") — won't accumulate
   enough sessions to be useful. Suggest broadening to the parent domain.
-- **Good examples:** "MySQL Performance", "AWS Infrastructure", "Payment
-  Processing", "Kubernetes Migration" — broad enough to accumulate sessions over
+- **Good examples:** "AWS Infrastructure", "CNC Machine Maintenance",
+  "Customer Onboarding", "Kubernetes Migration" — broad enough to accumulate sessions over
   months, specific enough to stay focused and readable.
 
 A simple test: will this page still be relevant in 3 months? Will it have
