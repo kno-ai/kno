@@ -14,7 +14,7 @@ func newSetupCmd() *cobra.Command {
 	var (
 		name            string
 		noClaudeDesktop bool
-		publishPath string
+		publishPath     string
 	)
 
 	cmd := &cobra.Command{
