@@ -1,5 +1,40 @@
 # Changelog
 
+## [0.10.1](https://github.com/kno-ai/kno/compare/v0.10.0...v0.10.1) (2026-03-08)
+
+
+### Bug Fixes
+
+* surface MCP registration errors and add trailing newline to config ([070f1ed](https://github.com/kno-ai/kno/commit/070f1ed9f2b2afa363346044476e935c3f251207))
+
+## [0.10.0](https://github.com/kno-ai/kno/compare/v0.9.0...v0.10.0) (2026-03-08)
+
+
+### Features
+
+* developer use case, first-use skill revisions, doc rewrite and reorg ([e52e84d](https://github.com/kno-ai/kno/commit/e52e84d64efd0736fbd1c41ca65e0f08fb3006b9))
+
+
+### Bug Fixes
+
+* gofmt formatting in mcpreg.go and context.go ([02eaea2](https://github.com/kno-ai/kno/commit/02eaea2f934634ee4164a289c71339b90e9f715e))
+
+## [0.9.0](https://github.com/kno-ai/kno/compare/v0.8.1...v0.9.0) (2026-03-08)
+
+
+### Features
+
+* add /kno entry point, refine skills voice, awareness-first docs ([517e47d](https://github.com/kno-ai/kno/commit/517e47d7ba35a3cb672376773b13be4a45c3a86f))
+
+
+### Bug Fixes
+
+* disable staticcheck cache to prevent tar corruption in CI ([c7d23db](https://github.com/kno-ai/kno/commit/c7d23db5567fe8442cb6b1dbb91715aec919518e))
+* reject unexpected positional args in setup command ([f882f9a](https://github.com/kno-ai/kno/commit/f882f9a8e5f490e9eb9ce9c6d3308cb6c5d920df))
+* remove unused nilIfEmpty function flagged by staticcheck ([dc0d919](https://github.com/kno-ai/kno/commit/dc0d9191883578bc61076278239b375b119f3d3f))
+* skip staticcheck Go install to avoid cache corruption ([584c6a1](https://github.com/kno-ai/kno/commit/584c6a1626d679e7953bf1c06dcf8aa1884d4796))
+* use correct input name for staticcheck cache disable ([f21f29c](https://github.com/kno-ai/kno/commit/f21f29c53babae3b37dcf81208615e86860acb4f))
+
 ## [0.8.1](https://github.com/kno-ai/kno/compare/v0.8.0...v0.8.1) (2026-03-08)
 
 
