@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.1](https://github.com/kno-ai/kno/compare/v0.8.0...v0.8.1) (2026-03-08)
+
+
+### Bug Fixes
+
+* gofmt formatting in setup.go and config.go ([ab33640](https://github.com/kno-ai/kno/commit/ab33640ed214c57392e015b70fbeffc44f1e7c2b))
+
 ## [0.8.0](https://github.com/kno-ai/kno/compare/v0.7.0...v0.8.0) (2026-03-08)
 
 
