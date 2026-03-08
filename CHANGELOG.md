@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.10.0](https://github.com/kno-ai/kno/compare/v0.9.0...v0.10.0) (2026-03-08)
+
+
+### Features
+
+* developer use case, first-use skill revisions, doc rewrite and reorg ([e52e84d](https://github.com/kno-ai/kno/commit/e52e84d64efd0736fbd1c41ca65e0f08fb3006b9))
+
+
+### Bug Fixes
+
+* gofmt formatting in mcpreg.go and context.go ([02eaea2](https://github.com/kno-ai/kno/commit/02eaea2f934634ee4164a289c71339b90e9f715e))
+
 ## [0.9.0](https://github.com/kno-ai/kno/compare/v0.8.1...v0.9.0) (2026-03-08)
 
 
