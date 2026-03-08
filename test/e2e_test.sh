@@ -40,7 +40,7 @@ assert_exit_nonzero() {
   if "$@" >/dev/null 2>&1; then fail "$desc: expected non-zero exit"; else pass "$desc"; fi
 }
 
-cleanup() { rm -rf "$VAULT" "$KNO"; }
+cleanup() { rm -rf "$VAULT" "$KNO" "${PUBLISH_DIR:-}"; }
 trap cleanup EXIT
 
 # --- Build ---
@@ -56,6 +56,16 @@ rm -rf "$VAULT"  # setup expects to create it
 echo "Setup"
 assert_contains "setup creates vault" "Vault created" "$KNO" setup --vault "$VAULT" --no-claude-desktop
 test -f "$VAULT/config.toml" && pass "config.toml exists" || fail "config.toml missing"
+
+# --- Setup --publish ---
+echo ""
+echo "Setup publish"
+SETUP_PUB_VAULT=$(mktemp -d /tmp/kno-e2e-setup-pub.XXXXXX)
+rm -rf "$SETUP_PUB_VAULT"
+SETUP_PUB_DIR=$(mktemp -d /tmp/kno-e2e-setup-pubdir.XXXXXX)
+assert_contains "setup --publish" "Publish target added" "$KNO" setup --vault "$SETUP_PUB_VAULT" --no-claude-desktop --publish "$SETUP_PUB_DIR"
+grep -q "frontmatter" "$SETUP_PUB_VAULT/config.toml" && pass "publish config written" || fail "publish config missing"
+rm -rf "$SETUP_PUB_VAULT" "$SETUP_PUB_DIR"
 
 # --- Vault status (empty) ---
 echo ""
@@ -135,13 +145,48 @@ echo "$JSON_OUT" | python3 -c "import sys,json; json.load(sys.stdin)" 2>/dev/nul
 JSON_OUT=$("$KNO" --vault "$VAULT" vault status --json 2>&1)
 echo "$JSON_OUT" | python3 -c "import sys,json; d=json.load(sys.stdin); assert 'pages' in d" 2>/dev/null && pass "vault status --json has pages key" || fail "vault status --json missing pages key"
 
+# --- Multi-value metadata round-trip ---
+echo ""
+echo "Multi-value metadata"
+
+MULTI_JSON=$("$KNO" --vault "$VAULT" note show "$NOTE1" --json 2>&1)
+echo "$MULTI_JSON" | python3 -c "import sys,json; data=json.load(sys.stdin); n=data[0] if isinstance(data,list) else data; assert 'databases' in str(n.get('metadata',{})), f'metadata: {n.get(\"metadata\")}'" 2>/dev/null && pass "note metadata in JSON output" || fail "note metadata missing from JSON"
+
+# --- Note content update via stdin ---
+echo ""
+echo "Note content update"
+
+echo "## Updated TL;DR
+New debugging insight." | "$KNO" --vault "$VAULT" note update "$NOTE1" >/dev/null 2>&1
+UPDATED_NOTE=$("$KNO" --vault "$VAULT" note show "$NOTE1" 2>&1)
+echo "$UPDATED_NOTE" | grep -q "New debugging insight" && pass "note content updated via stdin" || fail "note content update via stdin failed"
+
+# --- Page rename ---
+echo ""
+echo "Page rename"
+
+assert_exit_0 "page rename" "$KNO" --vault "$VAULT" page rename cnc-machine-maintenance --name "CNC Operations"
+assert_contains "renamed page in list" "CNC Operations" "$KNO" --vault "$VAULT" page list
+assert_not_contains "old name gone" "CNC Machine Maintenance" "$KNO" --vault "$VAULT" page list
+
 # --- Delete and prune ---
 echo ""
 echo "Delete and prune"
 
+assert_exit_0 "note delete" "$KNO" --vault "$VAULT" note delete "$NOTE2"
+assert_not_contains "deleted note gone" "$NOTE2" "$KNO" --vault "$VAULT" note list
+
 assert_contains "prune dry-run" "Would remove" "$KNO" --vault "$VAULT" note prune --count 1 --dry-run
-assert_exit_0 "page delete" "$KNO" --vault "$VAULT" page delete cnc-machine-maintenance
-assert_not_contains "page gone after delete" "CNC Machine Maintenance" "$KNO" --vault "$VAULT" page list
+assert_exit_0 "page delete" "$KNO" --vault "$VAULT" page delete cnc-operations
+assert_not_contains "page gone after delete" "CNC Operations" "$KNO" --vault "$VAULT" page list
+
+# --- Rebuild index ---
+echo ""
+echo "Rebuild index"
+
+assert_contains "rebuild-index" "Indexed" "$KNO" --vault "$VAULT" vault rebuild-index
+# Search should still work after rebuild
+assert_contains "search after rebuild" "Connection pool" "$KNO" --vault "$VAULT" note search "pool"
 
 # --- Error cases ---
 echo ""
@@ -150,6 +195,122 @@ echo "Error cases"
 assert_exit_nonzero "show nonexistent note" "$KNO" --vault "$VAULT" note show nonexistent-id
 assert_exit_nonzero "show nonexistent page" "$KNO" --vault "$VAULT" page show nonexistent-id
 assert_exit_nonzero "delete nonexistent page" "$KNO" --vault "$VAULT" page delete nonexistent-id
+
+# --- Publish ---
+echo ""
+echo "Publish"
+
+# No targets configured — should show help message
+assert_contains "publish no targets" "No publish targets" "$KNO" --vault "$VAULT" publish
+
+# Configure a publish target
+PUBLISH_DIR=$(mktemp -d /tmp/kno-e2e-publish.XXXXXX)
+cat >> "$VAULT/config.toml" << 'TOML'
+
+[[publish.targets]]
+TOML
+echo "path = \"$PUBLISH_DIR\"" | sed "s|\$PUBLISH_DIR|$PUBLISH_DIR|" >> "$VAULT/config.toml"
+echo 'format = "frontmatter"' >> "$VAULT/config.toml"
+
+assert_exit_0 "publish with target" "$KNO" --vault "$VAULT" publish
+test -f "$PUBLISH_DIR/aws-infrastructure.md" && pass "published file exists" || fail "published file missing"
+
+# Check frontmatter structure
+head -1 "$PUBLISH_DIR/aws-infrastructure.md" | grep -q "^---" && pass "frontmatter starts with ---" || fail "frontmatter missing opening ---"
+grep -q "^title:" "$PUBLISH_DIR/aws-infrastructure.md" && pass "frontmatter has title" || fail "frontmatter missing title"
+grep -q "^aliases:" "$PUBLISH_DIR/aws-infrastructure.md" && pass "frontmatter has aliases" || fail "frontmatter missing aliases"
+grep -q "^created:" "$PUBLISH_DIR/aws-infrastructure.md" && pass "frontmatter has created date" || fail "frontmatter missing created"
+
+# Check body content is present after frontmatter
+grep -q "Updated content" "$PUBLISH_DIR/aws-infrastructure.md" && pass "published body has content" || fail "published body missing content"
+
+# Publish single page
+assert_exit_0 "publish single page" "$KNO" --vault "$VAULT" publish --page aws-infrastructure
+
+# Publish nonexistent page
+assert_exit_nonzero "publish nonexistent page" "$KNO" --vault "$VAULT" publish --page nonexistent-id
+
+# Dry run
+assert_contains "publish dry-run" "Would publish" "$KNO" --vault "$VAULT" publish --dry-run
+
+# JSON output
+PUB_JSON=$("$KNO" --vault "$VAULT" publish --json 2>&1)
+echo "$PUB_JSON" | python3 -c "import sys,json; d=json.load(sys.stdin); assert len(d) > 0" 2>/dev/null && pass "publish --json valid" || fail "publish --json invalid"
+
+# Invalid format
+assert_exit_nonzero "publish invalid format" "$KNO" --vault "$VAULT" publish --format bogus
+
+# Markdown format override
+assert_exit_0 "publish markdown format" "$KNO" --vault "$VAULT" publish --format markdown
+# Markdown format should not have frontmatter
+grep -q "^---" "$PUBLISH_DIR/aws-infrastructure.md" && fail "markdown format has frontmatter" || pass "markdown format no frontmatter"
+
+# Guidance stripping — add guidance then publish
+echo '<!-- Guidance -->
+Focus on ops.
+
+## Real Content
+
+The actual knowledge.' | "$KNO" --vault "$VAULT" page update aws-infrastructure >/dev/null 2>&1
+"$KNO" --vault "$VAULT" publish >/dev/null 2>&1
+grep -q "Guidance" "$PUBLISH_DIR/aws-infrastructure.md" && fail "guidance not stripped" || pass "guidance stripped from published"
+grep -q "Real Content" "$PUBLISH_DIR/aws-infrastructure.md" && pass "content preserved after guidance strip" || fail "content lost after guidance strip"
+
+# --- Curate-publish loop (real-world metadata flow) ---
+echo ""
+echo "Curate-publish loop"
+
+# Simulate what curate does: stamp page with tags, summary, note_count, last_curated_at
+assert_exit_0 "page update with curate metadata" bash -c "echo '## RDS
+
+- Pin parameter groups before upgrades.
+
+## ECS
+
+- Drain window: 60s minimum.' | '$KNO' --vault '$VAULT' page update aws-infrastructure --meta tags=aws --meta tags=rds --meta tags=ecs --meta summary='Operational lessons for AWS infrastructure' --meta note_count=3 --meta last_curated_at=2026-03-07T10:00:00Z"
+
+# Publish and verify rich frontmatter
+"$KNO" --vault "$VAULT" publish >/dev/null 2>&1
+grep -q "^tags:" "$PUBLISH_DIR/aws-infrastructure.md" && pass "frontmatter has tags after curate" || fail "frontmatter missing tags after curate"
+grep -q "aws" "$PUBLISH_DIR/aws-infrastructure.md" && pass "frontmatter includes aws tag" || fail "frontmatter missing aws tag"
+grep -q "^summary:" "$PUBLISH_DIR/aws-infrastructure.md" && pass "frontmatter has summary" || fail "frontmatter missing summary"
+grep -q "^updated:" "$PUBLISH_DIR/aws-infrastructure.md" && pass "frontmatter has updated date" || fail "frontmatter missing updated date"
+grep -q "2026-03-07" "$PUBLISH_DIR/aws-infrastructure.md" && pass "updated date from last_curated_at" || fail "updated date wrong"
+# Body content should be present, guidance should not
+grep -q "Pin parameter groups" "$PUBLISH_DIR/aws-infrastructure.md" && pass "curated body content published" || fail "curated body content missing"
+
+# --- Prune actual execution ---
+echo ""
+echo "Prune execution"
+
+# Create a throwaway note to prune
+echo "Throwaway." | "$KNO" --vault "$VAULT" note create --title "Prune target" >/dev/null 2>&1
+BEFORE_COUNT=$("$KNO" --vault "$VAULT" note list --json 2>&1 | python3 -c "import sys,json; print(len(json.load(sys.stdin)))")
+assert_exit_0 "prune execute" "$KNO" --vault "$VAULT" note prune --count 1
+AFTER_COUNT=$("$KNO" --vault "$VAULT" note list --json 2>&1 | python3 -c "import sys,json; print(len(json.load(sys.stdin)))")
+[ "$AFTER_COUNT" -lt "$BEFORE_COUNT" ] && pass "prune reduced note count" || fail "prune did not reduce count"
+
+# --- Setup idempotency ---
+echo ""
+echo "Setup idempotency"
+
+IDEM_VAULT=$(mktemp -d /tmp/kno-e2e-idem.XXXXXX)
+rm -rf "$IDEM_VAULT"
+"$KNO" setup --vault "$IDEM_VAULT" --no-claude-desktop >/dev/null 2>&1
+# Add a note to the vault
+echo "Test note." | "$KNO" --vault "$IDEM_VAULT" note create --title "Before re-setup" >/dev/null 2>&1
+# Run setup again on the same vault
+IDEM_OUT=$("$KNO" setup --vault "$IDEM_VAULT" --no-claude-desktop 2>&1) || true
+# Note should still be there
+"$KNO" --vault "$IDEM_VAULT" note list 2>&1 | grep -q "Before re-setup" && pass "setup idempotent preserves data" || fail "setup idempotent lost data"
+rm -rf "$IDEM_VAULT"
+
+# --- Page multi-value metadata ---
+echo ""
+echo "Page multi-value metadata"
+
+PAGE_JSON=$("$KNO" --vault "$VAULT" page show aws-infrastructure --json 2>&1)
+echo "$PAGE_JSON" | python3 -c "import sys,json; p=json.load(sys.stdin); tags=p.get('metadata',{}).get('tags',[]); assert len(tags) >= 2, f'tags: {tags}'" 2>/dev/null && pass "page multi-value tags in JSON" || fail "page multi-value tags missing"
 
 # --- Version ---
 echo ""

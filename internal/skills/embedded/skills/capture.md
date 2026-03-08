@@ -142,13 +142,13 @@ to mention. Pick one:
 - **Uncurated count, relevant:** "Saved — you're building up good
   context on [topic]. `/kno.curate` folds these into pages whenever
   you're ready."
-- **No matching page, early:** "Saved. This context will be there for
-  you next time you work on this topic."
-- **First capture ever:** "Saved — that's your first one. Next time you
-  work on this topic, this context loads automatically."
+- **No matching page, early:** "Saved — `/kno.curate` will fold this
+  into a page when you're ready."
+- **First capture ever:** "Saved — that's your first one. `/kno.curate`
+  turns these into lasting pages as you build up more."
 
-The status line is one sentence. It names a specific command so the user
-learns the vocabulary over time, but it's informational — not asking
+The status line is one sentence. It always names `/kno.curate` so the
+user learns the vocabulary over time. It's informational — not asking
 them to do anything right now.
 
 ### Tier 2: Acknowledge the growing collection
@@ -192,17 +192,20 @@ response, mention it ahead of any tier: "Saved — though an older note
 was removed to make room. Running `/kno.curate` folds notes into pages
 so they're preserved long-term."
 
-**Page suggestions:** If 3+ uncurated sessions share tags with no matching
+**Page suggestions:** If 2+ uncurated sessions share tags with no matching
 page, mention it: "You're building up notes on [tags] — `/kno.page new`
 would give them a home to grow into." Only suggest when the pattern is
-obvious from the tags alone.
+obvious from the tags alone. Do not propose page names — that's the
+page skill's job.
 
 ### Keep it brief
 
-Every post-capture message should be one to three lines. The user just
-finished capturing — they want confirmation, not a lecture. The status
-line builds familiarity with slash commands over time without demanding
-anything in the moment.
+Every post-capture message should be one to three lines total. No
+exceptions. Do not explain why a note is valuable, do not describe what
+a page would contain, do not editorialize about which notes "belong
+together." The user just finished capturing — they want confirmation
+and a command hint, not commentary. The status line builds familiarity
+with slash commands over time without demanding anything in the moment.
 
 ## Guidelines
 

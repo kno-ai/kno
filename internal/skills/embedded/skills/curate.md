@@ -28,18 +28,26 @@ kno_page_update({
   "content": "<updated page document>",
   "meta": {
     "last_curated_at": "<ISO8601 timestamp>",
-    "summary": "<one-line summary of what this page currently covers>"
+    "summary": "<one-line summary of what this page currently covers>",
+    "tags": ["tag1", "tag2", "..."],
+    "note_count": "<number of notes curated into this page>"
   }
 })
 ```
 
-The `summary` is a concise description of the page's current scope — what
-topics and knowledge it contains. Update it on every curate pass to reflect
-the page as it stands now (not just what changed). Example: "AWS operational
-lessons — RDS parameter tuning, ECS deployment patterns, cross-AZ cost
-optimization." This summary powers topic awareness: it lets kno recognize
-when a new conversation overlaps with existing vault knowledge without
-reading the full page content.
+**`summary`** — a concise description of the page's current scope. Update
+on every curate pass to reflect the page as it stands now (not just what
+changed). Example: "AWS operational lessons — RDS parameter tuning, ECS
+deployment patterns, cross-AZ cost optimization." Powers topic awareness.
+
+**`tags`** — the union of all tags from notes curated into this page,
+deduplicated and sorted alphabetically. Collect tags from each note being
+curated, merge with any existing `tags` on the page, deduplicate. These
+tags power publishing (frontmatter) and topic awareness.
+
+**`note_count`** — total number of notes curated into this page (including
+previously curated notes, not just this pass). Read the current value from
+the page metadata and add the count of newly curated notes.
 
 **On each session that was curated:**
 
@@ -168,6 +176,11 @@ document, and it will load automatically.
 will be available automatically in future sessions on these topics." If the
 page has grown substantially, acknowledge it — "Your [page] page has real
 depth now" — the user should feel the accumulation.
+
+**Published pages:** If the `kno_page_update` response includes
+`published_to`, the page was automatically published to configured
+targets. Mention it naturally: "Pages updated and published." Don't
+explain what publishing does — just confirm it happened.
 
 **Orphaned sessions:** If sessions didn't match any page, mention it after
 the curate summary, not during. Keep the flow focused on one thing at a time.

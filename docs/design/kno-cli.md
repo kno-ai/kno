@@ -62,7 +62,7 @@ Setup is a one-time installation step and the first thing every user runs.
 ### kno setup
 
 ```
-kno setup  [--name <name>]  [--vault <path>]  [--no-claude-desktop]
+kno setup  [--name <name>]  [--vault <path>]  [--no-claude-desktop]  [--publish <path>]
 ```
 
 Initialize a kno vault and register it as an MCP server with Claude Desktop.
@@ -106,6 +106,12 @@ if Claude Desktop is detected.
                             registration. Useful in headless or CI
                             environments.
 
+    --publish <path>        Add a publish target directory. Pages will be
+                            automatically published here after each curate.
+                            Default format: frontmatter (YAML frontmatter,
+                            wikilinks). The directory is created if it
+                            doesn't exist.
+
 **Output**
 
 ```
@@ -119,6 +125,17 @@ Quick start:
   /kno.capture    — capture a session summary to your vault
   /kno.load       — load knowledge into a new session
   kno note list  — browse your vault from the terminal
+```
+
+**Output (with --publish)**
+
+```
+✓  Vault created at ~/kno
+✓  Config written to ~/kno/config.toml
+✓  Publish target added: ~/obsidian/kno
+✓  MCP server "kno" registered with Claude Desktop
+
+Restart Claude Desktop to activate kno skills.
 ```
 
 **Output (Claude Desktop not found)**
@@ -929,6 +946,96 @@ Done.
 
 ---
 
+## PUBLISH
+
+Publishing renders curated pages to external directories with optional
+frontmatter and wikilinks. The vault is always the source of truth —
+published files are derived artifacts that can be regenerated at any time.
+
+Pages are automatically published after every curate pass (via MCP). The
+CLI command is for manual publishes and troubleshooting.
+
+---
+
+### kno publish
+
+```
+kno publish  [--page <id>]  [--format <format>]  [--dry-run]  [--json]
+```
+
+Publish pages to all configured targets.
+
+**Options**
+
+    --page <id>         Publish a single page instead of all pages.
+    --format <format>   Override the target format for this run.
+                        "frontmatter" or "markdown". Does not modify config.
+    --dry-run           Show what would be published without writing files.
+    --json              Machine-readable output
+
+**Output (default)**
+
+```
+  ✓ AWS Infrastructure → ~/obsidian/kno
+  ✓ CNC Machine Maintenance → ~/obsidian/kno
+
+Published 2 page(s).
+```
+
+**Output (--dry-run)**
+
+```
+Would publish:
+  AWS Infrastructure → ~/obsidian/kno/aws-infrastructure.md  [frontmatter]
+  CNC Machine Maintenance → ~/obsidian/kno/cnc-machine-maintenance.md  [frontmatter]
+```
+
+**Output (--json)**
+
+```json
+[
+  {
+    "page_id": "aws-infrastructure",
+    "target": "~/obsidian/kno",
+    "path": "/Users/kevin/obsidian/kno/aws-infrastructure.md"
+  }
+]
+```
+
+**Output (no targets configured)**
+
+```
+No publish targets configured.
+
+Add a target to your config.toml:
+
+  [[publish.targets]]
+  path = "~/obsidian/kno"
+  format = "frontmatter"
+
+Or run: kno setup --publish ~/path/to/directory
+```
+
+**Formats**
+
+- **frontmatter** — YAML frontmatter (title, aliases, tags, summary, created,
+  updated), wikilinks for cross-page references, guidance comments stripped.
+  Works with Obsidian and any markdown tool that reads YAML frontmatter.
+- **markdown** — raw markdown with guidance comments stripped. No frontmatter,
+  no wikilinks.
+
+**Notes**
+
+- Published files are named `<page-id>.md` in the target directory.
+- Wikilinks are conservative: only multi-word page names (2+ words),
+  case-sensitive exact match at word boundaries, skipped inside fenced
+  code blocks.
+- Guidance comments (`<!-- ... -->` at the top of page content) are stripped
+  from all published output.
+- The `~` prefix in target paths is expanded to the user's home directory.
+
+---
+
 ## CONFIGURATION
 
 ```toml
@@ -954,6 +1061,10 @@ level = "light"                   # "off" | "light" | "active"
                                   # off: no awareness, slash commands only
                                   # light: high-signal nudges only (default)
                                   # active: broader nudging
+
+# [[publish.targets]]             # repeatable — publish pages to external dirs
+# path = "~/obsidian/kno"         # target directory (~ expanded)
+# format = "frontmatter"             # "frontmatter" or "markdown"
 ```
 
 Defaults are designed to be predictably successful. Any consumer operating

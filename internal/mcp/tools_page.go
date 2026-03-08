@@ -87,11 +87,28 @@ func pageCreateHandler(a *app.App) server.ToolHandlerFunc {
 		page.ID = id
 		a.IndexPage(page)
 
-		data, _ := json.MarshalIndent(map[string]any{
+		// Auto-publish new page to configured targets.
+		var published []string
+		if content != "" && a.HasPublishTargets() {
+			if results, err := a.PublishPages([]string{id}); err == nil {
+				for _, r := range results {
+					if r.Err == nil {
+						published = append(published, r.Target)
+					}
+				}
+			}
+		}
+
+		out := map[string]any{
 			"id":         id,
 			"name":       name,
 			"created_at": page.CreatedAt.Format(time.RFC3339),
-		}, "", "  ")
+		}
+		if len(published) > 0 {
+			out["published_to"] = published
+		}
+
+		data, _ := json.MarshalIndent(out, "", "  ")
 		return mcp.NewToolResultText(string(data)), nil
 	}
 }
@@ -189,10 +206,27 @@ func pageUpdateHandler(a *app.App) server.ToolHandlerFunc {
 			a.IndexPage(p)
 		}
 
-		data, _ := json.MarshalIndent(map[string]any{
+		// Auto-publish updated page to configured targets.
+		var published []string
+		if a.HasPublishTargets() {
+			if results, err := a.PublishPages([]string{id}); err == nil {
+				for _, r := range results {
+					if r.Err == nil {
+						published = append(published, r.Target)
+					}
+				}
+			}
+		}
+
+		out := map[string]any{
 			"id":         id,
 			"updated_at": time.Now().Format(time.RFC3339),
-		}, "", "  ")
+		}
+		if len(published) > 0 {
+			out["published_to"] = published
+		}
+
+		data, _ := json.MarshalIndent(out, "", "  ")
 		return mcp.NewToolResultText(string(data)), nil
 	}
 }

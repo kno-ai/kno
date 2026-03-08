@@ -37,9 +37,12 @@ setup, no rediscovering decisions you already made.
 
 **You curate periodically** — run `/kno.curate` to synthesize captured
 sessions into living page documents. Each page reflects everything you've
-learned about a subject, organized the way you think about it. kno will
-let you know when uncurated notes are accumulating — curate is the one
-step that stays intentional, where you decide what matters.
+learned about a subject, organized the way you think about it. If you've
+configured a publish target, pages are automatically published with
+frontmatter and tags — your knowledge becomes browsable in Obsidian or
+any markdown viewer. kno will let you know when uncurated notes are
+accumulating — curate is the one step that stays intentional, where you
+decide what matters.
 
 **The loop compounds.** Each capture feeds curate. Each curated page
 makes load faster and richer. Better loads mean better sessions, which
@@ -104,9 +107,19 @@ See the [User Guide](design/kno-guide) for the full walkthrough.
 ## Your vault is just files
 
 No database, no cloud service, no lock-in. Your vault is a folder of
-markdown files and a TOML config. Browse it in Obsidian, sync it with
-git or Dropbox, back it up however you back up everything else. You can
-read every file kno writes.
+markdown files and a TOML config. Sync it with git or Dropbox, back it
+up however you back up everything else. You can read every file kno writes.
+
+Publish curated pages to Obsidian or any markdown viewer that supports
+frontmatter — your pages get YAML metadata (title, tags, summary, dates)
+and cross-references become wikilinks:
+
+```sh
+kno setup --publish ~/obsidian/kno
+```
+
+Pages are published automatically after every curate. You can also run
+`kno publish` manually at any time.
 
 ## Works with Claude Desktop
 

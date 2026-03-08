@@ -66,17 +66,16 @@ If the user agrees, run the curate flow for this single page:
 1. Read relevant sessions in full: `kno_note_show({"ids": [...]})`
 2. Synthesize initial content, following the guidance just written.
 3. Show the proposed content to the user.
-4. On confirmation, update the page and stamp the sessions. Include a
-   `summary` in the page metadata — a one-line description of what the
-   page now covers. This summary powers topic awareness, letting kno
-   recognize when future conversations overlap with this page:
+4. On confirmation, update the page and stamp the sessions:
    ```
    kno_page_update({
      "id": "<page-id>",
      "content": "<guidance + synthesized knowledge>",
      "meta": {
        "last_curated_at": "<ISO8601>",
-       "summary": "<one-line summary of what this page now covers>"
+       "summary": "<one-line summary of what this page now covers>",
+       "tags": ["<union of all tags from curated notes>"],
+       "note_count": "<number of notes curated>"
      }
    })
    ```

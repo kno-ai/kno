@@ -240,6 +240,10 @@ Mark 9 notes as curated? [yes / review first]
 the note in. **Partial runs** — if uncurated notes exceed the configured
 limit, the skill processes what it can and reports the remainder.
 
+**Publishing** — if publish targets are configured, pages are automatically
+published after each curate update. The skill confirms this when it happens:
+"Pages updated and published." No extra step needed.
+
 ---
 
 ## /kno.load
