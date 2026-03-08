@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.0](https://github.com/kno-ai/kno/compare/v0.7.0...v0.8.0) (2026-03-08)
+
+
+### Features
+
+* add publish command for exporting pages to markdown with frontmatter ([ada89f5](https://github.com/kno-ai/kno/commit/ada89f540f8ea7b95f36a4f455025a45584fbcd3))
+
 ## [0.7.0](https://github.com/kno-ai/kno/compare/v0.6.0...v0.7.0) (2026-03-08)
 
 
