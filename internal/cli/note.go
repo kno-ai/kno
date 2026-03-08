@@ -618,10 +618,3 @@ func joinMeta(vals []string) string {
 	}
 	return result
 }
-
-func nilIfEmpty(s string) any {
-	if s == "" {
-		return nil
-	}
-	return s
-}
