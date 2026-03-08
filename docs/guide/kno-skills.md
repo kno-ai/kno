@@ -153,9 +153,9 @@ document) stays with the user.
 
 ---
 
-## /kno
+## /kno.start
 
-**The entry point.** Start every chat with `/kno` to connect to your vault.
+**The entry point.** Start every chat with `/kno.start` to connect to your vault.
 
 The skill calls `kno_vault_status`, lists your pages by name, and offers
 to load relevant context. The user says yes or just starts working —
@@ -266,7 +266,7 @@ published after each curate update. The skill confirms this when it happens:
 ## /kno.load
 
 **When to use it:** When you want to load a specific page or topic that
-kno hasn't surfaced. Usually you don't need this — `/kno` and kno's
+kno hasn't surfaced. Usually you don't need this — `/kno.start` and kno's
 attention handle loading automatically. Use it when you know exactly
 what you want.
 

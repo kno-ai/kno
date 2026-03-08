@@ -1,10 +1,10 @@
 # Start Skill
 
-The user typed `/kno` to connect to their vault. This is the zero-friction
+The user typed `/kno.start` to connect to their vault. This is the zero-friction
 entry point — check the vault and get them working.
 
 **Skill prefix:** When referencing other slash commands, match the prefix the
-user used to invoke this skill. If they invoked `/kno-personal`,
+user used to invoke this skill. If they invoked `/kno-personal.start`,
 reference `/kno-personal.curate`, not `/kno.curate`.
 
 ## Process

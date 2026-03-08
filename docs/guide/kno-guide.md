@@ -33,9 +33,9 @@ kno setup
 This creates your vault at `~/kno`, writes a default config, and registers
 kno with detected clients (Claude Desktop, Claude Code). Restart when prompted.
 
-**3. Enter `/kno` in a chat**
+**3. Enter `/kno.start` in a chat**
 
-Start a conversation and type `/kno`. kno checks your vault and shows
+Start a conversation and type `/kno.start`. kno checks your vault and shows
 your pages — if you have any, it offers to load relevant context. Say yes
 or just start working. That's the only step you need to remember.
 
@@ -202,12 +202,12 @@ you. These commands are available when you want explicit control.
 
 | Command | What it does |
 |---|---|
-| `/kno` | **Start here.** Shows pages, offers to load. Run this at the start of every chat. |
+| `/kno.start` | **Start here.** Shows pages, offers to load. Run this at the start of every chat. |
 | `/kno.capture` | Save insights when kno didn't offer, or steer tags explicitly. |
 | `/kno.curate` | Synthesize your notes into pages. |
 | `/kno.page` | Create or manage pages. |
 | `/kno.status` | Check vault health: note counts, page list, capacity. |
-| `/kno.load` | Load a specific page or topic. Usually not needed — `/kno` handles this. |
+| `/kno.load` | Load a specific page or topic. Usually not needed — `/kno.start` handles this. |
 
 ---
 
@@ -324,7 +324,7 @@ kno setup --name kno-personal --vault ~/kno-personal
 ```
 
 This creates a fully independent vault with its own tools and commands
-(`/kno-personal.capture`, etc.). The two vaults have no knowledge of
+(`/kno-personal.start`, `/kno-personal.capture`, etc.). The two vaults have no knowledge of
 each other.
 
 ---
@@ -343,7 +343,7 @@ with real context — no cold starts, no re-explaining your setup.
 on something repeatedly, create a page for it. Even an empty page gives
 curate a home for your notes.
 
-**Start every chat with `/kno`.** That's the one command to remember.
+**Start every chat with `/kno.start`.** That's the one command to remember.
 Everything else — saves, loads, curate reminders — kno handles for you.
 Slash commands are there if you want explicit control.
 
@@ -417,4 +417,4 @@ directly in conversation — no slash command needed:
 
 ---
 
-Your knowledge shouldn't reset every session. Start every chat with `/kno`.
+Your knowledge shouldn't reset every session. Start every chat with `/kno.start`.

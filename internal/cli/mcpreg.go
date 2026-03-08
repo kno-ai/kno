@@ -33,7 +33,7 @@ func knownMCPClients() []mcpClient {
 	// Claude Code — cross-platform
 	clients = append(clients, mcpClient{
 		Name:       "claude-code",
-		ConfigPath: filepath.Join(home, ".claude", "settings.json"),
+		ConfigPath: filepath.Join(home, ".claude", "settings.local.json"),
 	})
 
 	// Filter to clients whose parent directory exists.

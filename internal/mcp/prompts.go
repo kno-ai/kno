@@ -12,22 +12,22 @@ import (
 
 func registerPrompts(s *server.MCPServer, a *app.App, sc *SessionContext) {
 	s.AddPrompt(mcp.Prompt{
-		Name:        "kno",
+		Name:        "start",
 		Description: "Start here — show pages, offer to load",
 	}, startPromptHandler(a))
 
 	s.AddPrompt(mcp.Prompt{
-		Name:        "kno.capture",
+		Name:        "capture",
 		Description: "Save this session's insights to your vault",
 	}, capturePromptHandler(a))
 
 	s.AddPrompt(mcp.Prompt{
-		Name:        "kno.curate",
+		Name:        "curate",
 		Description: "Turn captured notes into lasting pages",
 	}, curatePromptHandler(a))
 
 	s.AddPrompt(mcp.Prompt{
-		Name:        "kno.load",
+		Name:        "load",
 		Description: "Load a specific page or topic",
 		Arguments: []mcp.PromptArgument{
 			{
@@ -39,7 +39,7 @@ func registerPrompts(s *server.MCPServer, a *app.App, sc *SessionContext) {
 	}, loadPromptHandler(a))
 
 	s.AddPrompt(mcp.Prompt{
-		Name:        "kno.page",
+		Name:        "page",
 		Description: "Create or edit a knowledge page",
 		Arguments: []mcp.PromptArgument{
 			{
@@ -51,7 +51,7 @@ func registerPrompts(s *server.MCPServer, a *app.App, sc *SessionContext) {
 	}, pagePromptHandler(a, sc))
 
 	s.AddPrompt(mcp.Prompt{
-		Name:        "kno.status",
+		Name:        "status",
 		Description: "Notes, pages, and vault health",
 	}, statusPromptHandler(a))
 }

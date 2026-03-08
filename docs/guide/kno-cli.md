@@ -92,7 +92,7 @@ with any detected clients.
                             Default: kno. Use a distinct name for each
                             additional vault (e.g. kno-personal). The name
                             becomes the skill prefix:
-                            /kno-personal.capture, /kno-personal.load, etc.
+                            /kno-personal.start, /kno-personal.capture, etc.
 
     --vault <path>          Vault directory path. Default: ~/kno for
                             the first vault. Use a distinct path for each
@@ -119,7 +119,7 @@ with any detected clients.
 ✓  Registered with Claude Desktop  (name: kno)
 ✓  Registered with Claude Code  (name: kno)
 
-Restart your client, then enter /kno in a chat to connect.
+Restart your client, then enter /kno.start in a chat to connect.
 ```
 
 **Output (with --publish)**
@@ -131,7 +131,7 @@ Restart your client, then enter /kno in a chat to connect.
 ✓  Registered with Claude Desktop  (name: kno)
 ✓  Registered with Claude Code  (name: kno)
 
-Restart your client, then enter /kno in a chat to connect.
+Restart your client, then enter /kno.start in a chat to connect.
 ```
 
 **Output (no clients found)**

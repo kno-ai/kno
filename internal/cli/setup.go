@@ -120,7 +120,7 @@ func newSetupCmd() *cobra.Command {
 					for _, c := range registered {
 						fmt.Fprintf(cmd.OutOrStdout(), "✓  MCP server %q registered with %s\n", serverName, c.Name)
 					}
-					fmt.Fprintf(cmd.OutOrStdout(), "\nRestart your client, then enter /kno in a chat to connect.\n")
+					fmt.Fprintf(cmd.OutOrStdout(), "\nRestart your client, then enter /%s.start in a chat to connect.\n", serverName)
 				} else if len(regErrors) == 0 {
 					fmt.Fprintln(cmd.OutOrStdout(), "—  No supported clients found — skipping MCP registration")
 					fmt.Fprintln(cmd.OutOrStdout(), "\nTo register manually, add the following to your client's MCP config:")

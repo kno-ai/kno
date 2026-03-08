@@ -66,7 +66,7 @@ go build -o /tmp/kno ./cmd/kno
 # Set up a test vault with MCP registration (registers with all detected clients)
 /tmp/kno setup --vault /tmp/kno-dev --name kno-dev
 
-# Restart your client — /kno-dev.capture, /kno-dev.load, etc. will appear
+# Restart your client — /kno-dev.start, /kno-dev.capture, etc. will appear
 ```
 
 The MCP registration points your client at `/tmp/kno` with
@@ -164,7 +164,7 @@ kno uses different language at different layers:
 |---|---|---|---|
 | CLI / data model | note, page | create, list, show, update, search | `kno note create` |
 | MCP tools | note, page | create, list, show, update, search | `kno_note_create` |
-| MCP prompts / skills | session, page | capture, curate, load | `/kno.capture` |
+| MCP prompts / skills | session, page | start, capture, curate, load | `/kno.start`, `/kno.capture` |
 
 - **CLI and MCP tools** use "note" — the data resource in the vault.
 - **Skills and user-facing text** use "capture" (verb) and "session" (noun) — what the user experiences.

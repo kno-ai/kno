@@ -192,7 +192,7 @@ If a matching page or note tagged with the repo name exists:
 > kno active — detected: [repo_name].
 > I'll surface relevant content as we work.
 
-**If the start skill (`/kno`) already ran this session, skip the session
+**If the start skill (`/kno.start`) already ran this session, skip the session
 confirmation** — the user already knows kno is present.
 
 ## Developer context
@@ -235,7 +235,7 @@ Check `vault_status.skill.auto_load_on_confirm`:
 
 ## Slash commands
 
-The user can invoke `/kno`, `/kno.capture`, `/kno.load`, `/kno.curate`,
+The user can invoke `/kno.start`, `/kno.capture`, `/kno.load`, `/kno.curate`,
 `/kno.page`, and `/kno.status` at any time for explicit control. These
 activate detailed skill prompts. Your awareness nudges complement them —
 they don't replace them.

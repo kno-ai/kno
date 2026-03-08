@@ -28,7 +28,7 @@ You've just tracked down a tricky issue. Before you move on:
 >
 > Save this? [yes / edit / skip]
 
-Two weeks later, you type `/kno` at the start of a new session:
+Two weeks later, you type `/kno.start` at the start of a new session:
 
 > **kno:** Your vault has **CNC Machine Maintenance** and **AWS
 > Infrastructure**. Want me to load any of these?
@@ -43,7 +43,7 @@ You decide what matters. kno makes sure you don't lose it.
 
 ## How it works
 
-**Start every chat with `/kno`.** kno checks your vault, shows your
+**Start every chat with `/kno.start`.** kno checks your vault, shows your
 pages, and offers to bring in relevant context. Say yes or just start
 working — kno stays attentive from there.
 
@@ -81,7 +81,7 @@ go install github.com/kno-ai/kno/cmd/kno@latest
 kno setup
 ```
 
-Restart your client (Claude Desktop or Claude Code). Enter `/kno` in a
+Restart your client (Claude Desktop or Claude Code). Enter `/kno.start` in a
 chat to connect — kno shows your pages and offers to bring in relevant
 context. From there, it stays attentive: noticing when something's worth
 keeping and offering to load what you already know.
