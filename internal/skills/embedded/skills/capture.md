@@ -292,7 +292,7 @@ kno_note_create({
     "tags": ["tag1", "tag2"],
     "summary": "one-line summary",
     "type": "decision",
-    "repo": "payments-service"
+    "repo": "cloud-infra"
   }
 })
 ```

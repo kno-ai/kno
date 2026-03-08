@@ -42,7 +42,7 @@ func TestPagePromptHandler_DeveloperTemplate(t *testing.T) {
 		Skills: embedded.New(),
 	}
 	sc := &SessionContext{
-		Git: &GitContext{RepoRoot: "/tmp/test", RepoName: "payments-service"},
+		Git: &GitContext{RepoRoot: "/tmp/test", RepoName: "cloud-infra"},
 	}
 
 	handler := pagePromptHandler(a, sc)
@@ -60,8 +60,8 @@ func TestPagePromptHandler_DeveloperTemplate(t *testing.T) {
 	if strings.Contains(text, "{{repo_name}}") {
 		t.Error("{{repo_name}} placeholder should be replaced")
 	}
-	if !strings.Contains(text, "payments-service") {
-		t.Error("expected repo name 'payments-service' in developer template")
+	if !strings.Contains(text, "cloud-infra") {
+		t.Error("expected repo name 'cloud-infra' in developer template")
 	}
 }
 

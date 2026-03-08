@@ -16,7 +16,7 @@ func TestExtractMeta_LowercaseKeys(t *testing.T) {
 			"Type":   "decision",
 			"STATUS": "open",
 			"tags":   []any{"aws", "rds"},
-			"Repo":   "payments-service",
+			"Repo":   "cloud-infra",
 		},
 	}
 	meta := extractMeta(args, "meta")
@@ -27,7 +27,7 @@ func TestExtractMeta_LowercaseKeys(t *testing.T) {
 	}{
 		{"type", "decision"},
 		{"status", "open"},
-		{"repo", "payments-service"},
+		{"repo", "cloud-infra"},
 	}
 	for _, tt := range tests {
 		if meta.Get(tt.key) != tt.want {

@@ -51,7 +51,7 @@ detection.
 
 When kno detects a git repo, it confirms at session start:
 
-> kno active — detected: payments-service
+> kno active — detected: cloud-infra
 
 This tells you the project context is live. Everything you save from
 this session will be tagged with the repo name.
@@ -59,7 +59,7 @@ this session will be tagged with the repo name.
 ### Automatic repo tagging
 
 Every save in a dev session gets the repo name as a tag automatically.
-You don't need to add `#payments-service` — it's already there.
+You don't need to add `#cloud-infra` — it's already there.
 Additional tags work the same as always.
 
 ### Type vocabulary
@@ -114,25 +114,25 @@ When something gets fixed, move it to solved with the resolution date.
 
 ## Decisions
 
-- **2026-02-14** — Chose Postgres over DynamoDB for order storage.
-  Query patterns are relational, access volume fits a single RDS
-  instance, and the team already knows Postgres.
+- **2026-02-14** — Chose RDS Postgres over DynamoDB for config storage.
+  Query patterns are relational, access volume fits a single instance,
+  and the team already knows Postgres.
 - **2026-01-20** — Event bus: SNS+SQS over Kafka. Lower operational
   overhead, sufficient throughput for current scale.
 
 ## Known issues
 
-- **open** — Flaky timeout on webhook retry after 3 attempts.
+- **open** — Flaky timeout on cross-AZ health check after 3 retries.
   Workaround: increase timeout to 30s in config. See #412.
-- **resolved (2026-03-01)** — Race condition in order lock acquisition.
-  Fixed by switching to advisory locks.
+- **resolved (2026-03-01)** — Race condition in ECS task placement.
+  Fixed by switching to spread placement strategy.
 
 ## Setup
 
 - Requires Docker for local Postgres: `docker compose up -d`
 - Seed data: `make seed` — takes ~2 minutes
 - `.env.example` has all required vars. Copy to `.env` and fill in
-  Stripe test keys from 1Password.
+  AWS credentials from your SSO session.
 
 ## Solved problems
 

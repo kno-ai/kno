@@ -13,10 +13,10 @@ func TestParseRepoNameFromURL(t *testing.T) {
 		url  string
 		want string
 	}{
-		{"git@github.com:org/payments-service.git", "payments-service"},
-		{"https://github.com/org/payments-service.git", "payments-service"},
-		{"git@github.com:org/payments-service", "payments-service"},
-		{"https://github.com/org/payments-service", "payments-service"},
+		{"git@github.com:org/cloud-infra.git", "cloud-infra"},
+		{"https://github.com/org/cloud-infra.git", "cloud-infra"},
+		{"git@github.com:org/cloud-infra", "cloud-infra"},
+		{"https://github.com/org/cloud-infra", "cloud-infra"},
 		{"ssh://git@github.com/org/repo.git", "repo"},
 		{"", ""},
 	}
