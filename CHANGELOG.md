@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.10.2](https://github.com/kno-ai/kno/compare/v0.10.1...v0.10.2) (2026-03-08)
+
+
+### Bug Fixes
+
+* rename MCP prompts to use conventional server.prompt naming ([8f81303](https://github.com/kno-ai/kno/commit/8f81303055f2c043a323aa71907e60ee39951d10))
+
 ## [0.10.1](https://github.com/kno-ai/kno/compare/v0.10.0...v0.10.1) (2026-03-08)
 
 
