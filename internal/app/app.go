@@ -5,6 +5,7 @@ import (
 
 	"github.com/kno-ai/kno/internal/config"
 	"github.com/kno-ai/kno/internal/model"
+	"github.com/kno-ai/kno/internal/publish"
 	"github.com/kno-ai/kno/internal/search"
 	"github.com/kno-ai/kno/internal/skills"
 	"github.com/kno-ai/kno/internal/skills/embedded"
@@ -162,4 +163,20 @@ func (a *App) RemovePageFromIndex(id string) {
 	}
 	defer idx.Close()
 	idx.RemovePage(id)
+}
+
+// --- Publishing ---
+
+// PublishPages publishes the given pages (or all pages if pageIDs is nil) to
+// all configured publish targets. Returns nil if no targets are configured.
+func (a *App) PublishPages(pageIDs []string) ([]publish.Result, error) {
+	if len(a.Config.Publish.Targets) == 0 {
+		return nil, nil
+	}
+	return publish.PublishPages(a.Vault, a.Config.Publish.Targets, pageIDs)
+}
+
+// HasPublishTargets reports whether any publish targets are configured.
+func (a *App) HasPublishTargets() bool {
+	return len(a.Config.Publish.Targets) > 0
 }

@@ -9,11 +9,30 @@ import (
 )
 
 type Config struct {
-	Notes  NotesConfig  `toml:"notes" json:"notes"`
-	Pages  PagesConfig  `toml:"pages" json:"pages"`
-	Curate CurateConfig `toml:"curate" json:"curate"`
-	Search SearchConfig `toml:"search" json:"search"`
-	Nudges NudgesConfig `toml:"nudges" json:"nudges"`
+	Notes   NotesConfig     `toml:"notes" json:"notes"`
+	Pages   PagesConfig     `toml:"pages" json:"pages"`
+	Curate  CurateConfig    `toml:"curate" json:"curate"`
+	Search  SearchConfig    `toml:"search" json:"search"`
+	Nudges  NudgesConfig    `toml:"nudges" json:"nudges"`
+	Publish PublishConfig   `toml:"publish" json:"publish"`
+}
+
+type PublishTarget struct {
+	Path   string `toml:"path" json:"path"`
+	Format string `toml:"format" json:"format"`
+}
+
+type PublishConfig struct {
+	Targets []PublishTarget `toml:"targets" json:"targets"`
+}
+
+// ValidPublishFormat reports whether format is a recognized publish format.
+func ValidPublishFormat(format string) bool {
+	switch format {
+	case "markdown", "frontmatter":
+		return true
+	}
+	return false
 }
 
 type NotesConfig struct {

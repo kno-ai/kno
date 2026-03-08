@@ -21,6 +21,12 @@ kno setup
 
 Restart Claude Desktop. kno is immediately active.
 
+To publish curated pages to Obsidian or another markdown viewer:
+
+```bash
+kno setup --publish ~/obsidian/kno
+```
+
 ## How it works
 
 kno listens as you work. It watches for **knowledge checkpoints** —
@@ -30,7 +36,9 @@ the overlap and offers to load your existing context.
 
 Periodically, you run `/kno.curate` to synthesize your captures into
 **page documents** — living, readable files that reflect everything you've
-learned about a subject.
+learned about a subject. Pages can be published to Obsidian or any markdown
+tool that supports frontmatter — your knowledge becomes browsable outside
+of AI conversations.
 
 The loop is capture, curate, load — and kno initiates most of it for you.
 Slash commands (`/kno.capture`, `/kno.load`, `/kno.curate`, `/kno.page`,
@@ -39,9 +47,9 @@ Slash commands (`/kno.capture`, `/kno.load`, `/kno.curate`, `/kno.page`,
 ## Your vault
 
 Your vault is just a folder of markdown files — no database, no cloud
-service, no lock-in. Sync it with git, Dropbox, iCloud — or browse it
-in Obsidian alongside your other notes. kno works with Claude Desktop
-today, with more AI clients coming soon.
+service, no lock-in. Sync it with git, Dropbox, iCloud — or publish
+curated pages to Obsidian with frontmatter, tags, and wikilinks. kno
+works with Claude Desktop today, with more AI clients coming soon.
 
 ```
 ~/kno/

@@ -34,6 +34,7 @@ func NewRootCommand() *cobra.Command {
 		newNoteCmd(),
 		newPageCmd(),
 		newVaultCmd(),
+		newPublishCmd(),
 		newMCPCmd(),
 		newVersionCmd(),
 	)

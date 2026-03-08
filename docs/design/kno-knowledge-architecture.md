@@ -46,11 +46,16 @@ client standing awareness of the vault — the ability to recognize knowledge
 checkpoints, offer to capture, and suggest loading relevant context. The
 instructions are determined by the `nudges.level` config setting.
 
+The MCP server also handles **auto-publishing**: when a page is created or
+updated via MCP (typically during curate), it automatically publishes to
+any configured targets. The publish result (`published_to`) is included in
+the tool response so the skill can confirm it to the user.
+
 Most MCP tools are used by skills — the skill orchestrates a sequence of
 tool calls to implement a workflow. Some tools (delete, rename) are used
 directly by the LLM without a skill, for simple operations where
 conversational handling is sufficient. Bulk maintenance commands (prune,
-index rebuild) are CLI-only.
+index rebuild, manual publish) are CLI-only.
 
 ### Skill — interprets intent
 
@@ -212,6 +217,8 @@ Key fields used by the skill:
 | (in content) | page | — | user-authored, skill-maintained |
 | last_curated_at | page | scalar | skill after curate |
 | summary | page | scalar | skill after curate |
+| tags | page | array | skill after curate (union of curated note tags) |
+| note_count | page | scalar | skill after curate |
 
 Page summaries power topic awareness — they let kno recognize when a new
 conversation overlaps with existing vault knowledge without reading full
@@ -321,6 +328,7 @@ the vault.
 | `kno page search` | `kno_page_search` | load (awareness or /kno.load) |
 | `kno vault status` | `kno_vault_status` | all skills, awareness |
 | `kno vault rebuild-index` | — | CLI only |
+| `kno publish` | — | CLI only (auto-triggered on page update via MCP) |
 
 **"Conversational"** means the LLM uses the tool directly when the user
 asks — no skill needed. Delete and rename are simple enough that a slash
@@ -338,7 +346,8 @@ to call and in what order based on the conversation.
 
 **Curate:** orient (`vault status`) → list uncurated (`note list`) →
 read relevant notes (`note show`) → read page (`page show`) →
-synthesize → write page (`page update`) → stamp notes (`note update`)
+synthesize → write page (`page update`, auto-publishes) → stamp notes
+(`note update`)
 
 **Load:** orient (`vault status`) → search (`page search`, `note search`) →
 read matches (`page show`, `note show`) → inject into conversation

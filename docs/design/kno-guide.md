@@ -225,6 +225,73 @@ Check vault health: session counts, page list, capacity.
 
 ---
 
+## Publishing pages
+
+Your curated pages are valuable outside of AI conversations. Publish them
+to Obsidian or any markdown viewer that supports YAML frontmatter:
+
+```bash
+kno setup --publish ~/obsidian/kno
+```
+
+This adds a publish target to your config. From then on, pages are
+**automatically published after every curate** — no extra step needed.
+You can also publish manually at any time:
+
+```bash
+kno publish
+```
+
+### What gets published
+
+Published pages include:
+
+- **YAML frontmatter** — title, aliases, tags, summary, created and
+  updated dates
+- **Wikilinks** — references to other page names become `[[wikilinks]]`
+  for easy cross-navigation in Obsidian
+- **Clean content** — guidance comments at the top of vault pages are
+  stripped from the published output
+
+The vault remains the source of truth. Published files are derived
+artifacts that can be regenerated at any time with `kno publish`.
+
+### Formats
+
+Two formats are available:
+
+- **frontmatter** (default) — YAML frontmatter, wikilinks, and clean
+  content. Works with Obsidian and any markdown tool that reads frontmatter.
+- **markdown** — raw markdown with guidance stripped. No frontmatter.
+
+Override the format per-publish:
+
+```bash
+kno publish --format markdown
+```
+
+### Multiple targets
+
+Add multiple targets in `config.toml`:
+
+```toml
+[[publish.targets]]
+path = "~/obsidian/kno"
+format = "frontmatter"
+
+[[publish.targets]]
+path = "~/docs/kno"
+format = "markdown"
+```
+
+### Time to value
+
+Publishing is the fastest way to see the value of your vault. After one
+curate pass, you have a living document in Obsidian — browsable, searchable,
+and linked to your other notes. Just one good page makes the loop click.
+
+---
+
 ## Vault management
 
 You don't need to think about capacity. When the vault is full, kno
@@ -244,9 +311,9 @@ this by folding sessions into pages before they age out.
 Your vault is just a directory of plain files — markdown, TOML config,
 and a search index. You can put it anywhere.
 
-- **Obsidian / other editors.** Place your vault inside an Obsidian vault
-  and your pages become browsable alongside your other notes. kno writes
-  standard markdown.
+- **Obsidian / other editors.** Publish curated pages to an Obsidian vault
+  with `kno setup --publish ~/obsidian/kno`. Pages get frontmatter, tags,
+  and wikilinks — browsable alongside your other notes.
 - **Sync.** Put your vault in a synced folder (iCloud, Dropbox, Syncthing)
   and your knowledge follows you across machines.
 - **Backup.** A vault in your existing backup path gets backed up
@@ -345,6 +412,10 @@ default_limit = 10
 
 [nudges]
 level = "light"              # "off", "light", or "active"
+
+# [[publish.targets]]
+# path = "~/obsidian/kno"
+# format = "frontmatter"            # "frontmatter" or "markdown"
 ```
 
 ### Managing your vault in conversation
