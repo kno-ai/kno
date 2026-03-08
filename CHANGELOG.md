@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.10.1](https://github.com/kno-ai/kno/compare/v0.10.0...v0.10.1) (2026-03-08)
+
+
+### Bug Fixes
+
+* surface MCP registration errors and add trailing newline to config ([070f1ed](https://github.com/kno-ai/kno/commit/070f1ed9f2b2afa363346044476e935c3f251207))
+
 ## [0.10.0](https://github.com/kno-ai/kno/compare/v0.9.0...v0.10.0) (2026-03-08)
 
 
