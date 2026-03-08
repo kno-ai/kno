@@ -22,10 +22,9 @@ don't just dump it.
 2. Orient: call `kno_vault_status` to see page count, session stats, and config.
 
 3. **Empty vault:** If the vault has no sessions and no pages, don't just say
-   "nothing found." Explain the loop briefly: "Your vault is empty — nothing
-   to load yet. After this session, run `/kno.capture` to start building your
-   knowledge base. Once you've saved a few sessions, `/kno.curate` will
-   synthesize them into pages that load instantly." Then let them get to work.
+   "nothing found." Briefly set expectations: "Your vault is empty — nothing
+   to load yet. Just start working and kno will notice when something worth
+   keeping comes up." Then let them get to work.
 
 4. Search pages (curated, high-signal knowledge):
    ```
@@ -56,21 +55,31 @@ don't just dump it.
    - Pages: `kno_page_show({"id": "<page-id>"})`
    - Sessions: `kno_note_show({"ids": ["id1", "id2"]})`
 
-9. **Demonstrate understanding.** Don't just say "loaded 3 items." Read what
-   you loaded and reflect it back: "I've loaded your CNC Machine Maintenance
-   page — I can see you've been tracking spindle issues and alignment
-   procedures. What specifically are we tackling?" This is the payoff of the whole
-   system — the user sees that this session already knows what previous sessions
-   learned. No re-explaining their setup, no rediscovering prior decisions.
-   Scale this to the load: a single short session doesn't need a grand summary,
-   just a brief acknowledgment that shows you absorbed it.
+9. **Demonstrate understanding and connect to the current task.** Don't just
+   say "loaded 3 items." Read what you loaded and show how it applies to what
+   the user is working on right now. This is the payoff — the user sees that
+   this session already knows what previous sessions learned.
+
+   Good: "Loaded your AWS Infrastructure page — since you're setting up a
+   new RDS instance, your parameter group pinning policy and 20-connection
+   pool limit from previous work apply here."
+
+   Not just: "Loaded your AWS Infrastructure page — it covers RDS, ECS,
+   and cost patterns."
+
+   The first connects past knowledge to the present task. The second just
+   summarizes. If you don't yet know what the user is working on, summarize
+   what you loaded and ask: "What specifically are we tackling?"
+
+   Scale this to the load: a single short session doesn't need a grand
+   summary, just a brief acknowledgment that shows you absorbed it.
 
 **Mid-session loads:** If the user runs `/kno.load` in the middle of a
 conversation, that's fine. Search and load as normal. They may want to pull
 in context they didn't realize they needed.
 
-**Awareness-initiated loads:** If the user confirmed a load from an awareness
-nudge ("I have notes on this — want me to load them?"), the flow is identical.
+**Awareness-initiated loads:** If the user confirmed a load from a kno
+nudge ("kno has notes on this — want to load them?"), the flow is identical.
 Search, present matches, confirm, load. The nudge already established the
 topic — use it as your search query rather than asking again.
 
@@ -103,7 +112,7 @@ After loading, if the vault status revealed anything worth mentioning, add a
 brief note — one or two lines at most. The user is here to work, not to
 manage the vault. Pick the single most important issue:
 
-- "You've got N sessions that could strengthen your pages — `/kno.curate` whenever you're ready."
+- "You've got N sessions that could strengthen your pages — ask kno to curate, or use `/kno.curate` whenever you're ready."
 - "Your vault is getting full (N/M) — `/kno.curate` preserves notes long-term."
 - "[Page] has some recent notes that could enrich it."
 
@@ -111,4 +120,6 @@ manage the vault. Pick the single most important issue:
 
 If a tool call fails, tell the user clearly and suggest a fallback — don't
 silently skip. "Search returned an error — you can try `/kno.load` again,
-or just describe your setup and I'll work without vault context."
+or just describe your setup and kno will work without vault context." If errors
+suggest index corruption (search returns unexpected results repeatedly),
+suggest running `kno vault rebuild-index` from the terminal.

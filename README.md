@@ -19,7 +19,7 @@ brew install kno
 kno setup
 ```
 
-Restart Claude Desktop. kno is immediately active.
+Restart Claude Desktop. Enter `/kno` in a chat to connect.
 
 To publish curated pages to Obsidian or another markdown viewer:
 
@@ -29,20 +29,19 @@ kno setup --publish ~/obsidian/kno
 
 ## How it works
 
-kno listens as you work. It watches for **knowledge checkpoints** —
-decisions, debugging insights, designs that settled — and offers to
-capture them. When you start a session on a familiar topic, it recognizes
-the overlap and offers to load your existing context.
+Start every chat with `/kno`. kno checks your vault and offers to load
+relevant context. From there, it stays aware — noticing knowledge
+checkpoints and offering to capture them, recognizing familiar topics
+and suggesting loads.
 
-Periodically, you run `/kno.curate` to synthesize your captures into
-**page documents** — living, readable files that reflect everything you've
-learned about a subject. Pages can be published to Obsidian or any markdown
-tool that supports frontmatter — your knowledge becomes browsable outside
-of AI conversations.
+Over time, kno prompts you to curate your captures into **page
+documents** — living, readable files that reflect everything you've
+learned about a subject. Pages can be published to Obsidian or any
+markdown tool that supports frontmatter — your knowledge becomes
+browsable outside of AI conversations.
 
-The loop is capture, curate, load — and kno initiates most of it for you.
-Slash commands (`/kno.capture`, `/kno.load`, `/kno.curate`, `/kno.page`,
-`/kno.status`) are available for explicit control.
+The loop is capture, curate, load — and kno drives it. Slash commands
+are there when you want explicit control.
 
 ## Your vault
 
@@ -70,9 +69,9 @@ works with Claude Desktop today, with more AI clients coming soon.
 
 ## Documentation
 
-- [User Guide](docs/design/kno-guide.md) — getting started, awareness, and vault management
+- [User Guide](docs/design/kno-guide.md) — getting started and vault management
 - [Architecture](docs/design/kno-knowledge-architecture.md) — design principles, layers, and knowledge model
-- [Skills Reference](docs/design/kno-skills.md) — awareness behavior and slash command details
+- [Skills Reference](docs/design/kno-skills.md) — skill behavior and slash command details
 - [CLI Reference](docs/design/kno-cli.md) — complete command specification
 
 ## License

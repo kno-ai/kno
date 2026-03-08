@@ -28,23 +28,44 @@ drives the loop with slash commands only.
 
 After you give a substantive response — one where you've engaged with a
 real technical topic, not just a greeting or clarification — check whether
-the vault has relevant knowledge. Do this by calling `kno_vault_status`.
+the vault has relevant knowledge. Call `kno_vault_status` if you haven't
+already this session, or if the topic has shifted since your last check.
+Don't call it on every exchange — once you know the vault contents, use
+that knowledge until the conversation moves to a new domain.
 
 The status response includes page names and metadata. Pages that have been
 curated will have a `summary` field describing their scope. Scan page names
-and summaries (when present) against the topic of the conversation. If a
-page name or summary clearly overlaps with what's being discussed, mention
-it once:
+and summaries (when present) against the topic of the conversation.
 
-> "I have notes on this in your vault — want me to load them?"
+**Also check uncurated notes.** Early in the vault lifecycle — before the
+user's first curate — all knowledge lives in uncurated notes. If there are
+no matching pages, call `kno_note_list({"limit": 10})` and scan titles and
+tags for topic overlap. A recent session titled "ECS drain window fix"
+tagged "aws, ecs" is just as worth offering as a curated page. Don't skip
+relevant knowledge just because it hasn't been curated yet.
 
-If the user confirms, search and load:
-1. `kno_page_search({"query": "<topic>"})` and/or
-   `kno_note_search({"query": "<topic>", "filter": {"curated_at": null}})`
-2. Read the best matches in full with `kno_page_show` / `kno_note_show`
-3. Present what you loaded — demonstrate understanding, don't just list titles
+**If a page or note clearly overlaps with what's being discussed, offer to
+load it.** Don't be shy about this — loading relevant context is one of the
+most valuable things you can do. The user can always say no.
 
-If the user declines, drop it and continue.
+> "kno has notes on this — want to load your AWS Infrastructure page?"
+
+Or for uncurated notes:
+
+> "kno has a recent session on ECS that might help — want to load it?"
+
+Name the specific page or session. Keep it to one sentence. The user just
+says yes or no.
+
+If the user confirms, load the content:
+1. If you already know the exact page from the status check, load it directly
+   with `kno_page_show` — no need to search first.
+2. If you need to narrow from multiple candidates or find relevant sessions,
+   search first with `kno_page_search` and/or `kno_note_search`.
+3. Present what you loaded — demonstrate understanding, don't just list titles.
+
+If the user declines, drop it. You can briefly mention `/kno.load` as a
+way to do it later — one sentence, then move on.
 
 **When to check again:** If the conversation shifts to a substantially
 different topic from what's been discussed, you may check again. Use your
@@ -78,7 +99,7 @@ worth preserving has landed:
 
 When you recognize a checkpoint, offer to capture it:
 
-> "That's a good one — want me to add it to your vault?"
+> "That's a good one — want to add it to your vault?"
 
 If the user agrees, run the full capture procedure: review the conversation,
 propose a title, summary, and tags, confirm with the user, then call
@@ -93,6 +114,11 @@ Not every useful exchange is worth capturing. Do not nudge for:
 - Code snippets that worked on the first try without insight
 - General explanations or tutorials
 - Routine, well-understood tasks
+- Straightforward debugging that followed a predictable path, even if it
+  took several exchanges
+- Context the user provided to you as input — their architecture descriptions,
+  constraints, existing setup. The checkpoint is the outcome that builds on
+  those inputs, not the inputs themselves
 
 The threshold must be high. Over-nudging is worse than under-nudging — it
 becomes noise and the user stops noticing. One well-timed nudge in a
@@ -103,11 +129,12 @@ productive session is better than five marginal ones.
 - Nudge at most once between user-initiated captures. If the user has already
   captured (via your nudge or via `/kno.capture`), wait for another genuine
   checkpoint before nudging again.
-- If the user declines a nudge, do not re-nudge for the same insight. Move on.
+- If the user declines a capture nudge, briefly mention `/kno.capture` as
+  a way to do it later, then move on. Do not re-nudge for the same insight.
 - Never nudge in the first few exchanges — let the conversation develop.
 - Frame nudges as offering, not reminding: "That's a good one for your
-  vault" not "Don't forget to save." The tone is a colleague who sees
-  value, not a manager assigning tasks.
+  vault" not "Don't forget to save." The tone is kno spotting value, not
+  a manager assigning tasks.
 - Keep nudges to one sentence. Do not explain why unless asked.
 
 ## Session winding down
@@ -116,15 +143,21 @@ If the conversation has produced valuable knowledge and the user signals
 they're wrapping up ("thanks", "that's all I needed", etc.), offer capture
 if it hasn't happened yet:
 
-> "Want me to add this to your vault before we wrap up?"
+> "Want to add this to your vault before we wrap up? You can always ask
+> kno later with `/kno.capture`."
 
-If capture already happened this session, skip this. If the vault has a
-good number of uncurated notes building up, you can mention it briefly:
+If capture already happened this session, skip the capture offer. At wrap-up
+you can mention one of these if relevant — pick at most one:
 
-> "You've built up N notes — `/kno.curate` will fold them into your pages whenever you're ready."
+- If uncurated notes are building up: "You've built up N notes — want
+  to fold them into your pages now, or do it later with `/kno.curate`?"
+- If captures are clustering around tags with no matching page: "You're
+  building up notes on [tags] — want to give them a page, or do it
+  later with `/kno.page`?"
 
 ## Slash commands
 
-The user can invoke `/kno.capture`, `/kno.load`, `/kno.curate`, `/kno.page`,
-and `/kno.status` at any time for explicit control. These activate detailed
-skill prompts. Your awareness nudges complement them — they don't replace them.
+The user can invoke `/kno`, `/kno.capture`, `/kno.load`, `/kno.curate`,
+`/kno.page`, and `/kno.status` at any time for explicit control. These
+activate detailed skill prompts. Your awareness nudges complement them —
+they don't replace them.

@@ -15,34 +15,34 @@ every conversation.
 
 ## How it works
 
-kno listens as you work — always present, never in the way. There's no
-activation step, no commands to remember, no habits to build.
+Start every chat with `/kno`. kno checks your vault, shows your pages,
+and offers to load relevant context. Say yes or just start working —
+kno stays aware from there.
 
 **kno notices knowledge checkpoints** — a decision reached, a root cause
 found, a design that settled — and offers to capture them:
 
-> "That's a good one — want me to add it to your vault?"
+> "That's a good one — want to add it to your vault?"
 
 You confirm, and it's saved with a title, summary, and tags. Ten seconds.
 The cost of preserving an insight drops from "remember to save, context-
 switch to a notes tool, decide what to write, format it" to "say yes."
 
-**kno recognizes familiar topics** — when your conversation overlaps with
-existing vault knowledge, it offers to load the relevant context:
+**kno suggests relevant context** — when your conversation overlaps with
+existing vault knowledge, it offers to load it:
 
-> "I have notes on this in your vault — want me to load them?"
+> "kno has notes on this — want to load your AWS Infrastructure page?"
 
 Your session starts informed instead of cold. No re-explaining your
 setup, no rediscovering decisions you already made.
 
-**You curate periodically** — run `/kno.curate` to synthesize captured
-sessions into living page documents. Each page reflects everything you've
-learned about a subject, organized the way you think about it. If you've
-configured a publish target, pages are automatically published with
-frontmatter and tags — your knowledge becomes browsable in Obsidian or
-any markdown viewer. kno will let you know when uncurated notes are
-accumulating — curate is the one step that stays intentional, where you
-decide what matters.
+**kno prompts you to curate** — when captures accumulate, kno suggests
+folding them into living page documents. Each page reflects everything
+you've learned about a subject, organized the way you think about it.
+If you've configured a publish target, pages are automatically published
+with frontmatter and tags — your knowledge becomes browsable in Obsidian
+or any markdown viewer. Curate is the one step that stays intentional,
+where you decide what matters.
 
 **The loop compounds.** Each capture feeds curate. Each curated page
 makes load faster and richer. Better loads mean better sessions, which
@@ -55,12 +55,12 @@ becomes.
 
 Mid-conversation, after you've debugged a tricky issue:
 
-> **kno:** "That root cause was non-obvious — want me to add it to your
+> **kno:** "That root cause was non-obvious — want to add it to your
 > vault?"
 >
 > **You:** "yes"
 >
-> **kno:** Here's what I'll capture:
+> **kno:** Here's what kno will capture:
 >
 >   Title:    RDS slow query debugging
 >   Summary:  Query planner regression after minor version upgrade.
@@ -69,12 +69,12 @@ Mid-conversation, after you've debugged a tricky issue:
 >
 > Save this? [yes / edit / skip]
 
-Two weeks later, starting a new session:
+Two weeks later, you type `/kno` at the start of a new session:
 
-> **kno:** "I have notes on CNC machine maintenance and that spindle
-> issue in your vault — want me to load them?"
+> **kno:** Your vault has **CNC Machine Maintenance** and **AWS
+> Infrastructure**. Want me to load any of these?
 >
-> **You:** "yes"
+> **You:** "load the CNC page"
 >
 > *Session starts with full context from prior work.*
 
@@ -95,10 +95,10 @@ go install github.com/kno-ai/kno/cmd/kno@latest
 kno setup
 ```
 
-Restart Claude Desktop after setup. kno is immediately
-active — it will notice knowledge checkpoints and offer to capture them.
-Slash commands like `/kno.capture` and `/kno.load` are also available
-for explicit control.
+Restart Claude Desktop after setup. Enter `/kno` in a chat to connect —
+kno shows your pages and offers to load relevant context. From there,
+it stays aware: noticing knowledge checkpoints and suggesting loads as
+topics come up.
 
 See the [User Guide](design/kno-guide) for the full walkthrough.
 
@@ -135,9 +135,9 @@ kno is in active development. The knowledge loop — capture, curate, load
 
 ## Documentation
 
-- [User Guide](design/kno-guide) — getting started, awareness, and vault management
+- [User Guide](design/kno-guide) — getting started and vault management
 - [Architecture](design/kno-knowledge-architecture) — design principles, layers, and knowledge model
-- [Skills Reference](design/kno-skills) — awareness behavior and slash command details
+- [Skills Reference](design/kno-skills) — skill behavior and slash command details
 - [CLI Reference](design/kno-cli) — complete command specification
 
 <p style="margin-top: 3rem; color: #666; font-size: 0.85rem;">

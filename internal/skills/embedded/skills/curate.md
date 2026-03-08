@@ -77,15 +77,21 @@ written. Confirm each succeeds before proceeding.
    })
    ```
 
-3. If there are no pages, let the user know: "You have saved sessions but no
-   pages yet — curate needs somewhere to write. Want to create a page with
-   `/kno.page`?" Don't proceed without pages.
+3. If there are no pages, offer to create one now. Look at common tags across
+   sessions and suggest a page name: "You have N sessions but no pages yet.
+   Based on your tags, a [suggested name] page would cover most of them —
+   want to create it and curate in one go?" If yes, create the page with
+   `kno_page_create` and proceed with curation. Don't bounce the user to a
+   separate command.
 
 4. Show the user: uncurated count, pages sorted by staleness (longest since
    last curate, using `last_curated_at` from each page's metadata).
 
-5. If there's only one page, proceed with it directly — don't ask. If there
-   are multiple, ask: "Curate all pages, or start with one?"
+5. If this curate was initiated from a post-capture offer (Tier 3), the
+   target page is already established — skip step 4 and proceed directly
+   with that page. Otherwise: if there's only one page, proceed with it
+   directly — don't ask. If there are multiple, ask: "Curate all pages,
+   or start with one?"
 
 6. For each page:
    a. Read the page: `kno_page_show({"id": "<page-id>"})`
@@ -99,7 +105,8 @@ written. Confirm each succeeds before proceeding.
    d. If no sessions are relevant, tell the user: "Nothing new for [page] —
       skipping." Move to the next page.
    e. Read relevant sessions in full: `kno_note_show({"ids": ["id1", "id2"]})`
-   f. Synthesize an update to the page content, following the page's guidance.
+   f. Synthesize an update to the page content, following the page's guidance
+      and the default voice below.
    g. **Show a structured summary of changes** — not a full document dump.
       Format like:
       - Added: [new section or point]
@@ -155,22 +162,39 @@ maintain the page. Read this before synthesizing. It may specify:
 
 If a page has no guidance, ask the user what to focus on before updating it.
 
+## Page voice
+
+Pages should read like a helpful, efficient assistant left you notes —
+direct, specific, and immediately useful. The target voice:
+
+- **Direct and imperative.** "Pin parameter groups before minor version
+  upgrades." Not "It is recommended that parameter groups be pinned."
+- **Specific numbers and values.** "20 connections per instance, hard max."
+  "Drain window: 60 seconds minimum." These concrete details are what make
+  a page worth loading.
+- **Context for why, not just what.** "The default 30s caused dropped
+  requests during deploys." One sentence of context turns a rule into
+  knowledge.
+- **No filler.** No "In this section we'll cover..." No "It's important
+  to note that..." Just the knowledge.
+
+Page guidance can override this voice — if the user wants a different tone,
+follow their guidance. This is the default when no guidance exists.
+
 ## Partial runs
 
 If uncurated sessions exceed `curate.max_notes_per_run`, the list call
 returns up to that limit. Process what you received and let the user know:
-"Processed N sessions. There are more — run `/kno.curate` again to continue."
+"Processed N sessions. There are more — ask kno to continue, or run
+`/kno.curate` again."
 
 ## After curating
 
 Connect curate to the next step in the loop:
 
 **First curate:** The user just saw sessions turn into a page document for
-the first time. Make the payoff concrete: "Your [page] document is ready.
-Next time you work on this topic, I'll recognize it and offer to load this
-context — no re-explaining your setup, no rediscovering prior decisions."
-This is the moment the loop clicks — scattered sessions became a lasting
-document, and it will load automatically.
+the first time. Keep it concrete: "Your [page] document is ready — kno will pull this in next time you're
+working on the topic."
 
 **Subsequent curates:** Brief reinforcement: "Pages updated. This context
 will be available automatically in future sessions on these topics." If the

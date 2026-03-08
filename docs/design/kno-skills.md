@@ -71,7 +71,7 @@ A checkpoint is:
 
 When kno recognizes a checkpoint:
 
-> "That's a good one — want me to add it to your vault?"
+> "That's a good one — want to add it to your vault?"
 
 The user confirms or declines. On confirmation, kno runs the full capture
 procedure: proposes title, summary, tags, and content, confirms with the
@@ -82,7 +82,7 @@ user, then writes to the vault.
 Early in a conversation, if the topic overlaps with existing vault
 knowledge, kno mentions it once:
 
-> "I have notes on this in your vault — want me to load them?"
+> "kno has notes on this — want to load your AWS Infrastructure page?"
 
 On confirmation, kno searches and loads relevant pages and notes. If
 declined, it drops the subject.
@@ -150,6 +150,20 @@ document) stays with the user.
 
 ---
 
+## /kno
+
+**The entry point.** Start every chat with `/kno` to connect to your vault.
+
+The skill calls `kno_vault_status`, lists your pages by name, and offers
+to load relevant context. The user says yes or just starts working —
+awareness takes over from there.
+
+This is the only step users need to remember. Everything else — capture
+nudges, load suggestions, curate reminders — is handled by awareness or
+surfaced at the right moment.
+
+---
+
 ## /kno.capture
 
 **When to use it:** When you want to explicitly capture, or when awareness
@@ -165,7 +179,7 @@ signal that load and curate use to match sessions to pages and queries.
 ```
 /kno.capture
 
-Here's what I'll capture from this session:
+Here's what kno will capture from this session:
 
   Title:    RDS slow query debugging
   Summary:  Query planner regression after minor version upgrade. Fixed by
@@ -248,8 +262,10 @@ published after each curate update. The skill confirms this when it happens:
 
 ## /kno.load
 
-**When to use it:** When you want to explicitly load vault knowledge, or
-when awareness didn't offer for a topic where you know you have context.
+**When to use it:** When you want to load a specific page or topic that
+awareness hasn't surfaced. Usually you don't need this — `/kno` and
+awareness handle loading automatically. Use it when you know exactly
+what you want.
 
 ```
 /kno.load

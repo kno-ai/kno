@@ -152,8 +152,8 @@ awareness settings.
 
 This is the model for spaces (e.g. work vs. personal). Each vault has its
 own MCP registration. The `--name` value becomes the skill prefix: a vault
-named `kno-personal` exposes `/kno-personal.capture`, `/kno-personal.load`,
-etc. Each vault's awareness operates independently. Separation is enforced
+named `kno-personal` exposes `/kno-personal`, `/kno-personal.capture`,
+`/kno-personal.load`, etc. Each vault's awareness operates independently. Separation is enforced
 at the filesystem level — vaults have no knowledge of each other. Sync
 and encryption are handled outside kno, at the directory level.
 

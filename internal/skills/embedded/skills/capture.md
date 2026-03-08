@@ -29,8 +29,7 @@ can absorb without having been here.
 
 2. **Check if there's anything worth saving.** If the conversation was trivial
    — a quick lookup, a greeting, a one-line answer — say so directly: "This
-   was a quick one — I don't think there's enough here to save. Want me to
-   save it anyway, or skip?" Don't force a save on a thin session.
+   was a quick one — not much here to save. Want to save it anyway, or skip?" Don't force a save on a thin session.
 
 3. Work backwards from outcomes to identify the reasoning, tradeoffs, and
    alternatives considered.
@@ -44,6 +43,10 @@ can absorb without having been here.
    "React auth flow with refresh tokens").
 
 6. Write a concise summary (1-2 sentences) for the `summary` metadata field.
+   **The summary powers topic matching** — make it outcome-focused, not
+   topic-focused. "Query planner regression after minor version upgrade —
+   fixed by pinning parameter group" is useful. "Discussed RDS issues" is
+   not. Include the resolution or key finding, not just the subject area.
 
 7. **Choose tags carefully.** Tags are the primary signal that load and curate
    use to match sessions to pages and queries. Good tags make sessions
@@ -71,6 +74,11 @@ can absorb without having been here.
 conversation rather than at the end, save what's happened so far. Don't
 flag the timing in the summary — just save whatever's worth saving. The user
 may have a reason for saving now.
+
+**Follow-up captures:** If a capture already happened earlier in this session,
+this one should cover only what happened since the last capture. Don't
+re-capture content that's already in the vault. Reference the earlier capture
+by title if it provides useful context for this one.
 
 **Nudge-initiated captures:** If this capture was triggered by an awareness
 nudge rather than a slash command, the flow is identical — same proposal,
@@ -138,26 +146,26 @@ Use the note's tags and the vault status to find the most relevant thing
 to mention. Pick one:
 
 - **Matching page exists:** "Saved. That'll feed into your [page name]
-  page next time you run `/kno.curate`."
+  page — ask kno to curate when you're ready, or use `/kno.curate`."
 - **Uncurated count, relevant:** "Saved — you're building up good
-  context on [topic]. `/kno.curate` folds these into pages whenever
-  you're ready."
-- **No matching page, early:** "Saved — `/kno.curate` will fold this
-  into a page when you're ready."
-- **First capture ever:** "Saved — that's your first one. `/kno.curate`
-  turns these into lasting pages as you build up more."
+  context on [topic]. Ask kno to curate whenever you're ready, or
+  use `/kno.curate`."
+- **No matching page, early:** "Saved — kno will fold this into a page
+  when you curate. Just ask, or use `/kno.curate`."
+- **First capture ever:** "Saved — that's your first one. As you build
+  up more, ask kno to curate them into lasting pages."
 
-The status line is one sentence. It always names `/kno.curate` so the
-user learns the vocabulary over time. It's informational — not asking
-them to do anything right now.
+The status line is one or two sentences. Prefer conversational framing
+("ask kno to curate") and mention the slash command as an alternative.
+It's informational — not asking them to do anything right now.
 
 ### Tier 2: Acknowledge the growing collection
 
 When uncurated notes are accumulating (roughly 8+), shift the status line
 to acknowledge the growing collection:
 
-"Saved. You've got N notes building up — `/kno.curate` will fold them
-into your pages whenever you're ready."
+"Saved. You've got N notes building up — want to fold them into your
+pages now, or do it later with `/kno.curate`?"
 
 If pages exist and the uncurated notes cluster around specific ones, name
 them: "Saved. You've got 6 notes that'd strengthen your CNC Machine
@@ -178,7 +186,7 @@ are true:
 When all three conditions hold:
 
 "Saved. You've got N notes that'd strengthen your [page name] page —
-want me to fold them in now?"
+want to fold them in now, or do it later with `/kno.curate`?"
 
 If yes, run the curate flow for that single page — not the whole vault.
 This keeps the follow-on bounded and immediately productive.
@@ -189,12 +197,12 @@ Do not offer this for the whole vault. One specific page, one clear action.
 
 **Capacity pressure:** If `auto_removed_uncurated` is true in the create
 response, mention it ahead of any tier: "Saved — though an older note
-was removed to make room. Running `/kno.curate` folds notes into pages
-so they're preserved long-term."
+was removed to make room. Curating folds notes into pages so they're
+preserved long-term — ask kno to curate, or use `/kno.curate`."
 
 **Page suggestions:** If 2+ uncurated sessions share tags with no matching
-page, mention it: "You're building up notes on [tags] — `/kno.page new`
-would give them a home to grow into." Only suggest when the pattern is
+page, mention it: "You're building up notes on [tags] — want to give
+them a page? Or use `/kno.page` later." Only suggest when the pattern is
 obvious from the tags alone. Do not propose page names — that's the
 page skill's job.
 
@@ -203,15 +211,21 @@ page skill's job.
 Every post-capture message should be one to three lines total. No
 exceptions. Do not explain why a note is valuable, do not describe what
 a page would contain, do not editorialize about which notes "belong
-together." The user just finished capturing — they want confirmation
-and a command hint, not commentary. The status line builds familiarity
-with slash commands over time without demanding anything in the moment.
+together." The user just finished capturing — they want confirmation,
+not commentary. Prefer conversational offers ("want to curate now?")
+with the slash command as a fallback ("or use `/kno.curate` later").
 
 ## Guidelines
 
 - Write for a future reader with no context about this conversation.
 - Lead with outcomes, not process.
-- Preserve technical precision: exact names, versions, error messages.
+- Preserve technical precision: exact names, versions, error messages,
+  config values, thresholds, and measurements. "20 connections per instance"
+  and "60 seconds minimum drain window" are the details that make a curated
+  page worth loading.
 - Save the *why* behind decisions as carefully as the *what*.
 - Keep it concise: 100-400 words, not a transcript.
+- For long sessions (20+ exchanges), focus on outcomes, decisions, and the
+  final approach — not the exploratory path. The capture should be useful
+  to a future reader, not a faithful log of the journey.
 - If a tool call fails, report the error clearly. Don't retry silently.

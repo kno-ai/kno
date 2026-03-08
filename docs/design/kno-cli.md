@@ -119,12 +119,7 @@ if Claude Desktop is detected.
 ✓  Config written to ~/kno/config.toml
 ✓  MCP server "kno" registered with Claude Desktop  (name: kno)
 
-Restart Claude Desktop to activate kno skills.
-
-Quick start:
-  /kno.capture    — capture a session summary to your vault
-  /kno.load       — load knowledge into a new session
-  kno note list  — browse your vault from the terminal
+Restart Claude Desktop, then enter /kno in a chat to connect.
 ```
 
 **Output (with --publish)**
@@ -135,7 +130,7 @@ Quick start:
 ✓  Publish target added: ~/obsidian/kno
 ✓  MCP server "kno" registered with Claude Desktop
 
-Restart Claude Desktop to activate kno skills.
+Restart Claude Desktop, then enter /kno in a chat to connect.
 ```
 
 **Output (Claude Desktop not found)**

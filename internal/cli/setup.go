@@ -95,7 +95,7 @@ func newSetupCmd() *cobra.Command {
 				results := registerMCP("", vaultPath, serverName)
 				if len(results) > 0 {
 					fmt.Fprintf(cmd.OutOrStdout(), "✓  MCP server %q registered with Claude Desktop\n", serverName)
-					fmt.Fprintf(cmd.OutOrStdout(), "\nRestart Claude Desktop to activate %s skills.\n", serverName)
+					fmt.Fprintf(cmd.OutOrStdout(), "\nRestart Claude Desktop, then enter /kno in a chat to connect.\n")
 				} else {
 					fmt.Fprintln(cmd.OutOrStdout(), "—  Claude Desktop not found — skipping MCP registration")
 					fmt.Fprintln(cmd.OutOrStdout(), "\nTo register manually, add the following to your Claude Desktop config:")

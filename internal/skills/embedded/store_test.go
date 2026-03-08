@@ -13,6 +13,7 @@ func TestEmbeddedSkillsPresent(t *testing.T) {
 		"curate.md",
 		"load.md",
 		"page.md",
+		"start.md",
 		"status.md",
 	}
 

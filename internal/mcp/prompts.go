@@ -11,22 +11,27 @@ import (
 
 func registerPrompts(s *server.MCPServer, a *app.App) {
 	s.AddPrompt(mcp.Prompt{
+		Name:        "kno",
+		Description: "Start here — show pages, offer to load",
+	}, startPromptHandler(a))
+
+	s.AddPrompt(mcp.Prompt{
 		Name:        "kno.capture",
-		Description: "Capture the current session to your knowledge vault.",
+		Description: "Save this session's insights to your vault",
 	}, capturePromptHandler(a))
 
 	s.AddPrompt(mcp.Prompt{
 		Name:        "kno.curate",
-		Description: "Synthesize uncurated notes into page documents.",
+		Description: "Turn captured notes into lasting pages",
 	}, curatePromptHandler(a))
 
 	s.AddPrompt(mcp.Prompt{
 		Name:        "kno.load",
-		Description: "Load relevant knowledge into this conversation.",
+		Description: "Load a specific page or topic",
 		Arguments: []mcp.PromptArgument{
 			{
 				Name:        "hint",
-				Description: "Optional page or keyword to guide what to load (e.g. 'aws infrastructure')",
+				Description: "Page or keyword (e.g. 'aws infrastructure')",
 				Required:    false,
 			},
 		},
@@ -34,7 +39,7 @@ func registerPrompts(s *server.MCPServer, a *app.App) {
 
 	s.AddPrompt(mcp.Prompt{
 		Name:        "kno.page",
-		Description: "Create or manage knowledge pages.",
+		Description: "Create or edit a knowledge page",
 		Arguments: []mcp.PromptArgument{
 			{
 				Name:        "action",
@@ -46,8 +51,21 @@ func registerPrompts(s *server.MCPServer, a *app.App) {
 
 	s.AddPrompt(mcp.Prompt{
 		Name:        "kno.status",
-		Description: "Check vault status.",
+		Description: "Notes, pages, and vault health",
 	}, statusPromptHandler(a))
+}
+
+func startPromptHandler(a *app.App) server.PromptHandlerFunc {
+	return func(ctx context.Context, req mcp.GetPromptRequest) (*mcp.GetPromptResult, error) {
+		skill, err := a.Skills.Get("start.md")
+		if err != nil {
+			return nil, fmt.Errorf("loading start skill: %w", err)
+		}
+		return &mcp.GetPromptResult{
+			Description: "Start here — show pages, offer to load",
+			Messages:    []mcp.PromptMessage{mcp.NewPromptMessage(mcp.RoleUser, mcp.NewTextContent(skill))},
+		}, nil
+	}
 }
 
 func capturePromptHandler(a *app.App) server.PromptHandlerFunc {
@@ -57,7 +75,7 @@ func capturePromptHandler(a *app.App) server.PromptHandlerFunc {
 			return nil, fmt.Errorf("loading capture skill: %w", err)
 		}
 		return &mcp.GetPromptResult{
-			Description: "Capture the current session to your knowledge vault.",
+			Description: "Save this session's insights to your vault",
 			Messages:    []mcp.PromptMessage{mcp.NewPromptMessage(mcp.RoleUser, mcp.NewTextContent(skill))},
 		}, nil
 	}
@@ -70,7 +88,7 @@ func curatePromptHandler(a *app.App) server.PromptHandlerFunc {
 			return nil, fmt.Errorf("loading curate skill: %w", err)
 		}
 		return &mcp.GetPromptResult{
-			Description: "Synthesize uncurated notes into page documents.",
+			Description: "Turn captured notes into lasting pages",
 			Messages:    []mcp.PromptMessage{mcp.NewPromptMessage(mcp.RoleUser, mcp.NewTextContent(skill))},
 		}, nil
 	}
@@ -89,7 +107,7 @@ func loadPromptHandler(a *app.App) server.PromptHandlerFunc {
 		}
 
 		return &mcp.GetPromptResult{
-			Description: "Load relevant knowledge into this conversation.",
+			Description: "Load a specific page or topic",
 			Messages:    []mcp.PromptMessage{mcp.NewPromptMessage(mcp.RoleUser, mcp.NewTextContent(instructions))},
 		}, nil
 	}
@@ -108,7 +126,7 @@ func pagePromptHandler(a *app.App) server.PromptHandlerFunc {
 		}
 
 		return &mcp.GetPromptResult{
-			Description: "Create or manage knowledge pages.",
+			Description: "Create or edit a knowledge page",
 			Messages:    []mcp.PromptMessage{mcp.NewPromptMessage(mcp.RoleUser, mcp.NewTextContent(instructions))},
 		}, nil
 	}
@@ -121,7 +139,7 @@ func statusPromptHandler(a *app.App) server.PromptHandlerFunc {
 			return nil, fmt.Errorf("loading status skill: %w", err)
 		}
 		return &mcp.GetPromptResult{
-			Description: "Check vault status.",
+			Description: "Notes, pages, and vault health",
 			Messages:    []mcp.PromptMessage{mcp.NewPromptMessage(mcp.RoleUser, mcp.NewTextContent(skill))},
 		}, nil
 	}

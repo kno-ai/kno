@@ -31,29 +31,28 @@ kno setup
 ```
 
 This creates your vault at `~/kno`, writes a default config, and connects
-kno to Claude Desktop. Restart when prompted. That's it — kno
-is now active in every conversation.
+kno to Claude Desktop. Restart when prompted.
 
-**3. Just work**
+**3. Enter `/kno` in a chat**
 
-Start a conversation and do your work normally. kno listens from the
-first message — you don't activate it, invoke it, or think about it.
+Start a conversation and type `/kno`. kno checks your vault and shows
+your pages — if you have any, it offers to load relevant context. Say yes
+or just start working. That's the only step you need to remember.
 
-When something worth keeping happens — a decision, a debugging insight, a
-design that settled — kno notices and offers:
+From there, kno stays aware. When something worth keeping happens — a
+decision, a debugging insight, a design that settled — kno notices and
+offers:
 
-> "That's a good one — want me to add it to your vault?"
+> "That's a good one — want to add it to your vault?"
 
-You say yes, review the proposed title and tags, and confirm. That's it.
-The insight that would have been trapped in a single chat is now in your
-vault, available to any future session. You can keep working — kno will
-notice the next checkpoint too. In a long, productive session, you might capture two or three times
-at natural milestones.
+You say yes, review the proposed title and tags, and confirm. The insight
+that would have been trapped in a single chat is now in your vault,
+available to any future session.
 
-When you start a session on a topic where you have existing knowledge, kno
-recognizes the overlap and offers to load the relevant context:
+When you're working on a topic where your vault has relevant knowledge,
+kno recognizes the overlap and suggests loading it:
 
-> "I have notes on this in your vault — want me to load them?"
+> "kno has notes on this — want to load your AWS Infrastructure page?"
 
 You say yes, and the session starts informed — no re-explaining your setup,
 no rediscovering decisions you already made, no cold starts on familiar
@@ -86,20 +85,14 @@ that are relevant — so your page starts with real knowledge, not empty.
 
 ### Curating sessions into pages
 
-```
-/kno.curate
-```
+Curate is where captured sessions become structured knowledge. kno
+lets you know when notes are building up and suggests curating — you
+can also run `/kno.curate` explicitly any time.
 
-Curate is where captured sessions become structured knowledge. kno scans
-your uncurated sessions, matches them to pages by content and tags,
-synthesizes an updated document, shows you what changed, and asks for
-confirmation before writing.
-
-Curate is the one step you initiate yourself — it's a periodic synthesis
-pass that benefits from your focused attention. You don't need to track
-when it's time — kno lets you know after captures and at the end of
-sessions when notes are building up. A reasonable cadence is weekly or
-monthly.
+kno scans your uncurated sessions, matches them to pages by content
+and tags, synthesizes an updated document, shows you what changed, and
+asks for confirmation before writing. A reasonable cadence is weekly or
+monthly, but you don't need to track when it's time — kno will tell you.
 
 Each curate pass also updates the page's summary — a short description of
 what the page currently covers. This summary is what lets kno recognize
@@ -163,10 +156,10 @@ make everything downstream work better.
 
 ---
 
-## Awareness levels
+## How proactive is kno?
 
-kno's active awareness is on by default. You can adjust how proactive it
-is in `config.toml`:
+kno pays attention by default. You can adjust how proactive it is in
+`config.toml`:
 
 ```toml
 [nudges]
@@ -179,7 +172,7 @@ Conservative, stays quiet unless something genuinely durable has landed.
 **active** — Broader checkpoint recognition. Good for users building a
 vault quickly or who want more capture opportunities surfaced.
 
-**off** — No awareness nudges. Slash commands only. The vault and all
+**off** — No suggestions. Slash commands only. The vault and all
 commands still work — you're just driving manually.
 
 Most users won't need to change this. The default balances being helpful
@@ -187,41 +180,19 @@ without being noisy.
 
 ---
 
-## Slash commands — explicit control
+## Commands reference
 
-Slash commands are always available for direct control. They execute the
-same procedures that awareness nudges trigger — the only difference is
-who initiates.
+Most of the time, kno handles captures, loads, and curate reminders
+for you. These commands are available when you want explicit control.
 
-### /kno.capture
-
-Capture what's happened so far. Useful when awareness didn't nudge for
-something you want to save, or when you want to steer the tags.
-
-```
-/kno.capture — tag this #aws #rds, the parameter group fix was the key thing
-```
-
-### /kno.load
-
-Explicitly load vault knowledge into the session.
-
-```
-/kno.load aws infrastructure
-```
-
-### /kno.curate
-
-Synthesize uncurated sessions into pages. See [Curating sessions into
-pages](#curating-sessions-into-pages) above.
-
-### /kno.page
-
-Create or manage pages. See [Pages](#pages--where-knowledge-lives) above.
-
-### /kno.status
-
-Check vault health: session counts, page list, capacity.
+| Command | What it does |
+|---|---|
+| `/kno` | **Start here.** Shows pages, offers to load. Run this at the start of every chat. |
+| `/kno.capture` | Capture insights when kno didn't offer, or steer tags explicitly. |
+| `/kno.curate` | Synthesize uncurated sessions into pages. |
+| `/kno.page` | Create or manage pages. |
+| `/kno.status` | Check vault health: session counts, page list, capacity. |
+| `/kno.load` | Load a specific page or topic. Usually not needed — `/kno` handles this. |
 
 ---
 
@@ -301,7 +272,7 @@ is what protects your knowledge: once a session's insights are folded
 into a page, the raw session can safely be recycled.
 
 If the vault is full and no curated sessions exist, kno removes the
-oldest session regardless and warns you. Running `/kno.curate` prevents
+oldest session regardless and warns you. Curating regularly prevents
 this by folding sessions into pages before they age out.
 
 ---
@@ -337,9 +308,9 @@ For complete separation between work and personal knowledge:
 kno setup --name kno-personal --vault ~/kno-personal
 ```
 
-This creates a fully independent vault with its own awareness, tools, and
-slash commands (`/kno-personal.capture`, etc.). The two vaults have no
-knowledge of each other.
+This creates a fully independent vault with its own tools and commands
+(`/kno-personal.capture`, etc.). The two vaults have no knowledge of
+each other.
 
 ---
 
@@ -357,9 +328,9 @@ with real context — no cold starts, no re-explaining your setup.
 on something repeatedly, create a page for it. Even an empty page gives
 curate a home for your sessions.
 
-**Use slash commands when you want control.** Awareness handles most of
-the loop, but `/kno.capture`, `/kno.load`, and `/kno.curate` are always
-there when you want to drive.
+**Start every chat with `/kno`.** That's the one command to remember.
+Everything else — captures, loads, curate reminders — kno handles
+for you. Slash commands are there if you want explicit control.
 
 ---
 
@@ -367,7 +338,7 @@ there when you want to drive.
 
 For the complete CLI specification, see the [CLI Reference](kno-cli). For
 detailed skill behavior, see the [Skills Reference](kno-skills). For
-how the layers connect (CLI, MCP, skills, awareness), see the
+how the layers connect, see the
 [Architecture](kno-knowledge-architecture) doc.
 
 ### Browsing your vault from the terminal
