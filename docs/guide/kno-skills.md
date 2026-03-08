@@ -1,27 +1,27 @@
 # kno — Skills Reference
 
-kno operates through two complementary interfaces: **active awareness** and
-**slash commands**. Awareness is the default — kno watches for knowledge
-checkpoints and offers to act at the right moments without being asked.
-Slash commands provide explicit control for users who want to drive the
-loop manually or override what awareness doesn't catch.
+kno operates through two complementary interfaces: **active attention** and
+**slash commands**. Attention is the default — kno watches for moments
+worth keeping and offers to act without being asked. Slash commands
+provide explicit control when you want to drive the loop yourself or
+override what kno didn't catch.
 
-Both interfaces execute the same procedures. A capture initiated by an
-awareness nudge is identical to one initiated by `/kno.capture` — same
-structure, same metadata, same confirmation step. The trigger changes,
-the execution path does not.
+Both interfaces execute the same procedures. A save initiated by a kno
+nudge is identical to one initiated by `/kno.capture` — same structure,
+same metadata, same confirmation step. The trigger changes, the execution
+path does not.
 
 ---
 
 ## Design Principles
 
-**You curate, kno compounds.** Every capture and curate is a moment
+**You curate, kno compounds.** Every save and curate is a moment
 where you decide what matters. That curation is the mechanism — the reason
 your pages read like documents you'd hand to a colleague, not auto-generated
 summaries you'd never reread. The knowledge compounds because your judgment
 shapes every step.
 
-**Awareness first, commands second.** kno pays attention to the
+**Attention first, commands second.** kno pays attention to the
 conversation and surfaces the right action at the right moment. Slash
 commands are always available for explicit control, but the primary
 experience is a conversation that manages its own knowledge.
@@ -44,22 +44,22 @@ traceable, testable, and replaceable.
 
 ---
 
-## Active Awareness
+## Active Attention
 
-Active awareness is kno's standing presence in every conversation. It
-requires no activation — it's active from the moment a session begins
-and remains present for its duration.
+Active attention is kno's standing presence in every conversation. It
+requires no activation — kno is present from the moment a session begins
+and stays attentive for its duration.
 
 The LLM already understands the full context of the conversation — the
 tradeoffs weighed, the root causes found, the reasoning behind decisions.
-Awareness leverages that understanding. The LLM is the natural entity to
+kno leverages that understanding. The LLM is the natural entity to
 recognize when something durable has crystallized and when prior knowledge
 would help.
 
 ### Knowledge checkpoints
 
-The core awareness behavior: recognizing moments where durable knowledge
-has crystallized and offering to capture it.
+The core behavior: recognizing moments where durable knowledge
+has crystallized and offering to save it.
 
 A checkpoint is:
 
@@ -73,11 +73,11 @@ When kno recognizes a checkpoint:
 
 > "That's a good one — want to add it to your vault?"
 
-The user confirms or declines. On confirmation, kno runs the full capture
+The user confirms or declines. On confirmation, kno runs the full save
 procedure: proposes title, summary, tags, and content, confirms with the
 user, then writes to the vault.
 
-### Topic awareness
+### Topic matching
 
 Early in a conversation, if the topic overlaps with existing vault
 knowledge, kno mentions it once:
@@ -85,11 +85,11 @@ knowledge, kno mentions it once:
 > "kno has notes on this — want to load your AWS Infrastructure page?"
 
 On confirmation, kno searches and loads relevant pages and notes. If
-declined, it drops the subject.
+declined, kno drops the subject.
 
 ### Session wrap-up
 
-If the conversation produced valuable knowledge and capture hasn't
+If the conversation produced valuable knowledge and saving hasn't
 happened, kno offers when the user signals they're wrapping up:
 
 > "Want me to add this to your vault before we wrap up?"
@@ -97,7 +97,10 @@ happened, kno offers when the user signals they're wrapping up:
 ### Nudge discipline
 
 - High threshold. Over-nudging is worse than under-nudging.
-- At most one nudge between user-initiated captures.
+- Timing depends on vault state — an empty vault means the user hasn't
+  seen kno act yet, so kno nudges earlier. A vault with pages means
+  the user knows the flow and kno can be more patient.
+- At most one nudge between user-initiated saves.
 - Never re-nudge after a decline.
 - Frame as offering value, not reminding: "That's a good one for your
   vault" not "Don't forget to save."
@@ -108,11 +111,11 @@ happened, kno offers when the user signals they're wrapping up:
 Configured in `config.toml`:
 
 ```toml
-[nudges]
-level = "light"
+[skill]
+nudge_level = "light"
 ```
 
-- **off** — No awareness nudges. Slash commands only.
+- **off** — No nudges. Slash commands only.
 - **light** — (default) High-signal checkpoints only. Conservative.
 - **active** — Broader checkpoint recognition. More nudges.
 
@@ -123,23 +126,23 @@ level = "light"
 The three core operations form a complete loop:
 
 ```
-  capture                    curate                   load
-  ───────                    ──────                   ────
+  save                       curate                   load
+  ────                       ──────                   ────
   Knowledge checkpoint  →    Periodically        →    New session on
-  (awareness offers)         /kno.curate              familiar topic
-                             (user-initiated)         (awareness offers)
+  (kno offers)               /kno.curate              familiar topic
+                             (user-initiated)         (kno offers)
 
-  Capture what you           Compress notes           Load what's relevant
-  learned.                   into living page         before you start.
+  Save what you              Weave notes into         Load what's relevant
+  learned.                   living page              before you start.
                              documents.
 ```
 
-Each pass through the loop compounds the next. Captures feed curate.
+Each pass through the loop compounds the next. Saves feed curate.
 Curated pages make load faster and richer. Better loads mean better
-sessions, which produce better captures. The more you use it, the more
+sessions, which produce better saves. The more you use it, the more
 valuable the vault becomes.
 
-Awareness initiates capture and load automatically — it notices the right
+kno initiates saves and loads automatically — it notices the right
 moment and offers. The user's only cost is saying yes. Curate is where
 the user decides what matters: a periodic synthesis pass where they shape
 their pages with full attention. It's the intentional step that makes
@@ -156,30 +159,30 @@ document) stays with the user.
 
 The skill calls `kno_vault_status`, lists your pages by name, and offers
 to load relevant context. The user says yes or just starts working —
-awareness takes over from there.
+kno stays attentive from there.
 
-This is the only step users need to remember. Everything else — capture
-nudges, load suggestions, curate reminders — is handled by awareness or
-surfaced at the right moment.
+This is the only step users need to remember. Everything else — save
+nudges, load suggestions, curate reminders — kno handles or surfaces
+at the right moment.
 
 ---
 
 ## /kno.capture
 
-**When to use it:** When you want to explicitly capture, or when awareness
-didn't nudge for something you want to save. Also useful mid-session
-at natural milestones — you can capture multiple times in a long session.
+**When to use it:** When you want to explicitly save, or when kno
+didn't nudge for something you want to keep. Also useful mid-session
+at natural milestones — you can save multiple times in a long session.
 
 **How it works**
 
 The skill reviews the conversation, proposes a title, summary, and tags,
 then asks you to confirm before writing anything. Tags are the primary
-signal that load and curate use to match sessions to pages and queries.
+signal that load and curate use to match notes to pages and queries.
 
 ```
 /kno.capture
 
-Here's what kno will capture from this session:
+Here's what I'll save from this session:
 
   Title:    RDS slow query debugging
   Summary:  Query planner regression after minor version upgrade. Fixed by
@@ -198,21 +201,21 @@ You can steer it conversationally. Hashtags in your message become tags:
 was the key thing
 ```
 
-**After capturing**, kno briefly connects the note to your vault —
+**After saving**, kno briefly connects the note to your vault —
 mentioning the page it'll strengthen, or suggesting curate when notes
-have accumulated. If sessions cluster around an untracked theme, kno
-suggests creating a page.
+have built up. If your notes cluster around a theme with no matching
+page, kno suggests creating one.
 
 ---
 
 ## /kno.curate
 
-**When to use it:** Periodically — when notes have accumulated, or when
+**When to use it:** Periodically — when notes have built up, or when
 you want a page to be current. A reasonable cadence for an active user
 is weekly or monthly. kno will let you know when your pages could benefit
 from new notes.
 
-**Why it matters:** Notes are raw captures. Curate is where they become
+**Why it matters:** Notes are raw saves. Curate is where they become
 knowledge. The skill reads your uncurated notes, synthesizes what's
 new, and updates your page documents following the guidance you've written
 into them.
@@ -263,8 +266,8 @@ published after each curate update. The skill confirms this when it happens:
 ## /kno.load
 
 **When to use it:** When you want to load a specific page or topic that
-awareness hasn't surfaced. Usually you don't need this — `/kno` and
-awareness handle loading automatically. Use it when you know exactly
+kno hasn't surfaced. Usually you don't need this — `/kno` and kno's
+attention handle loading automatically. Use it when you know exactly
 what you want.
 
 ```
@@ -279,7 +282,7 @@ Found:
   Pages (1):
     CNC Machine Maintenance  — last curated 2 weeks ago
 
-  Recent sessions (2, matched by tags: cnc, spindle, vibration):
+  Recent notes (2, matched by tags: cnc, spindle, vibration):
     Spindle bearing diagnosis — root cause was worn bearing    3 days ago
     Mill #3 alignment after motor swap                        1 week ago
 
@@ -296,7 +299,7 @@ The skill demonstrates understanding of what it loaded — not just "loaded
 ## /kno.page
 
 **When to use it:** When you want to create, review, or edit a page.
-kno will also suggest creating pages when sessions cluster around an
+kno will also suggest creating pages when notes cluster around an
 untracked theme.
 
 ```
@@ -306,17 +309,12 @@ What area of knowledge do you want to track?
 
 > our customer onboarding process
 
-Good. What should I focus on when updating this page? What can I skip?
-
-> Focus on edge cases, handoff failures, and what we learned from
-> difficult onboardings. Skip the standard checklist stuff.
-
-Creating page: Customer Onboarding
-Confirm? [yes / edit]
+Here's a starting point — focuses on durable insights, conclusions with
+reasoning, and open questions. Want to use this, tweak it, or start fresh?
 ```
 
-After creating a page, the skill checks for relevant uncurated sessions
-and offers to curate them immediately — so the page starts with real
+After creating a page, the skill checks for relevant uncurated notes
+and offers to fold them in immediately — so the page starts with real
 knowledge.
 
 ---
@@ -342,3 +340,22 @@ Pages:
   Customer Onboarding        never curated
   ...
 ```
+
+---
+
+## Developer Context
+
+When kno detects a git repository (via Claude Code), all skills gain
+project awareness. Everything you save is automatically tagged with
+the repo name, a developer-specific type vocabulary is used (`decision`,
+`debt`, `runbook`, `bug`, `dependency`), and page guidance templates
+are tailored to engineering knowledge — decisions with dates, known
+issues with status, setup instructions.
+
+Project-specific settings live in a `.kno` file at the repo root,
+allowing per-project overrides for `nudge_level` and
+`auto_load_on_confirm`.
+
+The general knowledge loop is unchanged — developer context enriches it,
+it doesn't replace it. For the full developer experience, see the
+[Developer Guide](kno-dev-guide).

@@ -12,12 +12,14 @@ import (
 
 // Serve starts the MCP server over stdio.
 func Serve(a *app.App) error {
+	sc := DetectSessionContext()
+
 	opts := []server.ServerOption{
 		server.WithToolCapabilities(true),
 		server.WithPromptCapabilities(true),
 	}
 
-	if instructions := awarenessInstructions(a); instructions != "" {
+	if instructions := awarenessInstructions(a, sc); instructions != "" {
 		opts = append(opts, server.WithInstructions(instructions))
 	}
 
@@ -25,16 +27,16 @@ func Serve(a *app.App) error {
 
 	registerNoteTools(s, a)
 	registerPageTools(s, a)
-	registerVaultTools(s, a)
-	registerPrompts(s, a)
+	registerVaultTools(s, a, sc)
+	registerPrompts(s, a, sc)
 
 	return server.ServeStdio(s)
 }
 
 // awarenessInstructions returns standing instructions based on the nudge level.
 // Returns empty string for "off".
-func awarenessInstructions(a *app.App) string {
-	level := a.Config.Nudges.Level
+func awarenessInstructions(a *app.App, sc *SessionContext) string {
+	level := sc.MergedNudgeLevel(a.Config.Skill.NudgeLevel)
 	if level == "off" {
 		return ""
 	}

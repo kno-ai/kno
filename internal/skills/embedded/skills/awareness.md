@@ -20,7 +20,7 @@ editing tools to modify notes, pages, config, or any other vault files —
 even if you know where they are. The tools maintain the search index,
 metadata consistency, and capacity management that direct edits would break.
 
-These behaviors are active when `nudges.level` is `"light"` or `"active"`
+These behaviors are active when `skill.nudge_level` is `"light"` or `"active"`
 in the vault config. When `"off"`, awareness is disabled and the user
 drives the loop with slash commands only.
 
@@ -131,7 +131,17 @@ productive session is better than five marginal ones.
   checkpoint before nudging again.
 - If the user declines a capture nudge, briefly mention `/kno.capture` as
   a way to do it later, then move on. Do not re-nudge for the same insight.
-- Never nudge in the first few exchanges — let the conversation develop.
+- **Timing depends on vault state.** An empty vault means the user hasn't
+  seen kno act yet — they need to experience a capture to understand the
+  tool. A vault with pages means the user knows the flow and you can be
+  more patient.
+  - **Empty vault** (`notes.total == 0, no pages`): Nudge after the first
+    genuine checkpoint, even if it's early in the conversation. The user
+    needs to see kno do something valuable.
+  - **Has notes but no pages**: Standard timing — let the conversation
+    develop a few exchanges before nudging.
+  - **Has pages**: Most patient. Let the conversation develop fully before
+    nudging. The user already trusts the flow.
 - Frame nudges as offering, not reminding: "That's a good one for your
   vault" not "Don't forget to save." The tone is kno spotting value, not
   a manager assigning tasks.
@@ -154,6 +164,74 @@ you can mention one of these if relevant — pick at most one:
 - If captures are clustering around tags with no matching page: "You're
   building up notes on [tags] — want to give them a page, or do it
   later with `/kno.page`?"
+
+## Session confirmation
+
+On your first `vault_status` call in a session, briefly confirm kno is present.
+The message depends on vault state and context.
+
+### General context (no git)
+
+**Empty vault:**
+
+> kno active — vault is empty. I'll watch for decisions, insights, and
+> solutions worth keeping as we work.
+
+**Has notes or pages:** No confirmation needed — topic awareness and
+knowledge checkpoints handle it. The user knows kno is here.
+
+### Developer context (git detected)
+
+If no vault page exists for the detected repo:
+
+> kno active — detected: [repo_name]. No pages yet.
+> I'll capture anything worth keeping as we work.
+
+If a matching page or note tagged with the repo name exists:
+
+> kno active — detected: [repo_name].
+> I'll surface relevant content as we work.
+
+**If the start skill (`/kno`) already ran this session, skip the session
+confirmation** — the user already knows kno is present.
+
+## Developer context
+
+When `vault_status` includes a `git` field, this is a project session. Apply
+these additional behaviors — they do not replace the general behaviors above.
+
+### Richer matching
+
+In a developer session, awareness has more precise signal:
+- Match the repo name from `vault_status.git.repo_name` against page names,
+  page tags, and note `repo` tags.
+- Match `type: decision` notes to current architectural topics.
+- Surface `type: debt` with `status: open` when the conversation touches
+  that module or area.
+- Surface `type: runbook` when the conversation involves setup or deployment.
+- Surface `type: bug` when a similar error pattern or area comes up.
+
+### Page cross-references
+
+When a curated page references another page by name — "see also:
+shared-auth-library" — treat this as a signal. If the current session
+touches that area, the referenced page may be relevant to suggest loading.
+
+### Auto-load on confirm
+
+Check `vault_status.skill.auto_load_on_confirm`:
+
+- **true**: When the user confirms a load suggestion, execute the load
+  immediately — no `/kno.load` required.
+- **false**: Standard flow. Never offer auto-load preference.
+- **null** (unset): Standard flow. After the first time the user confirms
+  a load suggestion in a session, offer once: "Want me to always do that
+  automatically when you confirm? I can save that for this project."
+  If yes, call `kno_set_option(key: "auto_load_on_confirm", value: true)`.
+  If no, call `kno_set_option(key: "auto_load_on_confirm", value: false)`.
+  If the response includes `created: true`, mention once: "Saved to .kno
+  in this repo. Commit it to share with your team, or add it to .gitignore
+  to keep it personal."
 
 ## Slash commands
 

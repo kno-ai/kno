@@ -7,10 +7,10 @@ to make knowledge compound across sessions — insights, decisions, and context
 accumulate over time instead of staying isolated in disconnected conversations.
 
 The vault is plain files on disk — markdown, TOML, and a search index. No
-database, no cloud dependency, no proprietary format. You can read every
-file kno writes, sync them with any tool, or browse them in a markdown
-editor like Obsidian. This is a deliberate trust signal: your knowledge
-belongs to you, stored in a format that outlasts any tool.
+database, no cloud dependency, no proprietary format. Everything kno builds
+lives in readable, portable files you can sync with any tool or browse in
+a markdown editor like Obsidian. Your knowledge is yours, stored in a format
+that outlasts any tool.
 
 The vault is client-agnostic. It's backed by a CLI that owns the data and
 an MCP server that exposes it. Any MCP-capable client can connect. Active
@@ -44,7 +44,7 @@ The server also delivers **active awareness instructions** at initialization
 time via the MCP `instructions` field. These instructions give the connected
 client standing awareness of the vault — the ability to recognize knowledge
 checkpoints, offer to capture, and suggest loading relevant context. The
-instructions are determined by the `nudges.level` config setting.
+instructions are determined by the `skill.nudge_level` config setting.
 
 The MCP server also handles **auto-publishing**: when a page is created or
 updated via MCP (typically during curate), it automatically publishes to
@@ -183,7 +183,7 @@ Each loop makes the next load better. Knowledge compounds.
 
 ## Awareness Configuration
 
-Awareness behavior is controlled by the `nudges.level` config setting:
+Awareness behavior is controlled by the `skill.nudge_level` config setting:
 
 | Level | Behavior |
 |---|---|
@@ -193,6 +193,10 @@ Awareness behavior is controlled by the `nudges.level` config setting:
 
 The setting is read at MCP server startup. Changing it requires restarting
 the client to pick up the new instructions.
+
+In a git repository, the `.kno` file at the repo root can override
+`nudge_level` per project. See the [Developer Guide](kno-dev-guide) for
+details.
 
 ---
 
@@ -327,6 +331,8 @@ the vault.
 | `kno page delete` | `kno_page_delete` | conversational |
 | `kno page search` | `kno_page_search` | load (awareness or /kno.load) |
 | `kno vault status` | `kno_vault_status` | all skills, awareness |
+| — | `kno_version` | conversational |
+| — | `kno_set_option` | awareness (auto-load preference) |
 | `kno vault rebuild-index` | — | CLI only |
 | `kno publish` | — | CLI only (auto-triggered on page update via MCP) |
 

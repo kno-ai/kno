@@ -3,7 +3,7 @@
 ## Prerequisites
 
 - Go 1.25+
-- Claude Desktop (for MCP integration testing)
+- Claude Desktop or Claude Code (for MCP integration testing)
 
 ## Build and test
 
@@ -35,8 +35,8 @@ Create an isolated vault that won't touch your real data:
 # Build
 go build -o /tmp/kno ./cmd/kno
 
-# Create a test vault (skips Claude Desktop registration)
-/tmp/kno setup --vault /tmp/kno-test --no-claude-desktop
+# Create a test vault (skips client registration)
+/tmp/kno setup --vault /tmp/kno-test --no-register
 
 # Use it
 echo "## TL;DR\n\nTest session content." | \
@@ -55,7 +55,7 @@ To start fresh, delete the directory:
 rm -rf /tmp/kno-test
 ```
 
-## Test with Claude Desktop
+## Test with a client
 
 To test MCP integration against a dev build:
 
@@ -63,22 +63,23 @@ To test MCP integration against a dev build:
 # Build and install to a known path
 go build -o /tmp/kno ./cmd/kno
 
-# Set up a test vault with MCP registration
+# Set up a test vault with MCP registration (registers with all detected clients)
 /tmp/kno setup --vault /tmp/kno-dev --name kno-dev
 
-# Restart Claude Desktop — /kno-dev.capture, /kno-dev.load, etc. will appear
+# Restart your client — /kno-dev.capture, /kno-dev.load, etc. will appear
 ```
 
-The MCP registration points Claude Desktop at `/tmp/kno` with
+The MCP registration points your client at `/tmp/kno` with
 `--vault /tmp/kno-dev`. Your real vault (if any) is untouched.
 
 To remove the test registration, delete the `kno-dev` entry from your
-Claude Desktop config (`~/Library/Application Support/Claude/claude_desktop_config.json`
-on macOS).
+client config:
+- Claude Desktop: `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS)
+- Claude Code: `~/.claude/settings.json`
 
 ## Run the MCP server manually
 
-Useful for debugging MCP tool calls without Claude Desktop:
+Useful for debugging MCP tool calls without a client:
 
 ```bash
 /tmp/kno --vault /tmp/kno-test mcp
@@ -147,6 +148,13 @@ You never need to manually create tags or GitHub releases.
 **Version policy:** We follow [semver](https://semver.org/). While pre-1.0,
 minor bumps may include breaking changes. After 1.0, breaking changes require
 a major bump via `feat!:` or `BREAKING CHANGE:` in the commit footer.
+
+## Documentation style
+
+User-facing docs follow the [Style Guide](STYLE_GUIDE.md) — warm, direct,
+kno as an active subject, no internal jargon ("awareness"), ownership
+framed as value. Technical docs (CLI reference, architecture) can be more
+detailed but should still follow the voice principles.
 
 ## Language conventions
 

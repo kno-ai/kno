@@ -35,7 +35,12 @@ func (s *Store) List() ([]string, error) {
 			return err
 		}
 		if !d.IsDir() && strings.HasSuffix(path, ".md") {
-			names = append(names, strings.TrimPrefix(path, "skills/"))
+			name := strings.TrimPrefix(path, "skills/")
+			// Filter out template files — they're loaded via Get(), not listed as skills.
+			if strings.HasPrefix(name, "templates/") {
+				return nil
+			}
+			names = append(names, name)
 		}
 		return nil
 	})

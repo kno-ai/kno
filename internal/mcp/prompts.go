@@ -3,13 +3,14 @@ package mcp
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/kno-ai/kno/internal/app"
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
 )
 
-func registerPrompts(s *server.MCPServer, a *app.App) {
+func registerPrompts(s *server.MCPServer, a *app.App, sc *SessionContext) {
 	s.AddPrompt(mcp.Prompt{
 		Name:        "kno",
 		Description: "Start here — show pages, offer to load",
@@ -47,7 +48,7 @@ func registerPrompts(s *server.MCPServer, a *app.App) {
 				Required:    false,
 			},
 		},
-	}, pagePromptHandler(a))
+	}, pagePromptHandler(a, sc))
 
 	s.AddPrompt(mcp.Prompt{
 		Name:        "kno.status",
@@ -113,7 +114,7 @@ func loadPromptHandler(a *app.App) server.PromptHandlerFunc {
 	}
 }
 
-func pagePromptHandler(a *app.App) server.PromptHandlerFunc {
+func pagePromptHandler(a *app.App, sc *SessionContext) server.PromptHandlerFunc {
 	return func(ctx context.Context, req mcp.GetPromptRequest) (*mcp.GetPromptResult, error) {
 		skill, err := a.Skills.Get("page.md")
 		if err != nil {
@@ -123,6 +124,19 @@ func pagePromptHandler(a *app.App) server.PromptHandlerFunc {
 		instructions := skill
 		if action, ok := req.Params.Arguments["action"]; ok && action != "" {
 			instructions += fmt.Sprintf("\n\nRequested action: %s", action)
+		}
+
+		// Inject page guidance template based on context.
+		templateName := "templates/general-page.md"
+		if sc.Git != nil {
+			templateName = "templates/developer-page.md"
+		}
+		if tmpl, err := a.Skills.Get(templateName); err == nil {
+			// Replace placeholder with actual repo name if in git context.
+			if sc.Git != nil {
+				tmpl = strings.Replace(tmpl, "{{repo_name}}", sc.Git.RepoName, 1)
+			}
+			instructions += "\n\n## Page Guidance Template\n\nWhen creating a new page, use this as the default guidance (the user can adjust):\n\n```\n" + tmpl + "```"
 		}
 
 		return &mcp.GetPromptResult{
