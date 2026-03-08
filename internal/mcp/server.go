@@ -12,12 +12,16 @@ import (
 
 // Serve starts the MCP server over stdio.
 func Serve(a *app.App) error {
-	s := server.NewMCPServer(
-		"kno",
-		internal.Version,
+	opts := []server.ServerOption{
 		server.WithToolCapabilities(true),
 		server.WithPromptCapabilities(true),
-	)
+	}
+
+	if instructions := awarenessInstructions(a); instructions != "" {
+		opts = append(opts, server.WithInstructions(instructions))
+	}
+
+	s := server.NewMCPServer("kno", internal.Version, opts...)
 
 	registerNoteTools(s, a)
 	registerPageTools(s, a)
@@ -25,6 +29,39 @@ func Serve(a *app.App) error {
 	registerPrompts(s, a)
 
 	return server.ServeStdio(s)
+}
+
+// awarenessInstructions returns standing instructions based on the nudge level.
+// Returns empty string for "off".
+func awarenessInstructions(a *app.App) string {
+	level := a.Config.Nudges.Level
+	if level == "off" {
+		return ""
+	}
+
+	skill, err := a.Skills.Get("awareness.md")
+	if err != nil {
+		return ""
+	}
+
+	if level == "active" {
+		return skill
+	}
+
+	// "light" — append a restraint note
+	return skill + `
+
+## Nudge level: light
+
+You are in light mode. Be more conservative with nudges:
+
+- Only nudge for knowledge checkpoints with very high signal — decisions
+  with clear tradeoffs, hard-won debugging insights, or things the user
+  explicitly called out as important.
+- Prefer fewer nudges. When in doubt, stay quiet.
+- Topic awareness (offering to load vault knowledge) is still active.
+- Session-end capture nudges are still active.
+`
 }
 
 // ServeUnconfigured starts a degraded MCP server with setup instructions.

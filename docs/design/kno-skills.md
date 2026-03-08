@@ -1,45 +1,38 @@
 # kno — Skills Reference
 
-Skills are slash commands available in Claude Desktop. They are the
-conversational surface of kno — they interpret what you want, ask when
-something is unclear, and translate your intent into precise vault operations.
+kno operates through two complementary interfaces: **active awareness** and
+**slash commands**. Awareness is the default — kno watches for knowledge
+checkpoints and offers to act at the right moments without being asked.
+Slash commands provide explicit control for users who want to drive the
+loop manually or override what awareness doesn't catch.
 
-Every skill is iterative. You don't need to know the right syntax or the
-exact command. You describe what you want, the skill proposes what it will
-do, and you confirm before anything is written.
+Both interfaces execute the same procedures. A capture initiated by an
+awareness nudge is identical to one initiated by `/kno.capture` — same
+structure, same metadata, same confirmation step. The trigger changes,
+the execution path does not.
 
 ---
 
-## Skill Design Principles
+## Design Principles
 
-These principles govern how all skills behave. Understanding them helps you
-trust the system — the skills follow these rules consistently.
-
-**You curate, kno compounds.** Every capture, curate, and load is a moment
+**You curate, kno compounds.** Every capture and curate is a moment
 where you decide what matters. That curation is the mechanism — the reason
 your pages read like documents you'd hand to a colleague, not auto-generated
-summaries you'd never reread. The loop takes seconds per session, and the
-knowledge it produces is yours: shaped by your judgment, organized by your
-priorities, refined every time you run curate.
+summaries you'd never reread. The knowledge compounds because your judgment
+shapes every step.
 
-**Skills are conversational, not transactional.** You don't need to know
-command syntax or vault structure. Describe what you want. The skill
-interprets, proposes, and waits for confirmation. The structured vault
-operation is the last step, not the first.
+**Awareness first, commands second.** kno pays attention to the
+conversation and surfaces the right action at the right moment. Slash
+commands are always available for explicit control, but the primary
+experience is a conversation that manages its own knowledge.
 
 **Skills surface decisions, not surprises.** Anything that modifies the
 vault — writing a note, updating a page, stamping notes as curated
 — is shown to you before it happens. The vault is never modified silently.
 
-**Skills are proactive.** They notice when the backlog is large, when a
-page hasn't been curated in a long time, when notes cluster around
-a theme that has no page. They surface these observations without being
-asked. The loop stays healthy without you having to manage it manually.
-
 **Skills narrow before loading.** On load and curate, the skill reads
 summaries first to decide what's worth fetching in full. Context usage
-stays efficient and predictable — the skill knows what it can afford to
-load before it commits to loading it.
+stays efficient and predictable.
 
 **Skills read before they write when state matters.** If a note already
 has `curated_into` values, the skill reads the current state before
@@ -51,69 +44,123 @@ traceable, testable, and replaceable.
 
 ---
 
+## Active Awareness
+
+Active awareness is kno's standing presence in every conversation. It
+requires no activation — it's active from the moment a session begins
+and remains present for its duration.
+
+The LLM already understands the full context of the conversation — the
+tradeoffs weighed, the root causes found, the reasoning behind decisions.
+Awareness leverages that understanding. The LLM is the natural entity to
+recognize when something durable has crystallized and when prior knowledge
+would help.
+
+### Knowledge checkpoints
+
+The core awareness behavior: recognizing moments where durable knowledge
+has crystallized and offering to capture it.
+
+A checkpoint is:
+
+- A decision reached after weighing tradeoffs
+- A non-obvious root cause identified
+- A design that settled after iteration
+- A working solution after failed attempts
+- Something explicitly flagged as important
+
+When kno recognizes a checkpoint:
+
+> "That's a good one — want me to add it to your vault?"
+
+The user confirms or declines. On confirmation, kno runs the full capture
+procedure: proposes title, summary, tags, and content, confirms with the
+user, then writes to the vault.
+
+### Topic awareness
+
+Early in a conversation, if the topic overlaps with existing vault
+knowledge, kno mentions it once:
+
+> "I have notes on this in your vault — want me to load them?"
+
+On confirmation, kno searches and loads relevant pages and notes. If
+declined, it drops the subject.
+
+### Session wrap-up
+
+If the conversation produced valuable knowledge and capture hasn't
+happened, kno offers when the user signals they're wrapping up:
+
+> "Want me to add this to your vault before we wrap up?"
+
+### Nudge discipline
+
+- High threshold. Over-nudging is worse than under-nudging.
+- At most one nudge between user-initiated captures.
+- Never re-nudge after a decline.
+- Frame as offering value, not reminding: "That's a good one for your
+  vault" not "Don't forget to save."
+- One sentence. No explanations unless asked.
+
+### Nudge levels
+
+Configured in `config.toml`:
+
+```toml
+[nudges]
+level = "light"
+```
+
+- **off** — No awareness nudges. Slash commands only.
+- **light** — (default) High-signal checkpoints only. Conservative.
+- **active** — Broader checkpoint recognition. More nudges.
+
+---
+
 ## The Knowledge Loop
 
-The three core skills form a complete loop:
+The three core operations form a complete loop:
 
 ```
-  /kno.capture               /kno.curate              /kno.load
-  ─────────               ────────────              ─────────
-  End of session     →     Periodically        →     Start of session
+  capture                    curate                   load
+  ───────                    ──────                   ────
+  Knowledge checkpoint  →    Periodically        →    New session on
+  (awareness offers)         /kno.curate              familiar topic
+                             (user-initiated)         (awareness offers)
 
-  Capture what you         Compress notes         Load what's relevant
-  learned before           into living page         before you start,
-  you close the tab.       documents.                not after.
+  Capture what you           Compress notes           Load what's relevant
+  learned.                   into living page         before you start.
+                             documents.
 ```
 
 Each pass through the loop compounds the next. Captures feed curate.
-Curated pages make load faster and richer. Better load means better
-sessions, which produce better notes.
+Curated pages make load faster and richer. Better loads mean better
+sessions, which produce better captures. The more you use it, the more
+valuable the vault becomes.
 
-The loop is proactive by design. You choose what to capture, what to focus
-on during curate, and what to load. That human judgment at each step is
-what produces pages worth reading — documents that reflect how you
-actually think, not auto-generated summaries. Your decisions, your
-lessons, your open questions, organized by your priorities.
-
-**These three commands are the user habit.**
-
-If you have multiple vaults (e.g. work and personal), the skill commands
-are prefixed by the vault name. A vault set up as `kno-personal` exposes
-`/kno-personal.capture`, `/kno-personal.curate`, and `/kno-personal.load`.
-The prefix is the only thing that changes — every skill works identically
-within its vault.
-`/kno.page` and `/kno.status`
-exist to support the loop, but in practice the skill orchestrates them for
-you — surfacing page suggestions during capture, checking vault health
-before curate, prompting you when something needs attention. You may go
-weeks without calling them directly.
+Awareness initiates capture and load automatically — it notices the right
+moment and offers. The user's only cost is saying yes. Curate is where
+the user decides what matters: a periodic synthesis pass where they shape
+their pages with full attention. It's the intentional step that makes
+pages worth reading — and the right division of labor. Low-judgment
+moments (noticing a checkpoint, recognizing a familiar topic) are
+automated. The high-judgment moment (shaping knowledge into a lasting
+document) stays with the user.
 
 ---
 
 ## /kno.capture
 
-**When to use it:** At the end of a session, before closing the
-conversation. The habit is: finish your work, then run `/kno.capture`.
-
-You can also capture mid-session — if you've reached a natural milestone or
-want to capture progress before continuing. The skill captures what's happened
-so far without treating it differently. You can capture multiple times in a
-long session.
-
-**Why it matters:** Most insight from an LLM session evaporates when you
-close the tab. Capture converts the session into a structured, searchable
-record that feeds every future session on the same topic. You review the
-title, summary, and tags before confirming — that moment of curation is
-what makes the knowledge findable and useful later. Ten seconds now
-is the entire foundation of the knowledge loop.
+**When to use it:** When you want to explicitly capture, or when awareness
+didn't nudge for something you want to save. Also useful mid-session
+at natural milestones — you can capture multiple times in a long session.
 
 **How it works**
 
 The skill reviews the conversation, proposes a title, summary, and tags,
 then asks you to confirm before writing anything. Tags are the primary
-signal that load and curate use to match sessions to pages and queries
-— the skill checks existing tags from recent sessions to suggest
-consistent tagging.
+signal that load and curate use to match sessions to pages and queries.
 
 ```
 /kno.capture
@@ -130,76 +177,31 @@ Here's what I'll capture from this session:
 Save this? [yes / edit / skip]
 ```
 
-You confirm, edit, or skip. The skill only writes on confirmation.
-
-**Conversational shortcuts**
-
-You can steer the note before or after the proposal. Hashtags in your
-message become tags automatically:
+You can steer it conversationally. Hashtags in your message become tags:
 
 ```
 /kno.capture — make sure to tag this #aws #rds, the parameter group fix
 was the key thing
-
-Here's what I'll note:
-
-  Title:    RDS slow query debugging
-  Tags:     aws, rds, databases, performance  ← picked up from your message
-  ...
 ```
 
-You can also correct the proposal in plain language:
-
-```
-> the title should be "RDS minor version upgrade regression" and drop the
-> databases tag, this was really an RDS-specific issue
-
-Got it. Updated:
-  Title:    RDS minor version upgrade regression
-  Tags:     aws, rds, performance
-```
-
-**Proactive suggestions**
-
-After saving, if the vault is filling with uncurated sessions, the skill
-will mention it:
-
-```
-Noted. You now have 18 uncurated notes.
-Consider running /kno.curate to compress them into your pages.
-```
-
-If several notes share tags but no page exists for them, the skill
-suggests creating one:
-
-```
-You've saved 4 sessions tagged "rds" and "database-performance" with
-no matching page. Want to create one?
-```
+**After capturing**, kno briefly connects the note to your vault —
+mentioning the page it'll strengthen, or suggesting curate when notes
+have accumulated. If sessions cluster around an untracked theme, kno
+suggests creating a page.
 
 ---
 
 ## /kno.curate
 
-**When to use it:** Periodically — when uncurated notes have
-accumulated, or when you want a page document to be current before a
-focused session. A reasonable cadence for an active user is weekly or
-monthly. The skill will remind you when the backlog is significant.
+**When to use it:** Periodically — when notes have accumulated, or when
+you want a page to be current. A reasonable cadence for an active user
+is weekly or monthly. kno will let you know when your pages could benefit
+from new notes.
 
-**Why it matters:** Notes are raw notes. Curate is where they become
+**Why it matters:** Notes are raw captures. Curate is where they become
 knowledge. The skill reads your uncurated notes, synthesizes what's
 new, and updates your page documents following the guidance you've written
 into them.
-
-The output is a page document — a maintained, readable document that
-reflects everything you've learned about a subject, organized the way you
-think about it. Not a dump of session transcripts. Not a generic summary.
-A document you own, can read standalone, can share, and that loads
-directly into any future session to bring it instantly up to speed.
-
-Without curate, load can only surface raw notes. With it, load
-surfaces your conclusions — the refined document that represents months
-of accumulated understanding in a form you can actually use.
 
 **How it works**
 
@@ -209,27 +211,15 @@ of accumulated understanding in a form you can actually use.
 You have 22 uncurated notes. 6 pages.
 
 Pages (by time since last curate):
-  1. AWS Infrastructure     — 3 weeks ago
-  2. MySQL Optimization     — 3 weeks ago
-  3. React Auth Patterns   — 1 month ago
-  4. Payment Processing     — 2 weeks ago
-  5. EFT Processing         — 6 days ago
-  6. Kubernetes Migration            — never curated
+  1. AWS Infrastructure        — 3 weeks ago
+  2. CNC Machine Maintenance   — 3 weeks ago
+  3. Customer Onboarding       — 1 month ago
+  4. Kubernetes Migration      — never curated
 
 Curate all, or start with one?
 ```
 
-In both modes, the skill works the same way per page: it scans all
-uncurated notes and matches them to pages using tags and content.
-Sessions tagged "aws" or "rds" match an AWS Infrastructure page;
-sessions tagged "payments" match Payment Processing. Tag overlap is
-the primary relevance signal. "Curate all" cycles through every page
-in turn. "Start with one" does the same scan for that page only — the
-rest of the notes stay uncurated until the next run.
-
-For each page, the skill synthesizes the update from the notes it
-found relevant, shows you what changed, and asks for confirmation before
-writing:
+For each page, the skill synthesizes the update and shows what changed:
 
 ```
 Curating: AWS Infrastructure
@@ -240,205 +230,82 @@ way — config decisions, debugging patterns, cost surprises."
 
 Done. Here's what changed:
   — Added: RDS parameter group pinning after minor version upgrade
-  — Updated: ECS drain window recommendation (30s → 60s based on recent experience)
+  — Updated: ECS drain window recommendation (30s -> 60s)
   — No change: connection pool section already reflected current thinking
 
 Mark 9 notes as curated? [yes / review first]
 ```
 
-You can review the updated document before confirming. Nothing is stamped
-until you say yes.
-
-**First curate into a new page**
-
-When a page has just been created and has no knowledge content yet, the
-first curate populates it from scratch. The skill reads the guidance you
-wrote, finds relevant uncurated notes, and synthesizes the initial
-document. You can also trigger this immediately after creating a page —
-the `/kno.page` skill offers to bootstrap-curate any relevant sessions
-right away so the page isn't empty.
-
-**Notes that fit multiple pages**
-
-When the skill finds a note that belongs in more than one page:
-
-```
-"ACH return handling — error retry logic" is relevant to both:
-  1. Payment Processing
-  2. EFT Processing
-
-Curate into both, or just one?
-```
-
-**Partial runs**
-
-If your backlog exceeds the configured limit for a single run, the skill
-processes what it can and reports the remainder:
-
-```
-Curate complete. 8 notes remain.
-Run /kno.curate again to continue.
-```
-
-**Proactive suggestions**
-
-The skill surfaces curate prompts automatically when the backlog is large,
-the vault is nearing capacity, or it has been a long time since a page
-was updated. You don't need to remember to check.
+**Notes that fit multiple pages** — the skill asks which pages to include
+the note in. **Partial runs** — if uncurated notes exceed the configured
+limit, the skill processes what it can and reports the remainder.
 
 ---
 
 ## /kno.load
 
-**When to use it:** At the start of a session, before you ask your first
-question. Especially valuable when returning to ongoing work or a domain
-where you have established context.
-
-You can also load mid-session — if the conversation shifts to a topic
-where you have existing knowledge, `/kno.load` will search and inject
-that context without disrupting your flow.
-
-**Why it matters:** Without load, every session starts cold — Claude has
-no memory of your prior decisions, the approaches you've already tried, or
-the lessons you've already learned. With load, the session starts informed.
-You don't re-explain your setup. You don't rediscover the same dead ends.
-You pick up where your knowledge left off.
-
-**How it works**
+**When to use it:** When you want to explicitly load vault knowledge, or
+when awareness didn't offer for a topic where you know you have context.
 
 ```
 /kno.load
 
 What are you working on today?
 
-> debugging a connection pool exhaustion issue in our payment service
+> troubleshooting vibration on CNC mill #3 after the spindle replacement
 
 Found:
 
   Pages (1):
-    Payment Processing  — last curated 2 weeks ago
-    "...connection pool tuning, retry logic, ACH return handling..."
+    CNC Machine Maintenance  — last curated 2 weeks ago
 
-  Recent sessions (2, matched by tags: payments, mysql, connection-pool):
-    ACH return handling — error retry logic         3 days ago
-    MySQL connection pool — max_connections         1 week ago
+  Recent sessions (2, matched by tags: cnc, spindle, vibration):
+    Spindle bearing diagnosis — root cause was worn bearing    3 days ago
+    Mill #3 alignment after motor swap                        1 week ago
 
 Load all 3? [yes / pick / skip]
 ```
 
-On confirmation, the skill reads the full content of the selected pages
-and notes and injects them into the session. Your first real message
-lands in an already-informed conversation.
+You can also load directly: `/kno.load aws infrastructure`
 
-**Direct load**
-
-If you already know what you need, skip the question:
-
-```
-/kno.load aws infrastructure
-```
-
-The skill searches immediately and presents what it finds.
-
-**What gets loaded**
-
-The skill balances relevance against context budget. It searches pages
-first (curated, durable knowledge), then recent uncurated notes
-(fresh, not yet integrated). It uses tag overlap as a primary relevance
-signal — sessions tagged with terms matching your query or a page's
-theme rank higher than those with only generic text matches. It reads
-summaries and tags to decide what's worth loading in full before
-fetching the content.
+The skill demonstrates understanding of what it loaded — not just "loaded
+3 items" but a brief reflection showing it absorbed the content.
 
 ---
 
 ## /kno.page
 
-**When to use it:** Most of the time, you won't invoke this directly —
-the skill will suggest creating or reviewing a page at the right moment
-during a note or curate session. But you can also call it explicitly
-when you want to set up a new knowledge area, review your page list, or
-update the guidance that shapes how a page is maintained.
-
-**Why it matters:** Pages are the table of contents for your vault.
-A note without a relevant page will never become structured knowledge —
-it will sit in the backlog and eventually age out. The skill watches for
-this pattern and surfaces it: if several notes share a theme and no
-page exists for it, it will suggest creating one before you lose the thread.
-
-When you do create a page, it's an intentional act. The skill guides you
-through it conversationally, asking what to focus on and what to skip, so
-the document reflects how *you* think about the subject — not a generic summary.
-
-**Creating a page**
+**When to use it:** When you want to create, review, or edit a page.
+kno will also suggest creating pages when sessions cluster around an
+untracked theme.
 
 ```
 /kno.page new
 
 What area of knowledge do you want to track?
 
-> our kubernetes migration
+> our customer onboarding process
 
-Good. I'll follow your guidance each time I update this page. What should
-I focus on? What can I skip? How should I handle contradictions between
-sessions?
+Good. What should I focus on when updating this page? What can I skip?
 
-> Focus on migration blockers, service-by-service lessons, and networking
-> gotchas. Skip basic k8s concepts — I know those. Flag anything that
-> contradicts a previous decision.
+> Focus on edge cases, handoff failures, and what we learned from
+> difficult onboardings. Skip the standard checklist stuff.
 
-Creating page: Kubernetes Migration
-
-  Your guidance goes at the top of the document and shapes every future
-  update. The knowledge content grows as notes are curated into it.
-
+Creating page: Customer Onboarding
 Confirm? [yes / edit]
 ```
 
-**Listing pages**
-
-```
-/kno.page list
-
-Your pages:
-
-  AWS Infrastructure     last curated 3 days ago
-  Payment Processing     last curated 2 weeks ago
-  Kubernetes Migration            never curated
-  React Auth Patterns   last curated 1 month ago
-```
-
-**Editing a page**
-
-You can update the guidance, the knowledge content, or both:
-
-```
-/kno.page edit kubernetes-migration
-
-Current content: [shows full document]
-
-What would you like to change? You can revise the guidance at the top,
-edit the knowledge document directly, or both.
-```
+After creating a page, the skill checks for relevant uncurated sessions
+and offers to curate them immediately — so the page starts with real
+knowledge.
 
 ---
 
 ## /kno.status
 
-**When to use it:** Rarely directly — the skill checks vault status
-internally at the start of every curate and load workflow, and surfaces
-what matters when it matters. If the vault is nearly full, you'll hear
-about it during note. If a page has gone months without a curate,
-you'll hear about it when you next run curate.
-
-Call it directly when you want the raw picture: how full is the vault,
-when were pages last updated, how big is the backlog.
-
-**Why it matters:** The skill uses this data to make every workflow
-decision — context budgets, curate ordering, capacity warnings. You're
-looking at the same orient call the skill makes before it acts.
-
-**How it works**
+**When to use it:** When you want the raw picture of vault health. kno
+checks vault status internally during other workflows and surfaces what
+matters — you rarely need to call this directly.
 
 ```
 /kno.status
@@ -450,13 +317,8 @@ Notes: 143 / 500  (357 remaining)
   Uncurated:      22
 
 Pages:
-  AWS Infrastructure     last curated 3 days ago
-  Payment Processing     last curated 2 weeks ago
-  Kubernetes Migration            never curated
-  React Auth Patterns   last curated 1 month ago
-  EFT Processing         last curated 6 days ago
-  MySQL Optimization     last curated 3 weeks ago
-
-22 uncurated notes.
-Run /kno.curate to compress them into your pages.
+  AWS Infrastructure        last curated 3 days ago
+  CNC Machine Maintenance   last curated 2 weeks ago
+  Customer Onboarding        never curated
+  ...
 ```

@@ -8,10 +8,10 @@ reference `/kno-personal.capture`, not `/kno.capture`.
 
 ## Voice
 
-You're a competent colleague giving a quick status report. Present the
-numbers, then translate them into what matters. "22 uncurated" means less
-than "You've got 22 sessions waiting to be folded into your pages." Guide
-the user toward the next useful action without being pushy.
+You're a knowledgeable colleague giving a quick status report. Present the
+numbers, then translate them into what they mean for the user's knowledge
+base. Guide toward the next useful action by framing it as an opportunity
+("your pages could be richer") not an obligation ("you need to curate").
 
 ## Process
 
@@ -23,20 +23,19 @@ the user toward the next useful action without being pushy.
      page's metadata — show "never curated" if absent)
 
 3. Translate the numbers into one clear suggestion — pick the most important:
-   - **Growing backlog:** "You've got N sessions waiting to be curated.
-     Running `/kno.curate` would fold them into your pages."
+   - **Growing collection:** "You've got N sessions that could strengthen
+     your pages. `/kno.curate` will fold them in whenever you're ready."
    - **Near capacity:** If remaining is getting low, mention it. If all
      sessions are uncurated, note that new saves will start replacing
-     older uncurated ones.
-   - **Stale pages:** If a page hasn't been curated in over a month,
-     mention it warmly: "[Page] hasn't been updated in a while — it might
-     be missing some recent insights."
-   - **No pages:** "You have sessions saved but no pages yet. Pages are
-     where your sessions become lasting knowledge — `/kno.page` to create
-     one."
-   - **Empty vault:** Briefly explain the workflow: "Your vault is empty.
-     Use `/kno.capture` at the end of a session to capture what you learned,
-     then `/kno.page` to organize by theme."
+     older ones — `/kno.curate` preserves them long-term.
+   - **Pages with room to grow:** If a page hasn't been curated in over
+     a month: "[Page] has new notes that could enrich it — it hasn't been
+     updated in a while."
+   - **No pages:** "You've got sessions saved but no pages yet. Pages are
+     where sessions become lasting knowledge — `/kno.page` to create one."
+   - **Empty vault:** Briefly explain: "Your vault is empty — nothing to
+     draw on yet. As you work, I'll notice insights worth keeping and
+     offer to add them. You can also run `/kno.capture` any time."
    - **Healthy vault:** If everything looks good, say so: "Looking good —
      your vault is healthy."
 

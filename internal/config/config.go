@@ -13,6 +13,7 @@ type Config struct {
 	Pages  PagesConfig  `toml:"pages" json:"pages"`
 	Curate CurateConfig `toml:"curate" json:"curate"`
 	Search SearchConfig `toml:"search" json:"search"`
+	Nudges NudgesConfig `toml:"nudges" json:"nudges"`
 }
 
 type NotesConfig struct {
@@ -34,6 +35,19 @@ type SearchConfig struct {
 	DefaultLimit int `toml:"default_limit" json:"default_limit"`
 }
 
+type NudgesConfig struct {
+	Level string `toml:"level" json:"level"`
+}
+
+// ValidNudgeLevel reports whether level is a recognized nudge setting.
+func ValidNudgeLevel(level string) bool {
+	switch level {
+	case "off", "light", "active":
+		return true
+	}
+	return false
+}
+
 func DefaultConfig() Config {
 	return Config{
 		Notes: NotesConfig{
@@ -50,6 +64,9 @@ func DefaultConfig() Config {
 		},
 		Search: SearchConfig{
 			DefaultLimit: 10,
+		},
+		Nudges: NudgesConfig{
+			Level: "light",
 		},
 	}
 }
@@ -119,5 +136,8 @@ func applyDefaults(cfg *Config) {
 	}
 	if cfg.Search.DefaultLimit == 0 {
 		cfg.Search.DefaultLimit = d.Search.DefaultLimit
+	}
+	if cfg.Nudges.Level == "" {
+		cfg.Nudges.Level = d.Nudges.Level
 	}
 }

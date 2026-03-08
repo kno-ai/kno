@@ -1,7 +1,9 @@
 # kno CLI Reference
 
 kno is a local-first knowledge vault for LLM conversations. The CLI provides
-deterministic, testable CRUD operations against the vault.
+deterministic, testable CRUD operations against the vault. The CLI owns the
+data — it has no knowledge of awareness, nudges, or skills. Those concerns
+live in the MCP and skill layers above.
 
 All commands support `--json` for machine-readable output. Human-readable
 output is the default.
@@ -206,7 +208,7 @@ List notes in the vault, newest first.
 ID                                    TITLE                          CREATED       STATUS
 20260305-rds-slow-query-debugging     RDS slow query debugging       2026-03-05    not curated
 20260220-sqs-dead-letter-queue        SQS dead letter queue          2026-02-20    curated
-20260110-eft-file-processing          EFT file processing            2026-02-10    curated
+20260110-spindle-bearing-diagnosis    Spindle bearing diagnosis      2026-01-10    curated
 ```
 
 **Output (--json)**
@@ -317,7 +319,7 @@ When a curated note was auto-removed to make room:
 
 ```
 Created: RDS slow query debugging  [20260305-rds-slow-query-debugging]
-Removed: EFT file processing       [20260110-eft-file-processing]  (oldest curated — curate backlog reminder)
+Removed: Spindle bearing diagnosis  [20260110-spindle-bearing-diagnosis]  (oldest curated)
 ```
 
 When an uncurated note was auto-removed (no curated notes available):
@@ -345,7 +347,7 @@ When a curated note was auto-removed:
   "id": "20260305-rds-slow-query-debugging",
   "title": "RDS slow query debugging",
   "created_at": "2026-03-05T14:22:00Z",
-  "auto_removed": "20260110-eft-file-processing"
+  "auto_removed": "20260110-spindle-bearing-diagnosis"
 }
 ```
 
@@ -468,9 +470,9 @@ handles. `--dry-run` shows what would be removed without deleting.
 ```
 Would remove 5 notes (oldest first):
 
-  20260110-eft-file-processing        EFT file processing        2026-01-10    curated
-  20260115-mysql-index-tuning         MySQL index tuning         2026-01-15    curated
-  20260120-sqs-visibility-timeout     SQS visibility timeout     2026-01-20    not curated
+  20260110-spindle-bearing-diagnosis   Spindle bearing diagnosis   2026-01-10    curated
+  20260115-mysql-index-tuning         MySQL index tuning          2026-01-15    curated
+  20260120-sqs-visibility-timeout     SQS visibility timeout      2026-01-20    not curated
 
 Run without --dry-run to proceed.
 ```
@@ -480,7 +482,7 @@ Run without --dry-run to proceed.
 ```json
 {
   "removed": 5,
-  "ids": ["20260110-eft-file-processing", "20260115-mysql-index-tuning", "20260120-sqs-visibility-timeout"]
+  "ids": ["20260110-spindle-bearing-diagnosis", "20260115-mysql-index-tuning", "20260120-sqs-visibility-timeout"]
 }
 ```
 
@@ -564,9 +566,9 @@ List all pages. Pages are finite and curated — no limit is applied.
 
 ```
 ID                    NAME                    LAST CURATED
-aws-infrastructure    AWS Infrastructure      2026-03-01
-payment-processing    Payment Processing      2026-02-15
-kubernetes-migration           Kubernetes Migration             —
+aws-infrastructure       AWS Infrastructure        2026-03-01
+cnc-machine-maintenance  CNC Machine Maintenance   2026-02-15
+customer-onboarding      Customer Onboarding       —
 ```
 
 **Output (--json)**
@@ -796,8 +798,8 @@ Returns ranked results.
 
 ```
 ID                    NAME                  SCORE
-aws-infrastructure    AWS Infrastructure    0.95
-payment-processing    Payment Processing    0.42
+aws-infrastructure       AWS Infrastructure        0.95
+cnc-machine-maintenance  CNC Machine Maintenance   0.42
 ```
 
 **Output (--json)**
@@ -836,13 +838,11 @@ Notes: 143 / 500  (357 remaining)
   Curated:      121
   Uncurated:      22
 
-Pages: 6
-  aws-infrastructure      AWS Infrastructure       last curated 3 days ago
-  payment-processing      Payment Processing       last curated 2 weeks ago
-  kubernetes-migration             Kubernetes Migration              last curated 1 month ago
-  react-auth-patterns     React Auth Patterns     never curated
-  eft-processing          EFT Processing           last curated 6 days ago
-  mysql-optimization      MySQL Optimization       last curated 3 weeks ago
+Pages: 4
+  aws-infrastructure       AWS Infrastructure        last curated 3 days ago
+  cnc-machine-maintenance  CNC Machine Maintenance   last curated 2 weeks ago
+  customer-onboarding      Customer Onboarding       last curated 1 month ago
+  mysql-optimization       MySQL Optimization        never curated
 
 Config:
   notes.max_count           500
@@ -875,8 +875,8 @@ Config:
       }
     },
     {
-      "id": "payment-processing",
-      "name": "Payment Processing",
+      "id": "cnc-machine-maintenance",
+      "name": "CNC Machine Maintenance",
       "metadata": {
         "last_curated_at": "2026-02-19T10:00:00Z"
       }
@@ -948,6 +948,12 @@ max_notes_per_run = 50        # max notes processed in a single curate pass
 
 [search]
 default_limit = 10                # default result count for all search commands
+
+[nudges]
+level = "light"                   # "off" | "light" | "active"
+                                  # off: no awareness, slash commands only
+                                  # light: high-signal nudges only (default)
+                                  # active: broader nudging
 ```
 
 Defaults are designed to be predictably successful. Any consumer operating

@@ -2,69 +2,78 @@
 
 **A knowledge vault for your AI conversations.** &nbsp; [View on GitHub](https://github.com/kno-ai/kno)
 
-Every time you close a chat with Claude, the insights from that session
-disappear. kno fixes that. You capture what you learned, curate it into
-living page documents, and load the right context into your next session.
-The knowledge compounds because you curate it — 30 seconds of attention
-per session turns scattered conversations into documents you trust.
+Your AI conversations are disconnected. Each one starts from scratch —
+you re-explain your setup, rediscover prior decisions, and lose the
+context you built last time. kno pays attention so you don't have to.
+It notices when something worth preserving happens and offers to capture
+it. It recognizes when you're working on a familiar topic and offers to
+load what you already know. Your knowledge compounds across sessions —
+not because you remember to do anything, but because kno listens in
+every conversation.
 
 ---
 
-## The knowledge loop
+## How it works
 
-Three commands. One habit.
+kno listens as you work — always present, never in the way. There's no
+activation step, no commands to remember, no habits to build.
 
-**`/kno.capture`** — At the end of a session, kno reviews the conversation and
-proposes a structured summary with title, tags, and key points. You confirm,
-edit, or skip — that moment of curation is what makes the knowledge findable
-later. Use #hashtags to steer tags directly.
+**kno notices knowledge checkpoints** — a decision reached, a root cause
+found, a design that settled — and offers to capture them:
 
-**`/kno.curate`** — Periodically, kno reads your saved sessions and folds
-them into page documents. Each page reflects everything you've learned about
-a subject — organized the way you think about it, following guidance you've
-written.
+> "That's a good one — want me to add it to your vault?"
 
-**`/kno.load`** — At the start of a session, kno finds relevant pages and
-recent sessions and injects them into the conversation. You don't re-explain
-your setup. You don't rediscover dead ends. You pick up where your knowledge
-left off.
+You confirm, and it's saved with a title, summary, and tags. Ten seconds.
+The cost of preserving an insight drops from "remember to save, context-
+switch to a notes tool, decide what to write, format it" to "say yes."
 
-Each pass through the loop makes the next one better.
+**kno recognizes familiar topics** — when your conversation overlaps with
+existing vault knowledge, it offers to load the relevant context:
+
+> "I have notes on this in your vault — want me to load them?"
+
+Your session starts informed instead of cold. No re-explaining your
+setup, no rediscovering decisions you already made.
+
+**You curate periodically** — run `/kno.curate` to synthesize captured
+sessions into living page documents. Each page reflects everything you've
+learned about a subject, organized the way you think about it. kno will
+let you know when uncurated notes are accumulating — curate is the one
+step that stays intentional, where you decide what matters.
+
+**The loop compounds.** Each capture feeds curate. Each curated page
+makes load faster and richer. Better loads mean better sessions, which
+produce better captures. The more you use it, the more valuable it
+becomes.
 
 ---
 
 ## What it feels like
 
-```
-/kno.capture — #aws #rds, the parameter group fix was the key thing
+Mid-conversation, after you've debugged a tricky issue:
 
-Here's what I'll capture from this session:
+> **kno:** "That root cause was non-obvious — want me to add it to your
+> vault?"
+>
+> **You:** "yes"
+>
+> **kno:** Here's what I'll capture:
+>
+>   Title:    RDS slow query debugging
+>   Summary:  Query planner regression after minor version upgrade.
+>             Fixed by pinning parameter group.
+>   Tags:     aws, rds, performance
+>
+> Save this? [yes / edit / skip]
 
-  Title:    RDS slow query debugging
-  Summary:  Query planner regression after minor version upgrade.
-            Fixed by pinning parameter group.
-  Tags:     aws, rds, performance
+Two weeks later, starting a new session:
 
-Save this? [yes / edit / skip]
-```
-
-Two weeks later, in a new session:
-
-```
-/kno.load
-
-What are you working on?
-
-> debugging a connection pool issue in our payment service
-
-Found:
-  Pages (1):     Payment Processing — last curated 2 weeks ago
-  Sessions (2,   matched by tags: payments, mysql, connection-pool):
-                 ACH return handling (3 days ago)
-                 MySQL connection pool (1 week ago)
-
-Load all 3? [yes / pick / skip]
-```
+> **kno:** "I have notes on CNC machine maintenance and that spindle
+> issue in your vault — want me to load them?"
+>
+> **You:** "yes"
+>
+> *Session starts with full context from prior work.*
 
 ---
 
@@ -83,29 +92,40 @@ go install github.com/kno-ai/kno/cmd/kno@latest
 kno setup
 ```
 
-Restart Claude Desktop after setup. Five slash commands appear automatically:
-`/kno.capture`, `/kno.load`, `/kno.curate`, `/kno.page`, `/kno.status`.
+Restart Claude Desktop after setup. kno is immediately
+active — it will notice knowledge checkpoints and offer to capture them.
+Slash commands like `/kno.capture` and `/kno.load` are also available
+for explicit control.
 
 See the [User Guide](design/kno-guide) for the full walkthrough.
 
 ---
 
-## Documentation
+## Your vault is just files
 
-- [User Guide](design/kno-guide) — full walkthrough, tips, and CLI reference
-- [Architecture](design/kno-knowledge-architecture) — design principles and mental model
-- [Skills Reference](design/kno-skills) — how the slash commands work
-- [CLI Reference](design/kno-cli) — complete command specification
+No database, no cloud service, no lock-in. Your vault is a folder of
+markdown files and a TOML config. Browse it in Obsidian, sync it with
+git or Dropbox, back it up however you back up everything else. You can
+read every file kno writes.
+
+## Works with Claude Desktop
+
+kno works with Claude Desktop today. Support for more AI clients is
+coming soon — your knowledge won't be locked to one tool.
 
 ---
 
 ## Project status
 
-kno is in active development. The knowledge loop — capture, curate, load —
-is functional end-to-end with Claude Desktop integration.
+kno is in active development. The knowledge loop — capture, curate, load
+— is functional end-to-end.
 
-Your vault is just a folder of markdown files. Sync it with git, Dropbox,
-iCloud — or browse it in Obsidian alongside your other notes.
+## Documentation
+
+- [User Guide](design/kno-guide) — getting started, awareness, and vault management
+- [Architecture](design/kno-knowledge-architecture) — design principles, layers, and knowledge model
+- [Skills Reference](design/kno-skills) — awareness behavior and slash command details
+- [CLI Reference](design/kno-cli) — complete command specification
 
 <p style="margin-top: 3rem; color: #666; font-size: 0.85rem;">
   MIT License | <a href="https://github.com/kno-ai/kno">GitHub</a>

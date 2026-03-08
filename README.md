@@ -2,9 +2,12 @@
 
 A knowledge vault for your AI conversations.
 
-Every time you close a chat with Claude, the insights from that session
-disappear. kno fixes that. You capture what you learned, curate it into
-living page documents, and load the right context into your next session.
+Your AI conversations are disconnected — each one starts from scratch.
+The debugging breakthrough, the design decision, the config that finally
+worked — none of it carries forward. kno pays attention so you don't
+have to. It notices when something worth preserving happens, offers to
+capture it, and loads relevant context into future sessions automatically.
+Your knowledge compounds across every conversation.
 
 **[Project page](https://kno-ai.github.io/kno/)** — examples, docs, and getting started.
 
@@ -16,17 +19,29 @@ brew install kno
 kno setup
 ```
 
-Restart Claude Desktop. Five slash commands appear:
-`/kno.capture`, `/kno.load`, `/kno.curate`, `/kno.page`, `/kno.status`.
+Restart Claude Desktop. kno is immediately active.
 
-## The knowledge loop
+## How it works
 
-- **`/kno.capture`** — End of session. Review and confirm a structured summary with tags.
-- **`/kno.curate`** — Periodically. Synthesize sessions into living page documents.
-- **`/kno.load`** — Start of session. Load relevant knowledge before you begin.
+kno listens as you work. It watches for **knowledge checkpoints** —
+decisions, debugging insights, designs that settled — and offers to
+capture them. When you start a session on a familiar topic, it recognizes
+the overlap and offers to load your existing context.
 
-Your vault is just a folder of markdown files. Sync it with git, Dropbox,
-iCloud — or browse it in Obsidian alongside your other notes.
+Periodically, you run `/kno.curate` to synthesize your captures into
+**page documents** — living, readable files that reflect everything you've
+learned about a subject.
+
+The loop is capture, curate, load — and kno initiates most of it for you.
+Slash commands (`/kno.capture`, `/kno.load`, `/kno.curate`, `/kno.page`,
+`/kno.status`) are available for explicit control.
+
+## Your vault
+
+Your vault is just a folder of markdown files — no database, no cloud
+service, no lock-in. Sync it with git, Dropbox, iCloud — or browse it
+in Obsidian alongside your other notes. kno works with Claude Desktop
+today, with more AI clients coming soon.
 
 ```
 ~/kno/
@@ -35,16 +50,21 @@ iCloud — or browse it in Obsidian alongside your other notes.
     20260305-rds-slow-query-debugging/
       content.md       # structured session summary
       meta.json        # title, tags, summary, curate status
+    20260301-onboarding-handoff-failures/
+      content.md
+      meta.json
   pages/
     aws-infrastructure.md          # living knowledge document
-    aws-infrastructure.meta.json   # name, last_curated_at
+    aws-infrastructure.meta.json   # name, summary, last_curated_at
+    customer-onboarding.md
+    customer-onboarding.meta.json
 ```
 
 ## Documentation
 
-- [User Guide](docs/design/kno-guide.md) — full walkthrough and tips
-- [Architecture](docs/design/kno-knowledge-architecture.md) — design principles and mental model
-- [Skills Reference](docs/design/kno-skills.md) — how the slash commands work
+- [User Guide](docs/design/kno-guide.md) — getting started, awareness, and vault management
+- [Architecture](docs/design/kno-knowledge-architecture.md) — design principles, layers, and knowledge model
+- [Skills Reference](docs/design/kno-skills.md) — awareness behavior and slash command details
 - [CLI Reference](docs/design/kno-cli.md) — complete command specification
 
 ## License
