@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.9.0](https://github.com/kno-ai/kno/compare/v0.8.1...v0.9.0) (2026-03-08)
+
+
+### Features
+
+* add /kno entry point, refine skills voice, awareness-first docs ([517e47d](https://github.com/kno-ai/kno/commit/517e47d7ba35a3cb672376773b13be4a45c3a86f))
+
+
+### Bug Fixes
+
+* disable staticcheck cache to prevent tar corruption in CI ([c7d23db](https://github.com/kno-ai/kno/commit/c7d23db5567fe8442cb6b1dbb91715aec919518e))
+* reject unexpected positional args in setup command ([f882f9a](https://github.com/kno-ai/kno/commit/f882f9a8e5f490e9eb9ce9c6d3308cb6c5d920df))
+* remove unused nilIfEmpty function flagged by staticcheck ([dc0d919](https://github.com/kno-ai/kno/commit/dc0d9191883578bc61076278239b375b119f3d3f))
+* skip staticcheck Go install to avoid cache corruption ([584c6a1](https://github.com/kno-ai/kno/commit/584c6a1626d679e7953bf1c06dcf8aa1884d4796))
+* use correct input name for staticcheck cache disable ([f21f29c](https://github.com/kno-ai/kno/commit/f21f29c53babae3b37dcf81208615e86860acb4f))
+
 ## [0.8.1](https://github.com/kno-ai/kno/compare/v0.8.0...v0.8.1) (2026-03-08)
 
 
