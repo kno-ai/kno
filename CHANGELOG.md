@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.12.0](https://github.com/kno-ai/kno/compare/v0.11.0...v0.12.0) (2026-03-09)
+
+
+### Features
+
+* project vaults, two-level publish config, consolidated docs ([54f5b2f](https://github.com/kno-ai/kno/commit/54f5b2f3a945a45b0b3438336a31c958e8d14d12))
+
 ## [0.11.0](https://github.com/kno-ai/kno/compare/v0.10.2...v0.11.0) (2026-03-09)
 
 
