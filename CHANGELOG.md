@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.11.0](https://github.com/kno-ai/kno/compare/v0.10.2...v0.11.0) (2026-03-09)
+
+
+### Features
+
+* redesign .kno project binding, streamline onboarding, default to active nudges ([33cdf5a](https://github.com/kno-ai/kno/commit/33cdf5a36ad8c51101e36578bc70942b80fccd8a))
+
+
+### Bug Fixes
+
+* replace payments-service examples with cloud-infra ([dd8bbe9](https://github.com/kno-ai/kno/commit/dd8bbe9c1f7f8f42adba978be8e5b1c2a70ba173))
+* update Claude Code MCP registration and document colon separator ([c2aa93b](https://github.com/kno-ai/kno/commit/c2aa93bbba35a382b523bf1284ec279fea87ba6c))
+
 ## [0.10.2](https://github.com/kno-ai/kno/compare/v0.10.1...v0.10.2) (2026-03-08)
 
 
