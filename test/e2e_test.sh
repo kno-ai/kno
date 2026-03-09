@@ -63,9 +63,12 @@ echo "Setup publish"
 SETUP_PUB_VAULT=$(mktemp -d /tmp/kno-e2e-setup-pub.XXXXXX)
 rm -rf "$SETUP_PUB_VAULT"
 SETUP_PUB_DIR=$(mktemp -d /tmp/kno-e2e-setup-pubdir.XXXXXX)
+SETUP_PUB_USER_CFG=$(mktemp -d /tmp/kno-e2e-setup-usercfg.XXXXXX)
+export KNO_USER_CONFIG_DIR="$SETUP_PUB_USER_CFG"
 assert_contains "setup --publish" "Publish target added" "$KNO" setup --vault "$SETUP_PUB_VAULT" --no-register --publish "$SETUP_PUB_DIR"
-grep -q "frontmatter" "$SETUP_PUB_VAULT/config.toml" && pass "publish config written" || fail "publish config missing"
-rm -rf "$SETUP_PUB_VAULT" "$SETUP_PUB_DIR"
+grep -q "frontmatter" "$SETUP_PUB_USER_CFG/config.toml" && pass "publish config written to user config" || fail "publish config missing from user config"
+unset KNO_USER_CONFIG_DIR
+rm -rf "$SETUP_PUB_VAULT" "$SETUP_PUB_DIR" "$SETUP_PUB_USER_CFG"
 
 # --- Vault status (empty) ---
 echo ""
@@ -311,6 +314,129 @@ echo "Page multi-value metadata"
 
 PAGE_JSON=$("$KNO" --vault "$VAULT" page show aws-infrastructure --json 2>&1)
 echo "$PAGE_JSON" | python3 -c "import sys,json; p=json.load(sys.stdin); tags=p.get('metadata',{}).get('tags',[]); assert len(tags) >= 2, f'tags: {tags}'" 2>/dev/null && pass "page multi-value tags in JSON" || fail "page multi-value tags missing"
+
+# --- Project vault: kno init ---
+echo ""
+echo "Project vault: kno init"
+
+PROJ_DIR=$(mktemp -d /tmp/kno-e2e-proj.XXXXXX)
+cd "$PROJ_DIR"
+git init >/dev/null 2>&1
+
+assert_contains "init creates vault" "Project vault created" "$KNO" init
+test -d "$PROJ_DIR/.kno" && pass "init creates .kno directory" || fail "init missing .kno directory"
+test -f "$PROJ_DIR/.kno/config.toml" && pass "init creates config.toml" || fail "init missing config.toml"
+test -d "$PROJ_DIR/.kno/notes" && pass "init creates notes dir" || fail "init missing notes dir"
+test -d "$PROJ_DIR/.kno/pages" && pass "init creates pages dir" || fail "init missing pages dir"
+test -f "$PROJ_DIR/.kno/.gitignore" && pass "init creates .gitignore" || fail "init missing .gitignore"
+grep -q "index/" "$PROJ_DIR/.kno/.gitignore" && pass "gitignore includes index/" || fail "gitignore missing index/"
+grep -q "notes/" "$PROJ_DIR/.kno/.gitignore" && pass "gitignore includes notes/" || fail "gitignore missing notes/"
+
+# Default page created and bound
+PROJ_NAME=$(basename "$PROJ_DIR")
+PROJ_SLUG=$("$KNO" --vault "$PROJ_DIR/.kno" page list --json 2>&1 | python3 -c "import sys,json; pages=json.load(sys.stdin); print(pages[0]['id'])")
+test -n "$PROJ_SLUG" && pass "init creates default page" || fail "init missing default page"
+grep -q "^page = " "$PROJ_DIR/.kno/config.toml" && pass "init binds page in config" || fail "init missing page binding"
+grep -q "Guidance" "$PROJ_DIR/.kno/pages/$PROJ_SLUG.md" && pass "default page has guidance template" || fail "default page missing guidance"
+grep -q "CAPTURE PRIORITIES" "$PROJ_DIR/.kno/pages/$PROJ_SLUG.md" && pass "default page has project template" || fail "default page missing project template"
+
+# Init again should fail
+assert_exit_nonzero "init fails if already exists" "$KNO" init
+
+# --- Project vault: auto-resolution ---
+echo ""
+echo "Project vault: auto-resolution"
+
+# Commands should auto-resolve to project vault (no --vault flag)
+echo "## Architecture decision." | "$KNO" note create --title "Test decision" >/dev/null 2>&1
+assert_contains "note list resolves to project vault" "Test decision" "$KNO" note list
+assert_contains "vault status shows project type" "project" "$KNO" vault status --json
+
+# Page operations in project vault
+assert_contains "page create in project vault" "Created" bash -c "echo 'Service docs.' | '$KNO' page create --name 'Architecture'"
+assert_contains "page list in project vault" "Architecture" "$KNO" page list
+
+# Verify data is in .kno/ not in personal vault
+test -d "$PROJ_DIR/.kno/pages" && ls "$PROJ_DIR/.kno/pages/" | grep -q "architecture" && pass "page stored in .kno/" || fail "page not in .kno/"
+
+# --- Project vault: auto index rebuild ---
+echo ""
+echo "Project vault: auto index rebuild"
+
+# Remove index, should rebuild automatically
+rm -rf "$PROJ_DIR/.kno/index"
+assert_contains "search works after index removal" "Architecture" "$KNO" page search "Architecture"
+test -d "$PROJ_DIR/.kno/index" && pass "index rebuilt automatically" || fail "index not rebuilt"
+
+# --- Project vault: subdirectory resolution ---
+echo ""
+echo "Project vault: subdirectory resolution"
+
+mkdir -p "$PROJ_DIR/src/deep"
+cd "$PROJ_DIR/src/deep"
+assert_contains "note list from subdirectory" "Test decision" "$KNO" note list
+
+cd /
+rm -rf "$PROJ_DIR"
+
+# --- Project vault: publish with user-level config ---
+echo ""
+echo "Project vault: publish with user-level config"
+
+# Set up a fresh project vault for publish tests
+PROJ_PUB_DIR=$(mktemp -d)
+mkdir -p "$PROJ_PUB_DIR/.kno/notes" "$PROJ_PUB_DIR/.kno/pages"
+cd "$PROJ_PUB_DIR"
+
+# Bootstrap a minimal project vault with a page
+echo 'page = "test-project"' > "$PROJ_PUB_DIR/.kno/config.toml"
+echo "# Test Project Knowledge" | "$KNO" --vault "$PROJ_PUB_DIR/.kno" page create --name "test-project" >/dev/null 2>&1
+
+# Point user config at the test personal vault
+export KNO_USER_CONFIG_DIR="$VAULT"
+
+# Create a personal publish target in the personal vault config
+PUBLISH_DIR=$(mktemp -d)
+cat >> "$VAULT/config.toml" <<EOF
+
+[[publish.targets]]
+path = "$PUBLISH_DIR"
+format = "frontmatter"
+EOF
+
+# Publish from project vault should pick up user-level targets
+PROJ_PUB_NAME=$(basename "$PROJ_PUB_DIR")
+assert_exit_0 "publish from project vault uses user config" "$KNO" --vault "$PROJ_PUB_DIR/.kno" publish
+# Pages should be grouped by project name (parent dir of .kno/)
+test -f "$PUBLISH_DIR/$PROJ_PUB_NAME/test-project.md" && pass "publish groups by project name" || fail "publish did not group by project name"
+
+# Project-level absolute target should also group (auto default)
+PROJ_PUB_OUT=$(mktemp -d)
+cat >> "$PROJ_PUB_DIR/.kno/config.toml" <<EOF
+
+[[publish.targets]]
+path = "$PROJ_PUB_OUT"
+format = "frontmatter"
+EOF
+"$KNO" --vault "$PROJ_PUB_DIR/.kno" publish >/dev/null 2>&1
+test -f "$PROJ_PUB_OUT/$PROJ_PUB_NAME/test-project.md" && pass "project absolute target groups" || fail "project absolute target did not group"
+
+# Group override: group = "false" on absolute path should publish flat
+PUBLISH_FLAT_DIR=$(mktemp -d)
+# Add a group=false target to the project vault config
+cat >> "$PROJ_PUB_DIR/.kno/config.toml" <<EOF
+
+[[publish.targets]]
+path = "$PUBLISH_FLAT_DIR"
+format = "frontmatter"
+group = "false"
+EOF
+"$KNO" --vault "$PROJ_PUB_DIR/.kno" publish >/dev/null 2>&1
+test -f "$PUBLISH_FLAT_DIR/test-project.md" && pass "group=false publishes flat" || fail "group=false did not publish flat"
+
+cd /
+unset KNO_USER_CONFIG_DIR
+rm -rf "$PROJ_PUB_DIR" "$PUBLISH_DIR" "$PROJ_PUB_OUT" "$PUBLISH_FLAT_DIR"
 
 # --- Version ---
 echo ""

@@ -4,8 +4,6 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
-
-	"github.com/kno-ai/kno/internal/config"
 )
 
 func TestParseRepoNameFromURL(t *testing.T) {
@@ -27,60 +25,6 @@ func TestParseRepoNameFromURL(t *testing.T) {
 				t.Errorf("parseRepoNameFromURL(%q) = %q, want %q", tt.url, got, tt.want)
 			}
 		})
-	}
-}
-
-func TestMergedNudgeLevel(t *testing.T) {
-	// No repo config — use vault default.
-	sc := &SessionContext{}
-	if got := sc.MergedNudgeLevel("light"); got != "light" {
-		t.Errorf("expected light, got %q", got)
-	}
-
-	// Repo config overrides.
-	active := "active"
-	sc = &SessionContext{
-		RepoConfig: &config.RepoConfig{
-			Skill: config.RepoSkillConfig{NudgeLevel: &active},
-		},
-	}
-	if got := sc.MergedNudgeLevel("light"); got != "active" {
-		t.Errorf("expected active, got %q", got)
-	}
-
-	// Invalid repo config value — fall back to vault default.
-	invalid := "bogus"
-	sc = &SessionContext{
-		RepoConfig: &config.RepoConfig{
-			Skill: config.RepoSkillConfig{NudgeLevel: &invalid},
-		},
-	}
-	if got := sc.MergedNudgeLevel("light"); got != "light" {
-		t.Errorf("expected light fallback, got %q", got)
-	}
-}
-
-func TestBoundPage(t *testing.T) {
-	// No repo config — empty.
-	sc := &SessionContext{}
-	if got := sc.BoundPage(); got != "" {
-		t.Errorf("expected empty, got %q", got)
-	}
-
-	// Page set.
-	sc = &SessionContext{
-		RepoConfig: &config.RepoConfig{Page: "cloud-infra"},
-	}
-	if got := sc.BoundPage(); got != "cloud-infra" {
-		t.Errorf("expected cloud-infra, got %q", got)
-	}
-
-	// Empty page.
-	sc = &SessionContext{
-		RepoConfig: &config.RepoConfig{},
-	}
-	if got := sc.BoundPage(); got != "" {
-		t.Errorf("expected empty, got %q", got)
 	}
 }
 

@@ -137,24 +137,17 @@ Use the vault status from step 4 to pick the most relevant follow-up.
 
 **Pick one:**
 
-- **First save ever (git context):** "Saved — that's your first one.
-  Want to set up a project page for [repo-name]? It'll load automatically
-  next time you work here." On yes: create the page with the developer
-  template (don't ask about template choice), curate the just-saved note
-  into it, and bind `.kno` for auto-load. Do all three without additional
-  confirmations. Report: "Done — created **[page name]**, added your
-  session, and bound it for auto-load. Next `/kno.start` here loads it
-  instantly." Call `kno_page_create`, then `kno_page_update` with the
-  curated content and metadata, then `kno_note_update` to stamp the note,
-  then `kno_set_option(key: "page", value: "[page name]")`. Mention once:
-  "Commit `.kno` to share with your team, or `.gitignore` it to keep it
-  personal."
+- **First save ever (project vault):** "Saved — that's your first one.
+  Your project page is ready for its first curate." Mention `/kno.curate`
+  to weave the note into the project page. The project page already
+  exists from `kno init` — don't offer to create one.
 
-- **First save ever (no git):** "Saved — that's your first one. Want to
-  start a page for [topic]? Pages collect your saves so they're ready
-  for future sessions." On yes: create the page with the general template
-  (don't ask about template choice), curate the note in. Report: "Done —
-  created **[page name]** and added your session."
+- **First save ever (personal vault):** "Saved — that's your first one.
+  Want to start a page for [topic]? Pages collect your saves so they're
+  ready for future sessions." On yes: create the page with the guidance
+  template (injected below), curate the note in. No intermediate
+  confirmations. Report: "Done — created **[page name]** and added
+  your session."
 
 - **Matching page exists:** "Saved. That'll feed into your [page name]
   page — `/kno.curate` when you're ready."

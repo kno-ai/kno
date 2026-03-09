@@ -5,15 +5,14 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
-
-	"github.com/kno-ai/kno/internal/config"
 )
 
 // SessionContext holds session-scoped state detected at MCP server init.
 // It is distinct from *app.App which holds vault-scoped state.
 type SessionContext struct {
-	Git        *GitContext        // nil if no .git detected
-	RepoConfig *config.RepoConfig // nil if no .kno file found
+	Git              *GitContext // nil if no .git detected
+	IsProjectVault   bool        // true if session is using a .kno/ project vault
+	ProjectVaultPath string      // path to .kno/ directory, empty if personal vault
 }
 
 // GitContext holds information about the detected git repository.
@@ -22,29 +21,10 @@ type GitContext struct {
 	RepoName string // extracted repo name (from remote URL or directory name)
 }
 
-// MergedNudgeLevel returns the effective nudge level, applying repo override if set.
-func (sc *SessionContext) MergedNudgeLevel(vaultDefault string) string {
-	if sc != nil && sc.RepoConfig != nil && sc.RepoConfig.Skill.NudgeLevel != nil {
-		level := *sc.RepoConfig.Skill.NudgeLevel
-		if config.ValidNudgeLevel(level) {
-			return level
-		}
-	}
-	return vaultDefault
-}
-
-// BoundPage returns the page name from .kno, or empty string if not set.
-func (sc *SessionContext) BoundPage() string {
-	if sc != nil && sc.RepoConfig != nil {
-		return sc.RepoConfig.Page
-	}
-	return ""
-}
-
-// DetectSessionContext detects git and repo config from the current working directory.
-// Walks up from cwd to find .git, then reads .kno from the repo root.
-// If no .git is found, checks cwd for a .kno file (non-dev project binding).
-// Returns a valid (possibly empty) SessionContext; never returns an error.
+// DetectSessionContext detects git and project vault from the current working
+// directory. Walks up from cwd to find .git, then checks for .kno/ directory
+// (project vault). Returns a valid (possibly empty) SessionContext; never
+// returns an error.
 func DetectSessionContext() *SessionContext {
 	sc := &SessionContext{}
 
@@ -53,18 +33,21 @@ func DetectSessionContext() *SessionContext {
 		return sc
 	}
 
+	projectRoot := cwd
 	repoRoot := findRepoRoot(cwd)
 	if repoRoot != "" {
+		projectRoot = repoRoot
 		sc.Git = &GitContext{
 			RepoRoot: repoRoot,
 			RepoName: extractRepoName(repoRoot),
 		}
-		rc, _ := config.LoadRepoConfig(repoRoot)
-		sc.RepoConfig = rc
-	} else {
-		// No git — check cwd for .kno file.
-		rc, _ := config.LoadRepoConfig(cwd)
-		sc.RepoConfig = rc
+	}
+
+	// Check for .kno/ project vault.
+	knoDir := filepath.Join(projectRoot, ".kno")
+	if info, err := os.Stat(knoDir); err == nil && info.IsDir() {
+		sc.IsProjectVault = true
+		sc.ProjectVaultPath = knoDir
 	}
 
 	return sc

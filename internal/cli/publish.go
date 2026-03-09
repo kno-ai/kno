@@ -26,17 +26,20 @@ func newPublishCmd() *cobra.Command {
 				return err
 			}
 
-			targets := a.Config.Publish.Targets
+			targets := a.CollectPublishTargets()
 			if len(targets) == 0 {
 				fmt.Fprintln(cmd.OutOrStdout(), "No publish targets configured.")
 				fmt.Fprintln(cmd.OutOrStdout(), "")
-				fmt.Fprintln(cmd.OutOrStdout(), "Add a target to your config.toml:")
+				fmt.Fprintln(cmd.OutOrStdout(), "Publish to Obsidian or any markdown directory:")
+				fmt.Fprintln(cmd.OutOrStdout(), "  kno setup --publish ~/obsidian/kno")
 				fmt.Fprintln(cmd.OutOrStdout(), "")
+				fmt.Fprintln(cmd.OutOrStdout(), "This adds a target to your user config (~/.kno/config.toml)")
+				fmt.Fprintln(cmd.OutOrStdout(), "so pages from all your vaults publish there.")
+				fmt.Fprintln(cmd.OutOrStdout(), "")
+				fmt.Fprintln(cmd.OutOrStdout(), "For project-specific targets, add to your vault's config.toml:")
 				fmt.Fprintln(cmd.OutOrStdout(), "  [[publish.targets]]")
-				fmt.Fprintln(cmd.OutOrStdout(), `  path = "~/obsidian/kno"`)
-				fmt.Fprintln(cmd.OutOrStdout(), `  format = "frontmatter"`)
-				fmt.Fprintln(cmd.OutOrStdout(), "")
-				fmt.Fprintln(cmd.OutOrStdout(), "Or run: kno setup --publish ~/path/to/directory")
+				fmt.Fprintln(cmd.OutOrStdout(), `  path = "docs/kno"`)
+				fmt.Fprintln(cmd.OutOrStdout(), `  format = "markdown"`)
 				return nil
 			}
 
@@ -62,7 +65,7 @@ func newPublishCmd() *cobra.Command {
 				return publishDryRun(cmd, a, targets, pageIDs)
 			}
 
-			results, err := publish.PublishPages(a.Vault, targets, pageIDs)
+			results, err := publish.PublishPages(a.Vault, targets, a.ProjectName, pageIDs)
 			if err != nil {
 				return err
 			}
@@ -139,6 +142,10 @@ func publishDryRun(cmd *cobra.Command, a *app.App, targets []config.PublishTarge
 
 	fmt.Fprintln(cmd.OutOrStdout(), "Would publish:")
 	for _, target := range targets {
+		targetPath := target.Path
+		if publish.ShouldGroup(target, a.ProjectName) {
+			targetPath = targetPath + "/" + a.ProjectName
+		}
 		for _, id := range pages {
 			name := id
 			for _, m := range metas {
@@ -147,7 +154,7 @@ func publishDryRun(cmd *cobra.Command, a *app.App, targets []config.PublishTarge
 					break
 				}
 			}
-			fmt.Fprintf(cmd.OutOrStdout(), "  %s → %s/%s.md  [%s]\n", name, target.Path, id, target.Format)
+			fmt.Fprintf(cmd.OutOrStdout(), "  %s → %s/%s.md  [%s]\n", name, targetPath, id, target.Format)
 		}
 	}
 	return nil

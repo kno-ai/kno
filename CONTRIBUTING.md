@@ -94,16 +94,17 @@ This starts the MCP server over stdio. Send JSON-RPC messages on stdin.
 ```
 cmd/kno/main.go          Entry point
 internal/
-  cli/                   Cobra commands (note, page, vault, setup)
-  mcp/                   MCP server, tools, and prompts
+  cli/                   Cobra commands (note, page, vault, setup, init, publish)
+  mcp/                   MCP server, tools, prompts, session context
   model/                 Data types: Note, Page, MetaMap
   vault/                 Vault interface
   vault/fs/              Filesystem vault implementation
-  config/                Config loading and defaults (config.toml)
+  config/                Config loading, defaults, user config (config.toml)
+  publish/               Publish logic (frontmatter, wikilinks, grouping)
   search/                Bleve full-text search index
   skills/                Skill store interface
-  skills/embedded/       Embedded skill markdown files
-  app/                   App struct that wires vault + config + skills
+  skills/embedded/       Embedded skill and template markdown files
+  app/                   App struct that wires vault + config + skills + publish
   integration_test.go    Integration tests (Go API level)
 test/
   e2e_test.sh            End-to-end CLI tests (builds binary, exercises every command)

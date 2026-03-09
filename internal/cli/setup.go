@@ -49,16 +49,25 @@ func newSetupCmd() *cobra.Command {
 			fmt.Fprintf(cmd.OutOrStdout(), "✓  Vault created at %s\n", vaultPath)
 			fmt.Fprintf(cmd.OutOrStdout(), "✓  Config written to %s\n", cfgPath)
 
-			// Add publish target if requested.
+			// Add publish target if requested — writes to user config
+			// (~/.kno/config.toml) so targets apply across all vaults.
 			if publishPath != "" {
-				cfg, err := config.Load(vaultPath)
+				userDir := config.UserConfigDir()
+				if userDir == "" {
+					return fmt.Errorf("could not determine user config directory")
+				}
+				if err := os.MkdirAll(userDir, 0o755); err != nil {
+					return fmt.Errorf("creating user config directory: %w", err)
+				}
+
+				userCfg, err := config.Load(userDir)
 				if err != nil {
-					return fmt.Errorf("loading config: %w", err)
+					return fmt.Errorf("loading user config: %w", err)
 				}
 
 				// Check if target already exists.
 				alreadyExists := false
-				for _, t := range cfg.Publish.Targets {
+				for _, t := range userCfg.Publish.Targets {
 					if t.Path == publishPath {
 						alreadyExists = true
 						break
@@ -66,12 +75,12 @@ func newSetupCmd() *cobra.Command {
 				}
 
 				if !alreadyExists {
-					cfg.Publish.Targets = append(cfg.Publish.Targets, config.PublishTarget{
+					userCfg.Publish.Targets = append(userCfg.Publish.Targets, config.PublishTarget{
 						Path:   publishPath,
 						Format: "frontmatter",
 					})
-					if err := config.Save(vaultPath, cfg); err != nil {
-						return fmt.Errorf("saving config: %w", err)
+					if err := config.Save(userDir, userCfg); err != nil {
+						return fmt.Errorf("saving user config: %w", err)
 					}
 					// Create target directory.
 					expanded := publishPath
@@ -83,7 +92,7 @@ func newSetupCmd() *cobra.Command {
 					if err := os.MkdirAll(expanded, 0o755); err != nil {
 						fmt.Fprintf(cmd.ErrOrStderr(), "Warning: could not create publish directory: %v\n", err)
 					}
-					fmt.Fprintf(cmd.OutOrStdout(), "✓  Publish target added: %s\n", publishPath)
+					fmt.Fprintf(cmd.OutOrStdout(), "✓  Publish target added: %s (in %s)\n", publishPath, config.ConfigPath(userDir))
 				} else {
 					fmt.Fprintf(cmd.OutOrStdout(), "—  Publish target already configured: %s\n", publishPath)
 				}
@@ -136,14 +145,20 @@ func newSetupCmd() *cobra.Command {
 				}
 			}
 
-			// Show publish tip if no publish targets configured.
+			// Show publish tip if no publish targets configured anywhere.
 			if publishPath == "" {
-				cfg, _ := config.Load(vaultPath)
-				if len(cfg.Publish.Targets) == 0 {
+				hasTargets := false
+				if cfg, err := config.Load(vaultPath); err == nil && len(cfg.Publish.Targets) > 0 {
+					hasTargets = true
+				}
+				if !hasTargets && len(config.LoadUserPublishTargets()) > 0 {
+					hasTargets = true
+				}
+				if !hasTargets {
 					fmt.Fprintln(cmd.OutOrStdout())
-					fmt.Fprintln(cmd.OutOrStdout(), "Tip: Publish curated pages to Obsidian or any markdown viewer")
-					fmt.Fprintln(cmd.OutOrStdout(), "that supports frontmatter:")
+					fmt.Fprintln(cmd.OutOrStdout(), "Tip: Publish pages to Obsidian or any markdown viewer:")
 					fmt.Fprintln(cmd.OutOrStdout(), "  kno setup --publish ~/obsidian/kno")
+					fmt.Fprintln(cmd.OutOrStdout(), "Pages from all your vaults will publish there automatically.")
 				}
 			}
 

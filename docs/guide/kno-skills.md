@@ -162,11 +162,11 @@ document) stays with the user.
 
 **The entry point.** Start every chat with `/kno.start` to connect to your vault.
 
-The skill calls `kno_vault_status` and checks for a project page binding.
-If a `.kno` file in the current directory binds a page (`page = "..."`),
-that page loads immediately — no prompting. Otherwise, the skill lists
-your pages by name and offers to load. In a git repo without a `.kno`
-file, the skill offers to create one for auto-load in future sessions.
+The skill calls `kno_vault_status` and checks for a bound page. In a
+project vault (created by `kno init`), the project page loads immediately
+— no prompting. Otherwise, the skill lists your pages by name and offers
+to load. In a git repo without a project vault, the skill offers to
+create one with `kno init` for auto-load in future sessions.
 
 This is the only step users need to remember. Everything else — save
 nudges, load suggestions, curate reminders — kno handles or surfaces
@@ -350,21 +350,26 @@ Pages:
 
 ---
 
-## Project Binding
+## Project Vaults
 
-A `.kno` file in any directory can bind a vault page for auto-load on
-`/kno.start`. The kno MCP server reads this file at session start.
-See the [User Guide](kno-guide#auto-loading-pages-with-kno) for details.
+A project vault (`.kno/` directory at a project root) binds a page for
+auto-load on `/kno.start`. The project page loads immediately — no
+prompting, no picking from a list. See the
+[User Guide](kno-guide#project-vaults) for details.
+
+In a git repo without a project vault, the start skill offers to create
+one with `kno init`. This can be disabled with `prompt_project_setup =
+false` in the vault config.
 
 ## Developer Context
 
 When the kno MCP server detects a git repository, all skills gain
 project context. Everything you save is automatically tagged with
-the repo name, a developer-specific type vocabulary is used (`decision`,
-`debt`, `runbook`, `bug`, `dependency`), and page guidance templates
-are tailored to engineering knowledge — decisions with dates, known
+the repo name, a developer-specific type vocabulary is available
+(`decision`, `debt`, `runbook`, `bug`, `dependency`), and page guidance
+is tailored to engineering knowledge — decisions with dates, known
 issues with status, setup instructions.
 
 The general knowledge loop is unchanged — developer context enriches it,
-it doesn't replace it. For the full developer experience, see the
-[Developer Guide](kno-dev-guide).
+it doesn't replace it. See [In git repos](kno-guide#in-git-repos) in
+the User Guide for details.

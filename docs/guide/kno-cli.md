@@ -107,11 +107,11 @@ with any detected clients.
     --no-register           Skip all client MCP registration. Useful in
                             headless or CI environments.
 
-    --publish <path>        Add a publish target directory. Pages will be
-                            automatically published here after each curate.
-                            Default format: frontmatter (YAML frontmatter,
-                            wikilinks). The directory is created if it
-                            doesn't exist.
+    --publish <path>        Add a publish target to user config
+                            (~/.kno/config.toml). Pages from all vaults
+                            will be automatically published here whenever
+                            a page is updated. Default format: frontmatter.
+                            The directory is created if it doesn't exist.
 
 **Output**
 
@@ -129,7 +129,7 @@ Restart your client, then enter /kno.start in a chat to connect.
 ```
 ✓  Vault created at ~/kno
 ✓  Config written to ~/kno/config.toml
-✓  Publish target added: ~/obsidian/kno
+✓  Publish target added: ~/obsidian/kno (in ~/.kno/config.toml)
 ✓  Registered with Claude Desktop  (name: kno)
 ✓  Registered with Claude Code  (name: kno)
 
@@ -165,11 +165,50 @@ To register manually, add the following to your client's MCP config:
   creates an independent vault without affecting existing ones. Each vault
   gets its own MCP registration, config, and search index. Sync and
   encryption are handled at the directory level — kno does not manage them.
-- The vault path can be changed later by editing `~/kno/config.toml` and
-  re-running `kno setup`
 - Each named vault is fully independent — separate notes, pages, search
   index, and config. Use this for work/personal separation, different sync
   or encryption policies, or any context where data should not cross over.
+
+---
+
+### kno init
+
+```
+kno init
+```
+
+Initialize a project vault in the current directory (or git root). Creates
+a `.kno/` directory that is self-contained — its own config, notes, pages,
+and search index. When kno detects a project vault, it uses it exclusively
+for the session.
+
+**What it does**
+
+1. Finds the project root (git root if in a repo, otherwise cwd)
+2. Creates `.kno/` with vault layout (`notes/`, `pages/`)
+3. Writes `config.toml` with the project page bound for auto-load
+4. Creates a default page named after the project, with guidance template
+5. Writes `.gitignore` inside `.kno/` (excludes `notes/` and `index/`)
+
+**Output**
+
+```
+✓  Project vault created at /Users/kevin/code/cloud-infra/.kno
+✓  Page "cloud-infra" created and bound for auto-load
+✓  .gitignore created (index/ and notes/ excluded from git)
+
+Commit .kno/ to share curated pages with your team.
+Notes are local to each developer — pages are the shared artifact.
+```
+
+**Notes**
+
+- Fails if `.kno/` already exists at the project root
+- Pages are committed to git; notes and index are gitignored
+- The project page auto-loads on `/kno.start` — no additional setup
+- In git repos without a project vault, kno offers to run `kno init`
+  at session start (can be disabled with `prompt_project_setup = false`
+  in vault config)
 
 ---
 
@@ -950,8 +989,17 @@ Publishing renders curated pages to external directories with optional
 frontmatter and wikilinks. The vault is always the source of truth —
 published files are derived artifacts that can be regenerated at any time.
 
-Pages are automatically published after every curate pass (via MCP). The
-CLI command is for manual publishes and troubleshooting.
+Pages are automatically published whenever they are updated (via curate or
+any page write through MCP). The CLI command is for manual publishes and
+troubleshooting.
+
+Publish targets are collected from two levels:
+
+1. **Vault config** (`<vault>/config.toml`) — targets specific to this vault
+2. **User config** (`~/.kno/config.toml`) — targets that apply across all
+   vaults (e.g. Obsidian)
+
+Both levels are merged, deduplicated by path.
 
 ---
 
@@ -961,7 +1009,7 @@ CLI command is for manual publishes and troubleshooting.
 kno publish  [--page <id>]  [--format <format>]  [--dry-run]  [--json]
 ```
 
-Publish pages to all configured targets.
+Publish pages to all configured targets (vault + user config).
 
 **Options**
 
@@ -984,8 +1032,8 @@ Published 2 page(s).
 
 ```
 Would publish:
-  AWS Infrastructure → ~/obsidian/kno/aws-infrastructure.md  [frontmatter]
-  CNC Machine Maintenance → ~/obsidian/kno/cnc-machine-maintenance.md  [frontmatter]
+  AWS Infrastructure → ~/obsidian/kno/cloud-infra/aws-infrastructure.md  [frontmatter]
+  CNC Machine Maintenance → ~/obsidian/kno/cloud-infra/cnc-machine-maintenance.md  [frontmatter]
 ```
 
 **Output (--json)**
@@ -995,7 +1043,7 @@ Would publish:
   {
     "page_id": "aws-infrastructure",
     "target": "~/obsidian/kno",
-    "path": "/Users/kevin/obsidian/kno/aws-infrastructure.md"
+    "path": "/Users/kevin/obsidian/kno/cloud-infra/aws-infrastructure.md"
   }
 ]
 ```
@@ -1005,13 +1053,16 @@ Would publish:
 ```
 No publish targets configured.
 
-Add a target to your config.toml:
+Publish to Obsidian or any markdown directory:
+  kno setup --publish ~/obsidian/kno
 
+This adds a target to your user config (~/.kno/config.toml)
+so pages from all your vaults publish there.
+
+For project-specific targets, add to your vault's config.toml:
   [[publish.targets]]
-  path = "~/obsidian/kno"
-  format = "frontmatter"
-
-Or run: kno setup --publish ~/path/to/directory
+  path = "docs/kno"
+  format = "markdown"
 ```
 
 **Formats**
@@ -1021,6 +1072,20 @@ Or run: kno setup --publish ~/path/to/directory
   Works with Obsidian and any markdown tool that reads YAML frontmatter.
 - **markdown** — raw markdown with guidance comments stripped. No frontmatter,
   no wikilinks.
+
+**Project grouping**
+
+When publishing from a project vault to an absolute path target (starting
+with `/` or `~/`), pages are placed in a subdirectory named after the
+project. This keeps pages from different projects organized in shared
+destinations like Obsidian.
+
+Relative paths are already project-scoped, so no grouping is applied.
+
+The `group` field on a publish target overrides the default behavior:
+- `"auto"` (default) — group for absolute paths, flat for relative
+- `"true"` — always group
+- `"false"` — never group
 
 **Notes**
 
@@ -1036,8 +1101,18 @@ Or run: kno setup --publish ~/path/to/directory
 
 ## CONFIGURATION
 
+kno uses two config levels:
+
+- **Vault config** (`<vault>/config.toml`) — vault-specific settings
+- **User config** (`~/.kno/config.toml`) — user-level settings that apply
+  across all vaults (publish targets)
+
+### Vault config
+
 ```toml
-# ~/kno/config.toml
+# <vault>/config.toml
+
+page = "project-name"            # page to auto-load (project vaults)
 
 [notes]
 max_count = 500                  # vault capacity; oldest curated removed first
@@ -1046,24 +1121,42 @@ summary_max_tokens = 100         # hint to skill: target summary length
 max_content_tokens = 3000        # hard limit on note content (~12KB)
 
 [pages]
-max_content_tokens = 12000        # hard limit on page content (~48KB)
+max_content_tokens = 12000       # hard limit on page content (~48KB)
 
 [curate]
-max_notes_per_run = 50        # max notes processed in a single curate pass
+max_notes_per_run = 50           # max notes processed in a single curate pass
 
 [search]
-default_limit = 10                # default result count for all search commands
+default_limit = 10               # default result count for all search commands
 
 [skill]
-nudge_level = "active"            # "off" | "light" | "active"
-                                  # off: no awareness, slash commands only
-                                  # light: high-signal nudges only
-                                  # active: broader nudging (default)
+nudge_level = "active"           # "off" | "light" | "active"
+                                 # off: no awareness, slash commands only
+                                 # light: high-signal nudges only
+                                 # active: broader nudging (default)
+# prompt_project_setup = false   # set to false to stop project vault prompts
 
-# [[publish.targets]]             # repeatable — publish pages to external dirs
-# path = "~/obsidian/kno"         # target directory (~ expanded)
-# format = "frontmatter"             # "frontmatter" or "markdown"
+# [[publish.targets]]            # project-specific publish targets
+# path = "docs/kno"
+# format = "markdown"
+# group = "false"
 ```
+
+### User config
+
+```toml
+# ~/.kno/config.toml
+
+[[publish.targets]]              # publish targets that apply to all vaults
+path = "~/obsidian/kno"
+format = "frontmatter"
+# group = "auto"                 # "auto" (default), "true", or "false"
+```
+
+User config is created by `kno setup --publish`. It currently supports
+only `[[publish.targets]]`. Other settings belong in the vault config.
+
+### Defaults
 
 Defaults are designed to be predictably successful. Any consumer operating
 within default limits always knows the upper bound of what it will receive.
@@ -1076,10 +1169,3 @@ Key behaviors:
   create and update.
 - Exceeding `curate.max_notes_per_run` processes up to the limit and
   reports how many notes remain for a follow-up run.
-
-### Project-specific settings (`.kno`)
-
-In git repositories, a `.kno` file at the repo root can override skill
-settings per project. This file is read by the MCP server when it detects
-a git context (Claude Code only). See the
-[Developer Guide](kno-dev-guide) for available keys and usage.

@@ -3,14 +3,13 @@ package mcp
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"github.com/kno-ai/kno/internal/app"
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
 )
 
-func registerPrompts(s *server.MCPServer, a *app.App, sc *SessionContext) {
+func registerPrompts(s *server.MCPServer, a *app.App) {
 	s.AddPrompt(mcp.Prompt{
 		Name:        "start",
 		Description: "Start here — show pages, offer to load",
@@ -48,7 +47,7 @@ func registerPrompts(s *server.MCPServer, a *app.App, sc *SessionContext) {
 				Required:    false,
 			},
 		},
-	}, pagePromptHandler(a, sc))
+	}, pagePromptHandler(a))
 
 	s.AddPrompt(mcp.Prompt{
 		Name:        "status",
@@ -75,9 +74,18 @@ func capturePromptHandler(a *app.App) server.PromptHandlerFunc {
 		if err != nil {
 			return nil, fmt.Errorf("loading capture skill: %w", err)
 		}
+
+		instructions := skill
+
+		// Inject page guidance template so capture can create pages with
+		// guidance on first save (same template the page skill uses).
+		if tmpl, err := a.Skills.Get("templates/project-page.md"); err == nil {
+			instructions += "\n\n## Page Guidance Template\n\nWhen creating a page on first save, prepend this guidance (wrapped in `<!-- Guidance -->`) before the curated content:\n\n```\n" + tmpl + "```"
+		}
+
 		return &mcp.GetPromptResult{
 			Description: "Save this session's insights to your vault",
-			Messages:    []mcp.PromptMessage{mcp.NewPromptMessage(mcp.RoleUser, mcp.NewTextContent(skill))},
+			Messages:    []mcp.PromptMessage{mcp.NewPromptMessage(mcp.RoleUser, mcp.NewTextContent(instructions))},
 		}, nil
 	}
 }
@@ -114,7 +122,7 @@ func loadPromptHandler(a *app.App) server.PromptHandlerFunc {
 	}
 }
 
-func pagePromptHandler(a *app.App, sc *SessionContext) server.PromptHandlerFunc {
+func pagePromptHandler(a *app.App) server.PromptHandlerFunc {
 	return func(ctx context.Context, req mcp.GetPromptRequest) (*mcp.GetPromptResult, error) {
 		skill, err := a.Skills.Get("page.md")
 		if err != nil {
@@ -126,16 +134,8 @@ func pagePromptHandler(a *app.App, sc *SessionContext) server.PromptHandlerFunc 
 			instructions += fmt.Sprintf("\n\nRequested action: %s", action)
 		}
 
-		// Inject page guidance template based on context.
-		templateName := "templates/general-page.md"
-		if sc.Git != nil {
-			templateName = "templates/developer-page.md"
-		}
-		if tmpl, err := a.Skills.Get(templateName); err == nil {
-			// Replace placeholder with actual repo name if in git context.
-			if sc.Git != nil {
-				tmpl = strings.Replace(tmpl, "{{repo_name}}", sc.Git.RepoName, 1)
-			}
+		// Inject page guidance template.
+		if tmpl, err := a.Skills.Get("templates/project-page.md"); err == nil {
 			instructions += "\n\n## Page Guidance Template\n\nWhen creating a new page, use this as the default guidance (the user can adjust):\n\n```\n" + tmpl + "```"
 		}
 

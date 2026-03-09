@@ -2,8 +2,6 @@ package mcp
 
 import (
 	"context"
-	"os"
-	"path/filepath"
 	"testing"
 
 	"github.com/kno-ai/kno/internal/app"
@@ -66,7 +64,7 @@ func TestExtractMeta_Nil(t *testing.T) {
 	}
 }
 
-func TestSetOptionHandler_NoContext(t *testing.T) {
+func TestSetOptionHandler_NoProjectVault(t *testing.T) {
 	a := testApp(t)
 	sc := &SessionContext{}
 	handler := setOptionHandler(a, sc)
@@ -77,36 +75,18 @@ func TestSetOptionHandler_NoContext(t *testing.T) {
 		"value": "test-page",
 	}
 
-	// Use a temp dir as cwd to avoid writing to the real cwd.
-	dir := t.TempDir()
-	origDir, _ := os.Getwd()
-	os.Chdir(dir)
-	defer os.Chdir(origDir)
-
 	result, err := handler(context.Background(), req)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if result.IsError {
-		t.Errorf("expected success for no-git context with cwd fallback: %v", result)
-	}
-
-	// Verify .kno was written to cwd.
-	loaded, loadErr := config.LoadRepoConfig(dir)
-	if loadErr != nil {
-		t.Fatalf("load error: %v", loadErr)
-	}
-	if loaded.Page != "test-page" {
-		t.Errorf("expected page = test-page, got %q", loaded.Page)
+	if !result.IsError {
+		t.Error("expected error when setting page without a project vault")
 	}
 }
 
 func TestSetOptionHandler_UnknownKey(t *testing.T) {
 	a := testApp(t)
-	dir := t.TempDir()
-	sc := &SessionContext{
-		Git: &GitContext{RepoRoot: dir, RepoName: "test-repo"},
-	}
+	sc := &SessionContext{}
 	handler := setOptionHandler(a, sc)
 
 	req := mcp.CallToolRequest{}
@@ -124,11 +104,11 @@ func TestSetOptionHandler_UnknownKey(t *testing.T) {
 	}
 }
 
-func TestSetOptionHandler_SetPage(t *testing.T) {
+func TestSetOptionHandler_SetPage_ProjectVault(t *testing.T) {
 	a := testApp(t)
-	dir := t.TempDir()
 	sc := &SessionContext{
-		Git: &GitContext{RepoRoot: dir, RepoName: "test-repo"},
+		IsProjectVault:   true,
+		ProjectVaultPath: a.VaultPath,
 	}
 	handler := setOptionHandler(a, sc)
 
@@ -146,22 +126,13 @@ func TestSetOptionHandler_SetPage(t *testing.T) {
 		t.Errorf("unexpected error result: %v", result)
 	}
 
-	// Verify .kno file was written.
-	knoPath := filepath.Join(dir, ".kno")
-	if _, err := os.Stat(knoPath); os.IsNotExist(err) {
-		t.Fatal(".kno file not created")
-	}
-
 	// Verify in-memory update.
-	if sc.RepoConfig == nil {
-		t.Fatal("sc.RepoConfig not updated")
-	}
-	if sc.RepoConfig.Page != "cloud-infra" {
-		t.Errorf("in-memory page = %q, want cloud-infra", sc.RepoConfig.Page)
+	if a.Config.Page != "cloud-infra" {
+		t.Errorf("in-memory page = %q, want cloud-infra", a.Config.Page)
 	}
 
-	// Verify file can be loaded back.
-	loaded, err := config.LoadRepoConfig(dir)
+	// Verify config was written to vault.
+	loaded, err := config.Load(a.VaultPath)
 	if err != nil {
 		t.Fatalf("load error: %v", err)
 	}
@@ -170,18 +141,18 @@ func TestSetOptionHandler_SetPage(t *testing.T) {
 	}
 }
 
-func TestSetOptionHandler_SetNudgeLevel(t *testing.T) {
+func TestSetOptionHandler_SetNudgeLevel_ProjectVault(t *testing.T) {
 	a := testApp(t)
-	dir := t.TempDir()
 	sc := &SessionContext{
-		Git: &GitContext{RepoRoot: dir, RepoName: "test-repo"},
+		IsProjectVault:   true,
+		ProjectVaultPath: a.VaultPath,
 	}
 	handler := setOptionHandler(a, sc)
 
 	req := mcp.CallToolRequest{}
 	req.Params.Arguments = map[string]any{
 		"key":   "nudge_level",
-		"value": "active",
+		"value": "light",
 	}
 
 	result, err := handler(context.Background(), req)
@@ -192,20 +163,26 @@ func TestSetOptionHandler_SetNudgeLevel(t *testing.T) {
 		t.Errorf("unexpected error result: %v", result)
 	}
 
-	loaded, err := config.LoadRepoConfig(dir)
+	// Verify in-memory update.
+	if a.Config.Skill.NudgeLevel != "light" {
+		t.Errorf("in-memory nudge_level = %q, want light", a.Config.Skill.NudgeLevel)
+	}
+
+	// Verify config was written to vault.
+	loaded, err := config.Load(a.VaultPath)
 	if err != nil {
 		t.Fatalf("load error: %v", err)
 	}
-	if loaded.Skill.NudgeLevel == nil || *loaded.Skill.NudgeLevel != "active" {
-		t.Error("round-trip: expected nudge_level = active")
+	if loaded.Skill.NudgeLevel != "light" {
+		t.Errorf("round-trip: nudge_level = %q, want light", loaded.Skill.NudgeLevel)
 	}
 }
 
 func TestSetOptionHandler_InvalidNudgeLevel(t *testing.T) {
 	a := testApp(t)
-	dir := t.TempDir()
 	sc := &SessionContext{
-		Git: &GitContext{RepoRoot: dir, RepoName: "test-repo"},
+		IsProjectVault:   true,
+		ProjectVaultPath: a.VaultPath,
 	}
 	handler := setOptionHandler(a, sc)
 
@@ -221,53 +198,6 @@ func TestSetOptionHandler_InvalidNudgeLevel(t *testing.T) {
 	}
 	if !result.IsError {
 		t.Error("expected error result for invalid nudge_level")
-	}
-}
-
-func TestSetOptionHandler_PreservesExistingConfig(t *testing.T) {
-	a := testApp(t)
-	dir := t.TempDir()
-
-	// Write an existing .kno with nudge_level.
-	level := "active"
-	existing := &config.RepoConfig{
-		Page:  "existing-page",
-		Skill: config.RepoSkillConfig{NudgeLevel: &level},
-	}
-	if err := config.SaveRepoConfig(dir, existing); err != nil {
-		t.Fatal(err)
-	}
-
-	sc := &SessionContext{
-		Git:        &GitContext{RepoRoot: dir, RepoName: "test-repo"},
-		RepoConfig: existing,
-	}
-	handler := setOptionHandler(a, sc)
-
-	req := mcp.CallToolRequest{}
-	req.Params.Arguments = map[string]any{
-		"key":   "page",
-		"value": "new-page",
-	}
-
-	result, err := handler(context.Background(), req)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if result.IsError {
-		t.Errorf("unexpected error result: %v", result)
-	}
-
-	// Verify nudge_level was preserved.
-	loaded, err := config.LoadRepoConfig(dir)
-	if err != nil {
-		t.Fatalf("load error: %v", err)
-	}
-	if loaded.Skill.NudgeLevel == nil || *loaded.Skill.NudgeLevel != "active" {
-		t.Error("existing nudge_level should be preserved")
-	}
-	if loaded.Page != "new-page" {
-		t.Errorf("expected page = new-page, got %q", loaded.Page)
 	}
 }
 
@@ -327,10 +257,7 @@ func TestSetOptionHandler_PromptProjectSetup_InvalidValue(t *testing.T) {
 
 func TestSetOptionHandler_MissingKey(t *testing.T) {
 	a := testApp(t)
-	dir := t.TempDir()
-	sc := &SessionContext{
-		Git: &GitContext{RepoRoot: dir, RepoName: "test-repo"},
-	}
+	sc := &SessionContext{}
 	handler := setOptionHandler(a, sc)
 
 	req := mcp.CallToolRequest{}

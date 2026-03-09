@@ -91,6 +91,28 @@ See the [User Guide](guide/kno-guide) for the full walkthrough.
 
 ---
 
+## For developers
+
+In Claude Code, kno detects your git repo and enriches everything
+automatically — saves get tagged with the project name, decisions get
+dates, known issues get status tracking. Run `kno init` to create a
+project vault that travels with your code:
+
+```sh
+cd ~/code/my-project
+kno init
+```
+
+Pages commit to git. Notes stay local. New team members clone the repo
+and start their first session with the project's accumulated knowledge
+loaded automatically.
+
+Project vaults work outside of git too — any directory where you
+repeatedly work on the same topic benefits. See the
+[User Guide](guide/kno-guide#project-vaults) for the full story.
+
+---
+
 ## Connects to Obsidian and the tools you already use
 
 kno works alongside your existing knowledge tools — it doesn't replace
@@ -103,21 +125,9 @@ searchable alongside everything else you've written.
 kno setup --publish ~/obsidian/kno
 ```
 
-Works with any markdown tool that supports frontmatter. No extra steps
-once it's set up.
-
----
-
-## For developers
-
-In Claude Code, kno detects git repositories automatically. Everything
-you save gets tagged with the project name. kno tracks the knowledge
-that actually matters in a codebase: decisions with dates and rationale,
-known issues with open/resolved status, non-obvious setup, hard problems
-solved. Project settings travel with the repo in a `.kno` file — commit
-it to share with your team, or keep it personal.
-
-See the [Developer Guide](guide/kno-dev-guide) for the full story.
+Pages from all your vaults — personal and project — publish to the same
+destination. Works with any markdown tool that supports frontmatter. No
+extra steps once it's set up.
 
 ---
 
@@ -140,8 +150,7 @@ the experience — feedback and ideas welcome via
 
 ## Documentation
 
-- [User Guide](guide/kno-guide) — getting started and vault management
-- [Developer Guide](guide/kno-dev-guide) — git detection, project pages, team use
+- [User Guide](guide/kno-guide) — getting started, project vaults, publishing, git features
 - [Architecture](https://github.com/kno-ai/kno/blob/main/ARCHITECTURE.md) — design principles, layers, and knowledge model
 - [Skills Reference](guide/kno-skills) — skill behavior and slash command details
 - [CLI Reference](guide/kno-cli) — complete command specification

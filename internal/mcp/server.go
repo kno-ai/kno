@@ -28,7 +28,7 @@ func Serve(a *app.App) error {
 	registerNoteTools(s, a)
 	registerPageTools(s, a)
 	registerVaultTools(s, a, sc)
-	registerPrompts(s, a, sc)
+	registerPrompts(s, a)
 
 	return server.ServeStdio(s)
 }
@@ -36,7 +36,7 @@ func Serve(a *app.App) error {
 // awarenessInstructions returns standing instructions based on the nudge level.
 // Returns empty string for "off".
 func awarenessInstructions(a *app.App, sc *SessionContext) string {
-	level := sc.MergedNudgeLevel(a.Config.Skill.NudgeLevel)
+	level := a.Config.Skill.NudgeLevel
 	if level == "off" {
 		return ""
 	}
