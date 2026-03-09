@@ -1,93 +1,82 @@
 # Start Skill
 
-The user typed `/kno.start` to connect to their vault. This is the zero-friction
-entry point — check the vault and get them working.
+The user typed `/kno.start` to connect to their vault. Check the vault
+and get them working.
 
 **Skill prefix:** When referencing other slash commands, match the prefix the
 user used to invoke this skill. If they invoked `/kno-personal.start`,
 reference `/kno-personal.curate`, not `/kno.curate`.
 
-## Process
+## Auto-load: project page bound
 
-1. Call `kno_vault_status` to get the vault snapshot.
+Call `kno_vault_status`. If the response includes `project.page`, a `.kno`
+file binds a page to this directory. Load it immediately with
+`kno_page_show` — no need to ask.
 
-2. Respond based on what you find:
+> kno active — loaded **[page name]**.
+> [1-2 sentence demonstration of understanding the page content]
 
-### Vault has pages
+If the page doesn't exist in the vault:
 
-List page names and offer to load. Names only — no summaries, no
-descriptions. The user knows what their own pages are about.
+> kno active — `.kno` references page "[page name]" but it's not in your
+> vault. Want to create it?
+
+Mention uncurated notes if applicable. Do not list other pages.
+
+## Git detected, no project binding
+
+If `vault_status` includes `git` but no `project`, this is a git repo
+without a `.kno` file.
+
+If `skill.prompt_project_setup` is `false`, skip the offer. Just add the
+repo line and fall through to the standard flow:
+
+> kno active — detected: [repo_name].
+
+Otherwise, offer to bind a page:
+
+- **Page matches repo name:** suggest binding it.
+  > kno active — detected: [repo_name]. Want to bind **[page]** so it
+  > loads automatically when you work here?
+
+- **Pages exist but none match:** offer to create and bind.
+  > kno active — detected: [repo_name]. No project page yet. Want to
+  > create one and bind it for auto-load?
+
+- **No pages:** mention the repo, fall through to standard flow.
+  > kno active — detected: [repo_name].
+
+On confirm: call `kno_set_option(key: "page", value: "[page name]")`.
+Create the page first if needed. Mention once: "Saved to `.kno`. Commit
+it to share with your team, or add it to `.gitignore` to keep it personal."
+
+On decline: offer once to disable future prompts. If yes, call
+`kno_set_option(key: "prompt_project_setup", value: "false")`.
+
+## Standard flow
+
+**Has pages:** List names, offer to load.
 
 > Your vault has **AWS Infrastructure**, **CNC Maintenance**, and
 > **Customer Onboarding**. Want me to load any of these?
->
-> Otherwise just start working — kno will suggest relevant context as we go.
-> You can also ask kno to load something specific, or use `/kno.load`.
 
-If there are also uncurated notes, add one line:
+**Has notes, no pages:** Suggest creating a page — notes without a page
+can't be loaded automatically in future sessions. Keep it brief.
 
-> You also have 5 uncurated notes — `/kno.curate` when you're ready.
-
-### Vault has notes but no pages
-
-If there are 3 or more notes, actively suggest page creation — notes
-without pages can't be loaded automatically in future sessions:
-
-> Your vault has N notes but no pages yet. Pages collect related sessions
-> so kno can load them automatically — want to create one now?
-> Otherwise just start working — `/kno.page` when you're ready.
-
-If fewer than 3, keep it lighter:
-
-> Your vault has N notes but no pages yet. Just start working —
-> `/kno.page` or `/kno.curate` when you're ready.
-
-### Empty vault
+**Empty vault:**
 
 > Your vault is empty. As we work, I'll spot decisions, insights, and
-> solutions worth keeping and offer to save them. Just start working.
+> solutions worth keeping. Just start working.
 
-## Developer context
+**Uncurated notes:** In any flow, append:
 
-When `vault_status` includes a `git` field, this is a project session.
-Adjust the response to acknowledge the detected repo.
-
-### Vault has pages matching the repo
-
-> kno active — detected: [repo_name].
-> Your vault has **[matching page]** and **[other pages]**. Want me to load any?
-
-### No matching pages but vault has other pages
-
-> kno active — detected: [repo_name]. No project page yet.
-> Your vault has **[other pages]**. Want me to load any?
-> Otherwise just start working — kno will capture as we go.
-
-### Notes but no pages in git context
-
-If there are 3 or more notes (especially if any are tagged with the repo name),
-suggest a project page:
-
-> kno active — detected: [repo_name]. You have N notes but no project page yet.
-> Want to create one? It'll give future sessions on [repo_name] a head start.
-> Otherwise just start working — `/kno.page` when you're ready.
-
-### Empty vault in git context
-
-> kno active — detected: [repo_name]. Vault is empty. As we work, I'll
-> spot decisions, solutions, and project knowledge worth keeping. Just
-> start working.
+> You also have N uncurated notes — `/kno.curate` when you're ready.
 
 ## Rules
 
-- **Keep it short.** The entire response should be 2-4 lines. No tutorials,
-  no explanations of how kno works, no command listings.
-- **Do not load anything.** This skill checks the vault and offers — loading
-  happens if the user says yes (handle it like an awareness-initiated load)
-  or via `/kno.load`.
-- **Do not explain the knowledge loop.** The user installed kno. They want
-  to use it, not learn about it.
-- **If `skill.nudge_level` is `off`**, append: "Suggestions are off — use
-  slash commands for captures and loads." This sets expectations so the
-  user doesn't wonder why kno is quiet.
-- **After the response, you're done.** kno takes over from here.
+- 2-4 lines total. No tutorials, no command listings.
+- Auto-load when bound. Do not ask.
+- Do not explain the knowledge loop.
+- If `skill.nudge_level` is `off`, append: "Suggestions are off — use
+  slash commands for captures and loads."
+- After the response, you're done.

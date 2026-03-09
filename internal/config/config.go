@@ -55,7 +55,8 @@ type SearchConfig struct {
 }
 
 type SkillConfig struct {
-	NudgeLevel string `toml:"nudge_level" json:"nudge_level"`
+	NudgeLevel         string `toml:"nudge_level" json:"nudge_level"`
+	PromptProjectSetup *bool  `toml:"prompt_project_setup,omitempty" json:"prompt_project_setup"`
 }
 
 // ValidNudgeLevel reports whether level is a recognized nudge setting.
@@ -85,7 +86,7 @@ func DefaultConfig() Config {
 			DefaultLimit: 10,
 		},
 		Skill: SkillConfig{
-			NudgeLevel: "light",
+			NudgeLevel: "active",
 		},
 	}
 }

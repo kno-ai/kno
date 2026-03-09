@@ -117,12 +117,12 @@ Configured in `config.toml`:
 
 ```toml
 [skill]
-nudge_level = "light"
+nudge_level = "active"
 ```
 
 - **off** — No nudges. Slash commands only.
-- **light** — (default) High-signal checkpoints only. Conservative.
-- **active** — Broader checkpoint recognition. More nudges.
+- **light** — High-signal checkpoints only. Conservative.
+- **active** — (default) Broader checkpoint recognition. More nudges.
 
 ---
 
@@ -162,9 +162,11 @@ document) stays with the user.
 
 **The entry point.** Start every chat with `/kno.start` to connect to your vault.
 
-The skill calls `kno_vault_status`, lists your pages by name, and offers
-to load relevant context. The user says yes or just starts working —
-kno stays attentive from there.
+The skill calls `kno_vault_status` and checks for a project page binding.
+If a `.kno` file in the current directory binds a page (`page = "..."`),
+that page loads immediately — no prompting. Otherwise, the skill lists
+your pages by name and offers to load. In a git repo without a `.kno`
+file, the skill offers to create one for auto-load in future sessions.
 
 This is the only step users need to remember. Everything else — save
 nudges, load suggestions, curate reminders — kno handles or surfaces
@@ -348,18 +350,20 @@ Pages:
 
 ---
 
+## Project Binding
+
+A `.kno` file in any directory can bind a vault page for auto-load on
+`/kno.start`. The kno MCP server reads this file at session start.
+See the [User Guide](kno-guide#auto-loading-pages-with-kno) for details.
+
 ## Developer Context
 
-When kno detects a git repository (via Claude Code), all skills gain
-project awareness. Everything you save is automatically tagged with
+When the kno MCP server detects a git repository, all skills gain
+project context. Everything you save is automatically tagged with
 the repo name, a developer-specific type vocabulary is used (`decision`,
 `debt`, `runbook`, `bug`, `dependency`), and page guidance templates
 are tailored to engineering knowledge — decisions with dates, known
 issues with status, setup instructions.
-
-Project-specific settings live in a `.kno` file at the repo root,
-allowing per-project overrides for `nudge_level` and
-`auto_load_on_confirm`.
 
 The general knowledge loop is unchanged — developer context enriches it,
 it doesn't replace it. For the full developer experience, see the

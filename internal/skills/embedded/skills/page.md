@@ -19,6 +19,10 @@ get out of the way. If they're unsure, offer examples rather than rules.
 
 ## Creating a new page
 
+**Note:** When the capture skill creates a page after a first save, it uses
+a streamlined path — no template choice, no intermediate confirmations. The
+full flow below is for explicit `/kno.page` invocations.
+
 1. Ask what area of knowledge the user wants to track — unless they already
    told you. If they said "create a page for AWS infrastructure, focus on
    ops lessons," you already have what you need. Don't ask questions they've
@@ -60,6 +64,21 @@ skill reads before every update.
 **Tip for the user:** "Guidance is worth revisiting after your first curate
 — you'll have a better sense of what matters once you see real sessions
 folded in."
+
+## Offer to bind in git context
+
+After creating a page, if `vault_status` includes `git` and no
+`project.page` is set, offer to bind the new page for auto-load:
+
+"Want to bind this page to a `.kno` file so it loads automatically
+when you work in this repo?"
+
+On confirm: call `kno_set_option(key: "page", value: "[page name]")`.
+Mention once: "Saved to `.kno`. Commit it to share with your team, or
+add it to `.gitignore` to keep it personal."
+
+On decline: drop it. Do not offer to disable prompting here — that's
+the start skill's job when the user declines at session start.
 
 ## Bootstrap curate
 

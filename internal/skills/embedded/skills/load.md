@@ -78,10 +78,10 @@ don't just dump it.
 conversation, that's fine. Search and load as normal. They may want to pull
 in context they didn't realize they needed.
 
-**Awareness-initiated loads:** If the user confirmed a load from a kno
-nudge ("kno has notes on this — want to load them?"), the flow is identical.
-Search, present matches, confirm, load. The nudge already established the
-topic — use it as your search query rather than asking again.
+**Loads from a kno suggestion:** If the user confirmed a load that kno
+offered ("kno has notes on this — want to load them?"), the flow is
+identical. The suggestion already established the topic — use it as
+your search query rather than asking again.
 
 ## Balancing relevance and context
 

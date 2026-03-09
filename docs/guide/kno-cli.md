@@ -1055,10 +1055,10 @@ max_notes_per_run = 50        # max notes processed in a single curate pass
 default_limit = 10                # default result count for all search commands
 
 [skill]
-nudge_level = "light"             # "off" | "light" | "active"
+nudge_level = "active"            # "off" | "light" | "active"
                                   # off: no awareness, slash commands only
-                                  # light: high-signal nudges only (default)
-                                  # active: broader nudging
+                                  # light: high-signal nudges only
+                                  # active: broader nudging (default)
 
 # [[publish.targets]]             # repeatable — publish pages to external dirs
 # path = "~/obsidian/kno"         # target directory (~ expanded)

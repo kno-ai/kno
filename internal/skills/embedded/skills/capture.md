@@ -80,11 +80,11 @@ this one should cover only what happened since the last capture. Don't
 re-capture content that's already in the vault. Reference the earlier capture
 by title if it provides useful context for this one.
 
-**Nudge-initiated captures:** If this capture was triggered by an awareness
+**Captures from a kno suggestion:** If this capture was triggered by a kno
 nudge rather than a slash command, the flow is identical — same proposal,
-same confirmation, same tool calls. The only difference is that you've already
-identified what's worth capturing. Propose it directly rather than reviewing
-the entire conversation from scratch.
+same confirmation, same tool calls. The only difference is that you've
+already identified what's worth capturing. Propose it directly rather than
+reviewing the entire conversation from scratch.
 
 ## Content format
 
@@ -132,116 +132,50 @@ reading full content.
 
 ## After capturing
 
-Check the vault status response from step 4. Your post-capture message has
-three tiers — use exactly one per capture, picking the highest tier that
-applies.
+Confirm the save and connect it to the vault. One to three lines total.
+Use the vault status from step 4 to pick the most relevant follow-up.
 
-### Tier 1: Confirm with a light status line (default)
+**Pick one:**
 
-Most captures land here. Confirm the save and append a brief, informational
-line that connects this note to the vault. This isn't a nudge — it's
-ambient awareness, helping the user build familiarity with the system.
+- **First save ever (git context):** "Saved — that's your first one.
+  Want to set up a project page for [repo-name]? It'll load automatically
+  next time you work here." On yes: create the page with the developer
+  template (don't ask about template choice), curate the just-saved note
+  into it, and bind `.kno` for auto-load. Do all three without additional
+  confirmations. Report: "Done — created **[page name]**, added your
+  session, and bound it for auto-load. Next `/kno.start` here loads it
+  instantly." Call `kno_page_create`, then `kno_page_update` with the
+  curated content and metadata, then `kno_note_update` to stamp the note,
+  then `kno_set_option(key: "page", value: "[page name]")`. Mention once:
+  "Commit `.kno` to share with your team, or `.gitignore` it to keep it
+  personal."
 
-Use the note's tags and the vault status to find the most relevant thing
-to mention. Pick one:
+- **First save ever (no git):** "Saved — that's your first one. Want to
+  start a page for [topic]? Pages collect your saves so they're ready
+  for future sessions." On yes: create the page with the general template
+  (don't ask about template choice), curate the note in. Report: "Done —
+  created **[page name]** and added your session."
 
 - **Matching page exists:** "Saved. That'll feed into your [page name]
-  page — ask kno to curate when you're ready, or use `/kno.curate`."
-- **Uncurated count, relevant:** "Saved — you're building up good
-  context on [topic]. Ask kno to curate whenever you're ready, or
-  use `/kno.curate`."
-- **No matching page, early:** "Saved — kno will fold this into a page
-  when you curate. Just ask, or use `/kno.curate`."
-- **First capture ever (no pages):** This is the most important post-save
-  message — it's the user's first experience with kno doing something.
-  Paint a concrete picture of the value, then offer to start a page.
+  page — `/kno.curate` when you're ready."
 
-  General context: "Saved — that's your first one. Next time you're
-  working on this topic, kno will offer to load this so you pick up
-  where you left off. Want to start a page for [topic area from tags]?
-  Pages collect related sessions so kno loads them automatically."
+- **Notes building up (8+) for a page:** "Saved. You've got N notes
+  that'd strengthen your [page name] page — want to curate now, or
+  `/kno.curate` later?" If yes, run curate for that one page.
 
-  Developer context: "Saved — that's your first [repo_name] capture.
-  Next time you're in this project, kno will surface this context.
-  Want to create a [repo_name] project page? It'll collect decisions,
-  issues, and solutions across sessions."
+- **Notes clustering with no page (2+ sharing tags):** "Saved. You're
+  building up notes on [topic] — want to give them a page? `/kno.page`
+  when you're ready."
 
-  If the user says yes, transition to the page creation flow — present
-  the appropriate template (see page skill) and create the page. If they
-  say no, that's fine: "No problem — `/kno.page` whenever you're ready."
-
-- **First capture for this repo (dev context, pages exist for other repos):**
-  "Saved — first capture for [repo_name]. Want to create a project page
-  for it, or keep building notes first?"
-
-- **Notes accumulating for a topic/repo, no page yet:** When 2+ uncurated
-  notes share tags (or share a repo in dev context) and no matching page
-  exists, suggest one: "Saved. You've got N notes on [repo_name or topic]
-  now — want to create a page so kno can load this automatically? Or
-  `/kno.page` later." This fills the gap between first-capture (which
-  offers a page) and established vault (which has pages).
-
-The status line is one or two sentences. Prefer conversational framing
-("ask kno to curate") and mention the slash command as an alternative.
-It's informational — not asking them to do anything right now.
-
-### Tier 2: Acknowledge the growing collection
-
-When uncurated notes are accumulating (roughly 8+), shift the status line
-to acknowledge the growing collection:
-
-"Saved. You've got N notes building up — want to fold them into your
-pages now, or do it later with `/kno.curate`?"
-
-If pages exist and the uncurated notes cluster around specific ones, name
-them: "Saved. You've got 6 notes that'd strengthen your CNC Machine
-Maintenance page."
-
-Still one or two lines. Still informational — offering value, not
-assigning homework.
-
-### Tier 3: Offer targeted curation (strong signal)
-
-This is the only tier that asks the user to act. Use it when all of these
-are true:
-
-- The note's tags clearly match a specific page
-- That page has 5+ uncurated notes matching it (including this one)
-- That page hasn't been curated recently (2+ weeks or never)
-
-When all three conditions hold:
-
-"Saved. You've got N notes that'd strengthen your [page name] page —
-want to fold them in now, or do it later with `/kno.curate`?"
-
-If yes, run the curate flow for that single page — not the whole vault.
-This keeps the follow-on bounded and immediately productive.
-
-Do not offer this for the whole vault. One specific page, one clear action.
-
-### Special cases
+- **Default:** "Saved. Run `/kno.curate` when you're ready to weave your
+  notes into a page."
 
 **Capacity pressure:** If `auto_removed_uncurated` is true in the create
-response, mention it ahead of any tier: "Saved — though an older note
-was removed to make room. Curating folds notes into pages so they're
-preserved long-term — ask kno to curate, or use `/kno.curate`."
+response, mention it: "Saved — though an older note was removed to make
+room. `/kno.curate` preserves notes long-term."
 
-**Page suggestions:** If 2+ uncurated sessions share tags with no matching
-page, mention it: "You're building up notes on [tags] — want to give
-them a page? Or use `/kno.page` later." Prioritize clusters that include
-the current capture's tags. Only mention unrelated clusters if the current
-capture has no cluster affinity. Only suggest when the pattern is obvious
-from the tags alone. Do not propose page names — that's the page skill's
-job.
-
-### Keep it brief
-
-Every post-capture message should be one to three lines total. No
-exceptions. Do not explain why a note is valuable, do not describe what
-a page would contain, do not editorialize about which notes "belong
-together." The user just finished capturing — they want confirmation,
-not commentary. Prefer conversational offers ("want to curate now?")
-with the slash command as a fallback ("or use `/kno.curate` later").
+Keep it brief. Don't explain why a note is valuable. Don't editorialize.
+The user just captured — they want confirmation, not commentary.
 
 ## Type vocabulary
 

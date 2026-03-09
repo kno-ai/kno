@@ -50,19 +50,22 @@ func awarenessInstructions(a *app.App, sc *SessionContext) string {
 		return skill
 	}
 
-	// "light" — append a restraint note
+	// "light" — append a restraint note for power users
 	return skill + `
 
 ## Nudge level: light
 
-You are in light mode. Be more conservative with nudges:
+The user has chosen light mode. They know kno and will use slash commands
+when they want to capture or load. Respect that by keeping a light touch:
 
 - Only nudge for knowledge checkpoints with very high signal — decisions
   with clear tradeoffs, hard-won debugging insights, or things the user
-  explicitly called out as important.
-- Prefer fewer nudges. When in doubt, stay quiet.
-- Topic awareness (offering to load vault knowledge) is still active.
-- Session-end capture nudges are still active.
+  explicitly called out as important. When in doubt, stay quiet.
+- Topic awareness (offering to load vault knowledge) is still active —
+  surfacing relevant context is always valuable.
+- Session-end capture offers are still active.
+- Skip session confirmation messages ("kno active — ..."). The user knows
+  kno is present.
 `
 }
 

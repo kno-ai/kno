@@ -62,6 +62,20 @@ You say yes, and the session starts informed — no re-explaining your setup,
 no rediscovering decisions you already made, no cold starts on familiar
 problems.
 
+### Coming back the next day
+
+This is where the loop pays off. You start a new session and type
+`/kno.start`. If you've bound a page to your directory (via a `.kno`
+file — see [Auto-loading pages](#auto-loading-pages-with-kno)), it loads
+instantly. Otherwise, kno lists your pages and offers to load the
+relevant one. Either way, you're working with full context in seconds —
+the decisions you made yesterday, the issues you found, the setup details
+you figured out. No re-explaining anything.
+
+That context compounds over time. After a few weeks, starting a session
+on a familiar topic feels like opening a document a sharp colleague has
+been maintaining for you.
+
 ---
 
 ## Pages — where knowledge lives
@@ -72,9 +86,9 @@ might cover RDS parameter tuning, ECS deployment patterns, and cost
 gotchas — accumulated over months of sessions, organized the way you
 think about it.
 
-Pages are created intentionally. After you've saved several sessions
-on the same topic, kno suggests creating a page to give them a home. You
-can also create one explicitly:
+Pages are created intentionally. After your first save, kno offers to
+create a page — giving your knowledge a home right away. You can also
+create one explicitly:
 
 ```
 /kno.page new
@@ -167,14 +181,14 @@ kno pays attention by default. You can adjust how proactive it is in
 
 ```toml
 [skill]
-nudge_level = "light"    # "off", "light", or "active"
+nudge_level = "active"    # "off", "light", or "active"
 ```
 
-**light** (default) — Nudges only for high-signal moments. Conservative,
-stays quiet unless something genuinely durable has landed.
+**active** (default) — Broad recognition. kno notices decisions, insights,
+and solutions as they happen and offers to save them.
 
-**active** — Broader recognition. Good for users building a vault quickly
-or who want more save opportunities surfaced.
+**light** — High-signal moments only. Conservative — stays quiet unless
+something genuinely durable has landed.
 
 **off** — No suggestions. Slash commands only. The vault and all commands
 still work — you're just driving manually.
@@ -182,20 +196,57 @@ still work — you're just driving manually.
 Most users won't need to change this. The default balances being helpful
 without being noisy.
 
-## Developer workflows (Claude Code)
+## Auto-loading pages with `.kno`
 
-kno works especially well in coding sessions. When it detects a git
-repository (via Claude Code), everything you save gets tagged with the
+If you work in the same directory regularly, you can bind a vault page
+to it so it loads the moment you start. Create a `.kno` file in the
+directory:
+
+```toml
+page = "CNC Maintenance"
+```
+
+Now when you type `/kno.start` in that directory, kno loads
+**CNC Maintenance** immediately — no prompting, no picking from a list.
+You're working with full context in seconds.
+
+In a git repo, kno offers to create this file when you create a page or
+the next time you run `/kno.start`. But `.kno` isn't developer-specific
+— any directory where you repeatedly work on the same topic benefits.
+You can always create one manually.
+
+The `.kno` file can also override your vault's nudge level for that
+directory:
+
+```toml
+page = "CNC Maintenance"
+
+[skill]
+nudge_level = "active"
+```
+
+### How it works
+
+The kno MCP server reads the `.kno` file when a session starts and
+includes the bound page in the vault status response. Claude Code
+picks this up reliably via `/kno.start`.
+
+### Disabling `.kno` setup prompts
+
+In git repos, kno offers to create a `.kno` file if one doesn't exist.
+If you'd rather not be prompted, tell kno to stop asking — it saves
+the preference in your vault config so it applies across all repos.
+
+## Developer workflows
+
+kno works especially well in coding sessions. When the kno MCP server
+detects a git repository, everything you save gets tagged with the
 project name automatically. kno applies developer-aware guidance —
 tracking decisions with rationale, known issues with status, and
 non-obvious setup details.
 
-Project-specific preferences travel with the repo in a `.kno` file
-at the root. Commit it to share with your team, or add it to
-`.gitignore` to keep it personal.
-
 For the full developer guide — including project pages, team onboarding,
-and the `.kno` file — see the [Developer Guide](kno-dev-guide).
+and dev-specific features — see the [Developer Guide](kno-dev-guide).
 
 ---
 
@@ -402,7 +453,8 @@ max_notes_per_run = 50
 default_limit = 10
 
 [skill]
-nudge_level = "light"        # "off", "light", or "active"
+nudge_level = "active"        # "off", "light", or "active"
+# prompt_project_setup = false  # set to false to stop .kno creation prompts
 
 # [[publish.targets]]
 # path = "~/obsidian/kno"

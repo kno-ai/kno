@@ -60,33 +60,27 @@ func TestMergedNudgeLevel(t *testing.T) {
 	}
 }
 
-func TestAutoLoadOnConfirm(t *testing.T) {
-	// No repo config — nil.
+func TestBoundPage(t *testing.T) {
+	// No repo config — empty.
 	sc := &SessionContext{}
-	if sc.AutoLoadOnConfirm() != nil {
-		t.Error("expected nil")
+	if got := sc.BoundPage(); got != "" {
+		t.Errorf("expected empty, got %q", got)
 	}
 
-	// Explicitly true.
-	tr := true
+	// Page set.
 	sc = &SessionContext{
-		RepoConfig: &config.RepoConfig{
-			Skill: config.RepoSkillConfig{AutoLoadOnConfirm: &tr},
-		},
+		RepoConfig: &config.RepoConfig{Page: "cloud-infra"},
 	}
-	if got := sc.AutoLoadOnConfirm(); got == nil || !*got {
-		t.Error("expected true")
+	if got := sc.BoundPage(); got != "cloud-infra" {
+		t.Errorf("expected cloud-infra, got %q", got)
 	}
 
-	// Explicitly false.
-	fa := false
+	// Empty page.
 	sc = &SessionContext{
-		RepoConfig: &config.RepoConfig{
-			Skill: config.RepoSkillConfig{AutoLoadOnConfirm: &fa},
-		},
+		RepoConfig: &config.RepoConfig{},
 	}
-	if got := sc.AutoLoadOnConfirm(); got == nil || *got {
-		t.Error("expected false")
+	if got := sc.BoundPage(); got != "" {
+		t.Errorf("expected empty, got %q", got)
 	}
 }
 

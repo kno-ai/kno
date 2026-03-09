@@ -7,17 +7,17 @@ import (
 	"github.com/BurntSushi/toml"
 )
 
-// RepoConfig represents the .kno file at a repository root.
-// It holds project-specific skill settings that override vault defaults.
+// RepoConfig represents the .kno file at a project root.
+// It holds project-specific settings that override vault defaults.
 type RepoConfig struct {
+	Page  string          `toml:"page,omitempty"`
 	Skill RepoSkillConfig `toml:"skill"`
 }
 
 // RepoSkillConfig holds skill settings from a .kno file.
 // Pointer fields distinguish "not set" (nil) from "set to zero value".
 type RepoSkillConfig struct {
-	NudgeLevel        *string `toml:"nudge_level"`
-	AutoLoadOnConfirm *bool   `toml:"auto_load_on_confirm"`
+	NudgeLevel *string `toml:"nudge_level"`
 }
 
 // LoadRepoConfig reads a .kno file from the given directory.

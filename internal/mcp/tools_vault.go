@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"os"
 	"path/filepath"
 
 	"github.com/kno-ai/kno/internal"
@@ -25,10 +26,10 @@ func registerVaultTools(s *server.MCPServer, a *app.App, sc *SessionContext) {
 	})
 
 	s.AddTool(mcp.NewTool("kno_set_option",
-		mcp.WithDescription("Set a project-specific skill option. Writes to .kno in the repo root. Requires git context."),
-		mcp.WithString("key", mcp.Required(), mcp.Description("Option key to set (e.g. auto_load_on_confirm).")),
-		mcp.WithBoolean("value", mcp.Required(), mcp.Description("Value to set.")),
-	), setOptionHandler(sc))
+		mcp.WithDescription("Set a project option. Writes to .kno in the project root (repo root if git detected, otherwise cwd)."),
+		mcp.WithString("key", mcp.Required(), mcp.Description("Option key to set (e.g. page, nudge_level).")),
+		mcp.WithString("value", mcp.Required(), mcp.Description("Value to set.")),
+	), setOptionHandler(a, sc))
 }
 
 func vaultStatusHandler(a *app.App, sc *SessionContext) server.ToolHandlerFunc {
@@ -82,10 +83,8 @@ func vaultStatusHandler(a *app.App, sc *SessionContext) server.ToolHandlerFunc {
 		mergedSkill := map[string]any{
 			"nudge_level": sc.MergedNudgeLevel(a.Config.Skill.NudgeLevel),
 		}
-		if aloc := sc.AutoLoadOnConfirm(); aloc != nil {
-			mergedSkill["auto_load_on_confirm"] = *aloc
-		} else {
-			mergedSkill["auto_load_on_confirm"] = nil
+		if pps := a.Config.Skill.PromptProjectSetup; pps != nil {
+			mergedSkill["prompt_project_setup"] = *pps
 		}
 
 		out := map[string]any{
@@ -102,6 +101,13 @@ func vaultStatusHandler(a *app.App, sc *SessionContext) server.ToolHandlerFunc {
 			"skill":  mergedSkill,
 		}
 
+		// Add project binding if .kno has a page set.
+		if page := sc.BoundPage(); page != "" {
+			out["project"] = map[string]string{
+				"page": page,
+			}
+		}
+
 		// Add git context if detected.
 		if sc.Git != nil {
 			out["git"] = map[string]string{
@@ -115,63 +121,112 @@ func vaultStatusHandler(a *app.App, sc *SessionContext) server.ToolHandlerFunc {
 	}
 }
 
-// allowedOptionKeys defines which keys kno_set_option can write.
-var allowedOptionKeys = map[string]bool{
-	"auto_load_on_confirm": true,
+// projectOptionKeys are written to .kno in the project root.
+var projectOptionKeys = map[string]bool{
+	"page":        true,
+	"nudge_level": true,
 }
 
-func setOptionHandler(sc *SessionContext) server.ToolHandlerFunc {
-	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-		if sc.Git == nil {
-			return mcp.NewToolResultError("No git context detected. kno_set_option only works inside a git repository."), nil
-		}
+// vaultOptionKeys are written to config.toml in the vault.
+var vaultOptionKeys = map[string]bool{
+	"prompt_project_setup": true,
+}
 
+func setOptionHandler(a *app.App, sc *SessionContext) server.ToolHandlerFunc {
+	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		key, err := req.RequireString("key")
 		if err != nil {
 			return mcp.NewToolResultError("key is required"), nil
 		}
 
-		if !allowedOptionKeys[key] {
-			return mcp.NewToolResultError(fmt.Sprintf("unknown option key %q — allowed keys: auto_load_on_confirm", key)), nil
-		}
-
-		// Parse the value from arguments.
-		rawValue, ok := req.GetArguments()["value"]
-		if !ok {
+		value, err := req.RequireString("value")
+		if err != nil {
 			return mcp.NewToolResultError("value is required"), nil
 		}
 
-		repoRoot := sc.Git.RepoRoot
-
-		// Load existing .kno or create new one.
-		rc, _ := config.LoadRepoConfig(repoRoot)
-		created := rc == nil
-		if created {
-			rc = &config.RepoConfig{}
+		// Route to vault config or project config.
+		if vaultOptionKeys[key] {
+			return setVaultOption(a, key, value)
+		}
+		if projectOptionKeys[key] {
+			return setProjectOption(sc, key, value)
 		}
 
-		switch key {
-		case "auto_load_on_confirm":
-			bval, ok := rawValue.(bool)
-			if !ok {
-				return mcp.NewToolResultError("auto_load_on_confirm value must be a boolean"), nil
-			}
-			rc.Skill.AutoLoadOnConfirm = &bval
-		}
-
-		if err := config.SaveRepoConfig(repoRoot, rc); err != nil {
-			return mcp.NewToolResultError(fmt.Sprintf("writing .kno: %v", err)), nil
-		}
-
-		// Update in-memory session context so the setting takes effect immediately.
-		sc.RepoConfig = rc
-
-		result := map[string]any{
-			"key":     key,
-			"value":   rawValue,
-			"created": created,
-		}
-		data, _ := json.MarshalIndent(result, "", "  ")
-		return mcp.NewToolResultText(string(data)), nil
+		return mcp.NewToolResultError(fmt.Sprintf("unknown option key %q — allowed keys: page, nudge_level, prompt_project_setup", key)), nil
 	}
+}
+
+func setVaultOption(a *app.App, key, value string) (*mcp.CallToolResult, error) {
+	switch key {
+	case "prompt_project_setup":
+		bval, ok := parseBool(value)
+		if !ok {
+			return mcp.NewToolResultError("prompt_project_setup value must be true or false"), nil
+		}
+		a.Config.Skill.PromptProjectSetup = &bval
+	}
+
+	if err := config.Save(a.VaultPath, a.Config); err != nil {
+		return mcp.NewToolResultError(fmt.Sprintf("writing config: %v", err)), nil
+	}
+
+	result := map[string]any{"key": key, "value": value}
+	data, _ := json.MarshalIndent(result, "", "  ")
+	return mcp.NewToolResultText(string(data)), nil
+}
+
+func setProjectOption(sc *SessionContext, key, value string) (*mcp.CallToolResult, error) {
+	// Determine project root: repo root if git detected, otherwise cwd.
+	var projectRoot string
+	var err error
+	if sc.Git != nil {
+		projectRoot = sc.Git.RepoRoot
+	} else {
+		projectRoot, err = os.Getwd()
+		if err != nil {
+			return mcp.NewToolResultError(fmt.Sprintf("cannot determine project root: %v", err)), nil
+		}
+	}
+
+	// Load existing .kno or create new one.
+	rc, _ := config.LoadRepoConfig(projectRoot)
+	created := rc == nil
+	if created {
+		rc = &config.RepoConfig{}
+	}
+
+	switch key {
+	case "page":
+		rc.Page = value
+	case "nudge_level":
+		if !config.ValidNudgeLevel(value) {
+			return mcp.NewToolResultError(fmt.Sprintf("invalid nudge_level %q — must be off, light, or active", value)), nil
+		}
+		rc.Skill.NudgeLevel = &value
+	}
+
+	if err := config.SaveRepoConfig(projectRoot, rc); err != nil {
+		return mcp.NewToolResultError(fmt.Sprintf("writing .kno: %v", err)), nil
+	}
+
+	// Update in-memory session context so the setting takes effect immediately.
+	sc.RepoConfig = rc
+
+	result := map[string]any{
+		"key":     key,
+		"value":   value,
+		"created": created,
+	}
+	data, _ := json.MarshalIndent(result, "", "  ")
+	return mcp.NewToolResultText(string(data)), nil
+}
+
+func parseBool(s string) (bool, bool) {
+	switch s {
+	case "true":
+		return true, true
+	case "false":
+		return false, true
+	}
+	return false, false
 }

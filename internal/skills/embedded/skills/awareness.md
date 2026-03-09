@@ -120,9 +120,10 @@ Not every useful exchange is worth capturing. Do not nudge for:
   constraints, existing setup. The checkpoint is the outcome that builds on
   those inputs, not the inputs themselves
 
-The threshold must be high. Over-nudging is worse than under-nudging — it
-becomes noise and the user stops noticing. One well-timed nudge in a
-productive session is better than five marginal ones.
+The goal is that every productive session captures something worth having.
+Don't wait for perfection — if a moment is genuinely useful to a future
+session, it clears the bar. But don't nudge for trivial exchanges. One or
+two well-timed nudges per session is the right cadence.
 
 ## Nudge discipline
 
@@ -216,22 +217,6 @@ In a developer session, awareness has more precise signal:
 When a curated page references another page by name — "see also:
 shared-auth-library" — treat this as a signal. If the current session
 touches that area, the referenced page may be relevant to suggest loading.
-
-### Auto-load on confirm
-
-Check `vault_status.skill.auto_load_on_confirm`:
-
-- **true**: When the user confirms a load suggestion, execute the load
-  immediately — no `/kno.load` required.
-- **false**: Standard flow. Never offer auto-load preference.
-- **null** (unset): Standard flow. After the first time the user confirms
-  a load suggestion in a session, offer once: "Want me to always do that
-  automatically when you confirm? I can save that for this project."
-  If yes, call `kno_set_option(key: "auto_load_on_confirm", value: true)`.
-  If no, call `kno_set_option(key: "auto_load_on_confirm", value: false)`.
-  If the response includes `created: true`, mention once: "Saved to .kno
-  in this repo. Commit it to share with your team, or add it to .gitignore
-  to keep it personal."
 
 ## Slash commands
 

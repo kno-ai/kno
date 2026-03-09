@@ -33,17 +33,17 @@ func (sc *SessionContext) MergedNudgeLevel(vaultDefault string) string {
 	return vaultDefault
 }
 
-// AutoLoadOnConfirm returns the tri-state auto_load_on_confirm setting.
-// nil = unset, *true = enabled, *false = user declined.
-func (sc *SessionContext) AutoLoadOnConfirm() *bool {
+// BoundPage returns the page name from .kno, or empty string if not set.
+func (sc *SessionContext) BoundPage() string {
 	if sc != nil && sc.RepoConfig != nil {
-		return sc.RepoConfig.Skill.AutoLoadOnConfirm
+		return sc.RepoConfig.Page
 	}
-	return nil
+	return ""
 }
 
 // DetectSessionContext detects git and repo config from the current working directory.
 // Walks up from cwd to find .git, then reads .kno from the repo root.
+// If no .git is found, checks cwd for a .kno file (non-dev project binding).
 // Returns a valid (possibly empty) SessionContext; never returns an error.
 func DetectSessionContext() *SessionContext {
 	sc := &SessionContext{}
@@ -54,17 +54,18 @@ func DetectSessionContext() *SessionContext {
 	}
 
 	repoRoot := findRepoRoot(cwd)
-	if repoRoot == "" {
-		return sc
+	if repoRoot != "" {
+		sc.Git = &GitContext{
+			RepoRoot: repoRoot,
+			RepoName: extractRepoName(repoRoot),
+		}
+		rc, _ := config.LoadRepoConfig(repoRoot)
+		sc.RepoConfig = rc
+	} else {
+		// No git — check cwd for .kno file.
+		rc, _ := config.LoadRepoConfig(cwd)
+		sc.RepoConfig = rc
 	}
-
-	sc.Git = &GitContext{
-		RepoRoot: repoRoot,
-		RepoName: extractRepoName(repoRoot),
-	}
-
-	rc, _ := config.LoadRepoConfig(repoRoot)
-	sc.RepoConfig = rc
 
 	return sc
 }

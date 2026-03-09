@@ -191,8 +191,8 @@ Awareness behavior is controlled by the `skill.nudge_level` config setting:
 | Level | Behavior |
 |---|---|
 | `off` | No awareness instructions sent. Slash commands only. |
-| `light` | (default) High-signal checkpoints only. Conservative nudging. |
-| `active` | Broader checkpoint recognition. More frequent nudges. |
+| `light` | High-signal checkpoints only. Conservative nudging. |
+| `active` | (default) Broader checkpoint recognition. More frequent nudges. |
 
 The setting is read at MCP server startup. Changing it requires restarting
 the client to pick up the new instructions.

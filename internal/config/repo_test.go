@@ -19,8 +19,9 @@ func TestLoadRepoConfig_NotFound(t *testing.T) {
 
 func TestLoadRepoConfig_Valid(t *testing.T) {
 	dir := t.TempDir()
-	content := `[skill]
-auto_load_on_confirm = true
+	content := `page = "cloud-infra"
+
+[skill]
 nudge_level = "active"
 `
 	if err := os.WriteFile(filepath.Join(dir, ".kno"), []byte(content), 0644); err != nil {
@@ -34,19 +35,17 @@ nudge_level = "active"
 	if rc == nil {
 		t.Fatal("expected non-nil RepoConfig")
 	}
-	if rc.Skill.AutoLoadOnConfirm == nil || !*rc.Skill.AutoLoadOnConfirm {
-		t.Error("expected auto_load_on_confirm = true")
+	if rc.Page != "cloud-infra" {
+		t.Errorf("expected page = cloud-infra, got %q", rc.Page)
 	}
 	if rc.Skill.NudgeLevel == nil || *rc.Skill.NudgeLevel != "active" {
 		t.Errorf("expected nudge_level = active, got %v", rc.Skill.NudgeLevel)
 	}
 }
 
-func TestLoadRepoConfig_PartialFields(t *testing.T) {
+func TestLoadRepoConfig_PageOnly(t *testing.T) {
 	dir := t.TempDir()
-	// Only auto_load_on_confirm set, nudge_level omitted
-	content := `[skill]
-auto_load_on_confirm = false
+	content := `page = "my-project"
 `
 	if err := os.WriteFile(filepath.Join(dir, ".kno"), []byte(content), 0644); err != nil {
 		t.Fatal(err)
@@ -56,8 +55,8 @@ auto_load_on_confirm = false
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if rc.Skill.AutoLoadOnConfirm == nil || *rc.Skill.AutoLoadOnConfirm {
-		t.Error("expected auto_load_on_confirm = false")
+	if rc.Page != "my-project" {
+		t.Errorf("expected page = my-project, got %q", rc.Page)
 	}
 	if rc.Skill.NudgeLevel != nil {
 		t.Error("expected nudge_level to be nil (unset)")
@@ -77,8 +76,8 @@ func TestLoadRepoConfig_EmptyFile(t *testing.T) {
 	if rc == nil {
 		t.Fatal("expected non-nil RepoConfig for empty file")
 	}
-	if rc.Skill.AutoLoadOnConfirm != nil {
-		t.Error("expected nil auto_load_on_confirm")
+	if rc.Page != "" {
+		t.Errorf("expected empty page, got %q", rc.Page)
 	}
 	if rc.Skill.NudgeLevel != nil {
 		t.Error("expected nil nudge_level")
@@ -100,12 +99,11 @@ func TestLoadRepoConfig_MalformedTOML(t *testing.T) {
 func TestSaveAndLoadRepoConfig_RoundTrip(t *testing.T) {
 	dir := t.TempDir()
 
-	tr := true
 	level := "active"
 	rc := &RepoConfig{
+		Page: "cloud-infra",
 		Skill: RepoSkillConfig{
-			AutoLoadOnConfirm: &tr,
-			NudgeLevel:        &level,
+			NudgeLevel: &level,
 		},
 	}
 
@@ -117,23 +115,19 @@ func TestSaveAndLoadRepoConfig_RoundTrip(t *testing.T) {
 	if err != nil {
 		t.Fatalf("load error: %v", err)
 	}
-	if loaded.Skill.AutoLoadOnConfirm == nil || !*loaded.Skill.AutoLoadOnConfirm {
-		t.Error("round-trip: expected auto_load_on_confirm = true")
+	if loaded.Page != "cloud-infra" {
+		t.Errorf("round-trip: expected page = cloud-infra, got %q", loaded.Page)
 	}
 	if loaded.Skill.NudgeLevel == nil || *loaded.Skill.NudgeLevel != "active" {
 		t.Error("round-trip: expected nudge_level = active")
 	}
 }
 
-func TestSaveRepoConfig_NilFields(t *testing.T) {
+func TestSaveRepoConfig_PageOnlyOmitsSkill(t *testing.T) {
 	dir := t.TempDir()
 
-	// Save with only auto_load_on_confirm set
-	fa := false
 	rc := &RepoConfig{
-		Skill: RepoSkillConfig{
-			AutoLoadOnConfirm: &fa,
-		},
+		Page: "my-project",
 	}
 
 	if err := SaveRepoConfig(dir, rc); err != nil {
@@ -144,8 +138,8 @@ func TestSaveRepoConfig_NilFields(t *testing.T) {
 	if err != nil {
 		t.Fatalf("load error: %v", err)
 	}
-	if loaded.Skill.AutoLoadOnConfirm == nil || *loaded.Skill.AutoLoadOnConfirm {
-		t.Error("expected auto_load_on_confirm = false")
+	if loaded.Page != "my-project" {
+		t.Errorf("expected page = my-project, got %q", loaded.Page)
 	}
 	if loaded.Skill.NudgeLevel != nil {
 		t.Error("expected nudge_level to remain nil after round-trip")
