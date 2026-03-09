@@ -19,31 +19,24 @@ get out of the way. If they're unsure, offer examples rather than rules.
 
 ## Creating a new page
 
-**Note:** When the capture skill creates a page after a first save, it uses
-a streamlined path — no template choice, no intermediate confirmations. The
-full flow below is for explicit `/kno.page` invocations.
+**Note:** When the capture skill creates a page after a first save, it
+uses a streamlined path — no intermediate confirmations. The full flow
+below is for explicit `/kno.page` invocations.
 
 1. Ask what area of knowledge the user wants to track — unless they already
    told you. If they said "create a page for AWS infrastructure, focus on
    ops lessons," you already have what you need. Don't ask questions they've
    already answered.
 
-2. **Present a template as a starting point.** Rather than asking open-ended
-   questions about guidance, show the user what a page looks like. This
-   reduces friction — they can react to something concrete instead of
-   imagining from scratch.
+2. **Show the default guidance.** Pages start with guidance that shapes
+   every future curate pass. Show the user the default (injected below as
+   "Page Guidance Template") and offer to customize:
 
-   **Developer context** (git detected, or user mentions a project/repo):
-   Present the developer template with the repo name filled in. Frame it as:
-   "Here's a starting point for [repo_name] — covers decisions, known issues,
-   setup, and solved problems. Want to use this, tweak it, or start fresh?"
-
-   **General context:** Present the general template. Frame it as:
-   "Here's a starting point — focuses on durable insights, conclusions with
-   reasoning, and open questions. Want to use this, tweak it, or start fresh?"
+   "Here's the default guidance — covers decisions, known issues, setup,
+   and solved problems. Want to tweak the focus, or use it as-is?"
 
    If the user wants to customize, ask what to focus on and what to skip.
-   If they accept the template as-is, use it directly.
+   If they accept as-is, use it directly.
 
 3. Generate a clear, descriptive name (e.g. "AWS Infrastructure",
    "Auth System Design", "CNC Machine Maintenance").
@@ -65,20 +58,20 @@ skill reads before every update.
 — you'll have a better sense of what matters once you see real sessions
 folded in."
 
-## Offer to bind in git context
+## Auto-load page in project vault
 
-After creating a page, if `vault_status` includes `git` and no
-`project.page` is set, offer to bind the new page for auto-load:
+In a project vault, `kno init` creates a default page and binds it for
+auto-load. If the user creates additional pages, they may want to change
+which page loads automatically.
 
-"Want to bind this page to a `.kno` file so it loads automatically
-when you work in this repo?"
+After creating a new page in a project vault, offer to make it the
+auto-load page:
+
+"Want this to be the page that loads automatically in this project?"
 
 On confirm: call `kno_set_option(key: "page", value: "[page name]")`.
-Mention once: "Saved to `.kno`. Commit it to share with your team, or
-add it to `.gitignore` to keep it personal."
 
-On decline: drop it. Do not offer to disable prompting here — that's
-the start skill's job when the user declines at session start.
+On decline: drop it — the existing auto-load page stays.
 
 ## Bootstrap curate
 

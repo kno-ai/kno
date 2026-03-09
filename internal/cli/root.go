@@ -27,10 +27,11 @@ func NewRootCommand() *cobra.Command {
 		},
 	}
 
-	root.PersistentFlags().String("vault", "", "Path to the vault directory (default: ~/kno)")
+	root.PersistentFlags().String("vault", "", "Path to the vault directory (default: ~/.kno)")
 
 	root.AddCommand(
 		newSetupCmd(),
+		newInitCmd(),
 		newNoteCmd(),
 		newPageCmd(),
 		newVaultCmd(),
@@ -49,7 +50,7 @@ func vaultExists(cmd *cobra.Command) bool {
 		if err != nil {
 			return false
 		}
-		vaultPath = filepath.Join(home, "kno")
+		vaultPath = filepath.Join(home, ".kno")
 	}
 	_, err := os.Stat(filepath.Join(vaultPath, "config.toml"))
 	return err == nil

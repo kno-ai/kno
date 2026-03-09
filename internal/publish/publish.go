@@ -23,8 +23,9 @@ type Result struct {
 }
 
 // PublishPages renders the given pages to all targets in the given format.
-// If pageIDs is nil, all pages are published.
-func PublishPages(v vault.Vault, targets []config.PublishTarget, pageIDs []string) ([]Result, error) {
+// If pageIDs is nil, all pages are published. projectName is used for
+// group-by-project subdirectories (empty means no project context).
+func PublishPages(v vault.Vault, targets []config.PublishTarget, projectName string, pageIDs []string) ([]Result, error) {
 	pages, err := loadPages(v, pageIDs)
 	if err != nil {
 		return nil, err
@@ -45,6 +46,12 @@ func PublishPages(v vault.Vault, targets []config.PublishTarget, pageIDs []strin
 	var results []Result
 	for _, target := range targets {
 		expandedPath := expandHome(target.Path)
+
+		// Apply group-by-project subdirectory.
+		if ShouldGroup(target, projectName) {
+			expandedPath = filepath.Join(expandedPath, projectName)
+		}
+
 		if err := os.MkdirAll(expandedPath, 0o755); err != nil {
 			for _, p := range pages {
 				results = append(results, Result{
@@ -72,6 +79,35 @@ func PublishPages(v vault.Vault, targets []config.PublishTarget, pageIDs []strin
 	}
 
 	return results, nil
+}
+
+// ShouldGroup determines whether pages should be published into a
+// project-name subdirectory for the given target.
+//
+// Group values:
+//   - "" or "auto": group when projectName is set AND path is absolute-like
+//   - "true": always group (if projectName is available)
+//   - "false": never group
+//
+// Auto logic: absolute paths (starting with / or ~/) aggregate across
+// projects and need namespacing. Relative paths are already project-scoped.
+func ShouldGroup(target config.PublishTarget, projectName string) bool {
+	if projectName == "" {
+		return false
+	}
+	switch target.Group {
+	case "true":
+		return true
+	case "false":
+		return false
+	default: // "" or "auto"
+		return isAbsoluteLike(target.Path)
+	}
+}
+
+// isAbsoluteLike reports whether a path looks absolute (starts with / or ~/).
+func isAbsoluteLike(path string) bool {
+	return filepath.IsAbs(path) || strings.HasPrefix(path, "~/")
 }
 
 func loadPages(v vault.Vault, pageIDs []string) ([]model.Page, error) {

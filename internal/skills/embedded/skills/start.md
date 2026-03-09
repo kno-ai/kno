@@ -7,51 +7,54 @@ and get them working.
 user used to invoke this skill. If they invoked `/kno-personal.start`,
 reference `/kno-personal.curate`, not `/kno.curate`.
 
-## Auto-load: project page bound
+## Project vault
 
-Call `kno_vault_status`. If the response includes `project.page`, a `.kno`
-file binds a page to this directory. Load it immediately with
+Call `kno_vault_status`. If `vault_type` is `"project"` and the response
+includes `project.page`, load the bound page immediately with
 `kno_page_show` — no need to ask.
 
-> kno active — loaded **[page name]**.
+Check whether the page has been curated (`last_curated_at` in page
+metadata). This tells you whether the page has real content or is still
+the guidance template from `kno init`.
+
+**Page has curated content:**
+
+> kno active — loaded **[page name]** (project vault).
 > [1-2 sentence demonstration of understanding the page content]
 
-If the page doesn't exist in the vault:
+**Page is fresh (no `last_curated_at`):**
 
-> kno active — `.kno` references page "[page name]" but it's not in your
+> kno active — **[page name]** project vault is set up. Start working
+> and I'll capture what matters — your first curate will bring this
+> page to life.
+
+If the bound page doesn't exist in the vault:
+
+> kno active — config references page "[page name]" but it's not in your
 > vault. Want to create it?
 
 Mention uncurated notes if applicable. Do not list other pages.
 
-## Git detected, no project binding
+## Git detected, no project vault
 
-If `vault_status` includes `git` but no `project`, this is a git repo
-without a `.kno` file.
+If `vault_status` includes `git` but `vault_type` is not `"project"`,
+this is a git repo using the personal vault.
 
-If `skill.prompt_project_setup` is `false`, skip the offer. Just add the
-repo line and fall through to the standard flow:
+If `skill.prompt_project_setup` is `false`, skip the offer. Just note
+the repo and fall through to the standard flow:
 
 > kno active — detected: [repo_name].
 
-Otherwise, offer to bind a page:
+Otherwise, suggest setting up a project vault. Keep it to one offer —
+the value is a shared knowledge base the team can build on:
 
-- **Page matches repo name:** suggest binding it.
-  > kno active — detected: [repo_name]. Want to bind **[page]** so it
-  > loads automatically when you work here?
-
-- **Pages exist but none match:** offer to create and bind.
-  > kno active — detected: [repo_name]. No project page yet. Want to
-  > create one and bind it for auto-load?
-
-- **No pages:** mention the repo, fall through to standard flow.
-  > kno active — detected: [repo_name].
-
-On confirm: call `kno_set_option(key: "page", value: "[page name]")`.
-Create the page first if needed. Mention once: "Saved to `.kno`. Commit
-it to share with your team, or add it to `.gitignore` to keep it personal."
+> kno active — detected: [repo_name]. Want to set up a project vault?
+> Run `kno init` to create a shared knowledge base in this repo —
+> it'll take effect next session.
 
 On decline: offer once to disable future prompts. If yes, call
-`kno_set_option(key: "prompt_project_setup", value: "false")`.
+`kno_set_option(key: "prompt_project_setup", value: "false")`. Then
+fall through to the standard flow with the personal vault.
 
 ## Standard flow
 
@@ -61,7 +64,7 @@ On decline: offer once to disable future prompts. If yes, call
 > **Customer Onboarding**. Want me to load any of these?
 
 **Has notes, no pages:** Suggest creating a page — notes without a page
-can't be loaded automatically in future sessions. Keep it brief.
+can't surface automatically in future sessions. Keep it brief.
 
 **Empty vault:**
 

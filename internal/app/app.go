@@ -2,6 +2,8 @@ package app
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 
 	"github.com/kno-ai/kno/internal/config"
 	"github.com/kno-ai/kno/internal/model"
@@ -15,13 +17,16 @@ import (
 
 // App wires together the core services. Both CLI and MCP use this.
 type App struct {
-	VaultPath string
-	Config    config.Config
-	Vault     vault.Vault
-	Skills    skills.Store
+	VaultPath   string
+	ProjectName string // non-empty if this is a project vault (.kno/ in a repo)
+	Config      config.Config
+	Vault       vault.Vault
+	Skills      skills.Store
 }
 
 // FromVaultPath builds an App from a vault directory path.
+// Automatically rebuilds the search index if it is missing (e.g., after cloning
+// a repo with a project vault where index/ is gitignored).
 func FromVaultPath(vaultPath string) (*App, error) {
 	cfg, err := config.Load(vaultPath)
 	if err != nil {
@@ -31,12 +36,23 @@ func FromVaultPath(vaultPath string) (*App, error) {
 	v := fs.New(vaultPath)
 	skillStore := embedded.New()
 
-	return &App{
-		VaultPath: vaultPath,
-		Config:    cfg,
-		Vault:     v,
-		Skills:    skillStore,
-	}, nil
+	a := &App{
+		VaultPath:   vaultPath,
+		ProjectName: detectProjectName(vaultPath),
+		Config:      cfg,
+		Vault:       v,
+		Skills:      skillStore,
+	}
+
+	// Auto-rebuild index if missing.
+	indexDir := v.IndexDir()
+	if _, err := os.Stat(indexDir); os.IsNotExist(err) {
+		if idx, err := search.Rebuild(v); err == nil {
+			idx.Close()
+		}
+	}
+
+	return a, nil
 }
 
 // --- Token estimation ---
@@ -167,16 +183,59 @@ func (a *App) RemovePageFromIndex(id string) {
 
 // --- Publishing ---
 
-// PublishPages publishes the given pages (or all pages if pageIDs is nil) to
-// all configured publish targets. Returns nil if no targets are configured.
-func (a *App) PublishPages(pageIDs []string) ([]publish.Result, error) {
-	if len(a.Config.Publish.Targets) == 0 {
-		return nil, nil
+// CollectPublishTargets returns all publish targets from both the current
+// vault config and the user-level config (~/.kno/config.toml). User-level
+// targets let a user publish pages from all their vaults to a single
+// destination (like Obsidian). Deduplicates by path.
+func (a *App) CollectPublishTargets() []config.PublishTarget {
+	targets := make([]config.PublishTarget, len(a.Config.Publish.Targets))
+	copy(targets, a.Config.Publish.Targets)
+
+	seen := make(map[string]bool, len(targets))
+	for _, t := range targets {
+		seen[t.Path] = true
 	}
-	return publish.PublishPages(a.Vault, a.Config.Publish.Targets, pageIDs)
+	for _, t := range config.LoadUserPublishTargets() {
+		if !seen[t.Path] {
+			targets = append(targets, t)
+			seen[t.Path] = true
+		}
+	}
+
+	return targets
 }
 
-// HasPublishTargets reports whether any publish targets are configured.
+// PublishPages publishes the given pages (or all pages if pageIDs is nil) to
+// all collected publish targets (vault + user-level). Returns nil if no
+// targets are configured.
+func (a *App) PublishPages(pageIDs []string) ([]publish.Result, error) {
+	targets := a.CollectPublishTargets()
+	if len(targets) == 0 {
+		return nil, nil
+	}
+	return publish.PublishPages(a.Vault, targets, a.ProjectName, pageIDs)
+}
+
+// HasPublishTargets reports whether any publish targets are configured
+// (vault-level or user-level).
 func (a *App) HasPublishTargets() bool {
-	return len(a.Config.Publish.Targets) > 0
+	return len(a.CollectPublishTargets()) > 0
+}
+
+// detectProjectName returns the project name if vaultPath is a project vault
+// (.kno/ directory inside a project). Returns empty for personal vaults.
+func detectProjectName(vaultPath string) string {
+	abs, err := filepath.Abs(vaultPath)
+	if err != nil {
+		return ""
+	}
+	if filepath.Base(abs) != ".kno" {
+		return ""
+	}
+	parent := filepath.Dir(abs)
+	home, _ := os.UserHomeDir()
+	if parent == home {
+		return "" // ~/.kno is personal, not project
+	}
+	return filepath.Base(parent)
 }

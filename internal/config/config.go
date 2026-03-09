@@ -9,6 +9,7 @@ import (
 )
 
 type Config struct {
+	Page    string        `toml:"page,omitempty" json:"page,omitempty"`
 	Notes   NotesConfig   `toml:"notes" json:"notes"`
 	Pages   PagesConfig   `toml:"pages" json:"pages"`
 	Curate  CurateConfig  `toml:"curate" json:"curate"`
@@ -20,6 +21,7 @@ type Config struct {
 type PublishTarget struct {
 	Path   string `toml:"path" json:"path"`
 	Format string `toml:"format" json:"format"`
+	Group  string `toml:"group,omitempty" json:"group,omitempty"` // "auto" (default), "true", "false"
 }
 
 type PublishConfig struct {
@@ -33,6 +35,43 @@ func ValidPublishFormat(format string) bool {
 		return true
 	}
 	return false
+}
+
+// ValidPublishGroup reports whether group is a recognized grouping setting.
+func ValidPublishGroup(group string) bool {
+	switch group {
+	case "", "auto", "true", "false":
+		return true
+	}
+	return false
+}
+
+// UserConfigDir returns the path to the user-level kno config directory (~/.kno).
+// Respects KNO_USER_CONFIG_DIR for testing.
+func UserConfigDir() string {
+	if dir := os.Getenv("KNO_USER_CONFIG_DIR"); dir != "" {
+		return dir
+	}
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return ""
+	}
+	return filepath.Join(home, ".kno")
+}
+
+// LoadUserPublishTargets loads publish targets from the user-level config
+// (~/.kno/config.toml). Returns nil if no targets are configured or the
+// config doesn't exist.
+func LoadUserPublishTargets() []PublishTarget {
+	dir := UserConfigDir()
+	if dir == "" {
+		return nil
+	}
+	cfg, err := Load(dir)
+	if err != nil {
+		return nil
+	}
+	return cfg.Publish.Targets
 }
 
 type NotesConfig struct {

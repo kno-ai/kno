@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 
 	"github.com/kno-ai/kno/internal/app"
 	"github.com/kno-ai/kno/internal/model"
@@ -16,15 +17,58 @@ func defaultVaultPath() string {
 	if err != nil {
 		return ""
 	}
-	return home + "/kno"
+	return home + "/.kno"
 }
 
-// resolveVault determines vault path from flag or default.
+// resolveVault determines vault path: explicit flag > project vault > personal vault.
 func resolveVault(cmd *cobra.Command) string {
 	if v, _ := cmd.Flags().GetString("vault"); v != "" {
 		return v
 	}
+	if pv := detectProjectVault(); pv != "" {
+		return pv
+	}
 	return defaultVaultPath()
+}
+
+// detectProjectVault checks for a .kno/ directory at the project root.
+// Checks git root first (if in a repo), then cwd.
+func detectProjectVault() string {
+	cwd, err := os.Getwd()
+	if err != nil {
+		return ""
+	}
+
+	// Check git root first.
+	if root := findRepoRoot(cwd); root != "" {
+		p := filepath.Join(root, ".kno")
+		if info, err := os.Stat(p); err == nil && info.IsDir() {
+			return p
+		}
+	}
+
+	// Check cwd.
+	p := filepath.Join(cwd, ".kno")
+	if info, err := os.Stat(p); err == nil && info.IsDir() {
+		return p
+	}
+
+	return ""
+}
+
+// findRepoRoot walks up from dir looking for a .git directory.
+func findRepoRoot(dir string) string {
+	for {
+		gitPath := filepath.Join(dir, ".git")
+		if info, err := os.Stat(gitPath); err == nil && info.IsDir() {
+			return dir
+		}
+		parent := filepath.Dir(dir)
+		if parent == dir {
+			return ""
+		}
+		dir = parent
+	}
 }
 
 // loadApp creates an App from the resolved vault path.

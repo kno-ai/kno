@@ -143,12 +143,35 @@ automatically. This keeps the page list finite and owned.
 
 ---
 
-## Multiple Vaults
+## Vault Types
 
-A vault is a self-contained directory. Running `kno setup` a second time
-with a different `--name` and `--vault` path creates a completely
-independent vault — separate notes, pages, search index, config, and
-awareness settings.
+### Personal vault
+
+A personal vault is a standalone directory (default: `~/kno`). Created by
+`kno setup`. It holds knowledge across all topics — general purpose.
+
+### Project vault
+
+A project vault is a `.kno/` directory at a project root. Created by
+`kno init`. It is self-contained — its own config, notes, pages, and
+search index. When kno detects a project vault (via MCP session context
+or CLI vault resolution), it uses that vault exclusively.
+
+Project vaults are designed for sharing: pages commit to git, while
+notes and the search index are gitignored (local to each user). The
+config includes a `page` binding that auto-loads the project page at
+session start.
+
+The MCP server detects project vaults by looking for `.kno/` at the git
+root (if in a repo) or cwd. The CLI resolves vaults the same way — a
+`.kno/` directory in the current or parent directory takes precedence over
+the personal vault.
+
+### Multiple named vaults
+
+Running `kno setup` a second time with a different `--name` and `--vault`
+path creates a completely independent vault — separate notes, pages, search
+index, config, and awareness settings.
 
 This is the model for spaces (e.g. work vs. personal). Each vault has its
 own MCP registration. The `--name` value becomes the skill prefix: a vault
@@ -157,8 +180,8 @@ named `kno-personal` exposes `/kno-personal.start`, `/kno-personal.capture`,
 varies by client — Claude Desktop uses a dot (`/kno.start`), Claude Code
 uses a colon (`/kno:start`). Each vault's awareness operates independently.
 Separation is enforced at the filesystem level — vaults have no knowledge
-of each other. Sync
-and encryption are handled outside kno, at the directory level.
+of each other. Sync and encryption are handled outside kno, at the
+directory level.
 
 ---
 
@@ -184,6 +207,45 @@ Each loop makes the next load better. Knowledge compounds.
 
 ---
 
+## Publishing
+
+Publishing renders vault pages to external directories as derived
+artifacts. The vault is always the source of truth.
+
+### Two-level config
+
+Publish targets are configured at two levels:
+
+- **User config** (`~/.kno/config.toml`) — targets that apply across all
+  vaults. Written by `kno setup --publish`. This is where personal
+  destinations like Obsidian go.
+- **Vault config** (`<vault>/config.toml`) — targets specific to one vault.
+  This is where project-specific destinations go (e.g. a team docs
+  directory committed alongside the code).
+
+`App.CollectPublishTargets()` merges both levels, deduplicating by path.
+
+### Auto-publish
+
+Pages are automatically published whenever they are created or updated
+via MCP (the `pageCreateHandler` and `pageUpdateHandler` in
+`mcp/tools_page.go`). This means curate → page update → publish happens
+as one flow. The publish result (`published_to`) is included in the MCP
+tool response so the skill can confirm it to the user.
+
+The `kno publish` CLI command exists for manual publishes and
+troubleshooting.
+
+### Project grouping
+
+When publishing from a project vault to an absolute path target, pages
+are placed in a subdirectory named after the project (`ShouldGroup` in
+`publish/publish.go`). This keeps pages from different projects organized
+in shared destinations. The `group` field on a target overrides the
+default behavior (`"auto"`, `"true"`, `"false"`).
+
+---
+
 ## Awareness Configuration
 
 Awareness behavior is controlled by the `skill.nudge_level` config setting:
@@ -195,11 +257,8 @@ Awareness behavior is controlled by the `skill.nudge_level` config setting:
 | `active` | (default) Broader checkpoint recognition. More frequent nudges. |
 
 The setting is read at MCP server startup. Changing it requires restarting
-the client to pick up the new instructions.
-
-In a git repository, the `.kno` file at the repo root can override
-`nudge_level` per project. See the [Developer Guide](kno-dev-guide) for
-details.
+the client to pick up the new instructions. Project vaults can set their
+own `nudge_level` in their `config.toml`.
 
 ---
 
@@ -335,8 +394,9 @@ the vault.
 | `kno page search` | `kno_page_search` | load (awareness or /kno.load) |
 | `kno vault status` | `kno_vault_status` | all skills, awareness |
 | — | `kno_version` | conversational |
-| — | `kno_set_option` | awareness (auto-load preference) |
+| — | `kno_set_option` | awareness (settings) |
 | `kno vault rebuild-index` | — | CLI only |
+| `kno init` | — | CLI only (creates project vault) |
 | `kno publish` | — | CLI only (auto-triggered on page update via MCP) |
 
 **"Conversational"** means the LLM uses the tool directly when the user

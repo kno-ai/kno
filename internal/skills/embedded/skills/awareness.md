@@ -181,31 +181,41 @@ The message depends on vault state and context.
 **Has notes or pages:** No confirmation needed — topic awareness and
 knowledge checkpoints handle it. The user knows kno is here.
 
-### Developer context (git detected)
+### Project vault
 
-If no vault page exists for the detected repo:
+If `vault_type` is `"project"`:
 
-> kno active — detected: [repo_name]. No pages yet.
-> I'll capture anything worth keeping as we work.
+> kno active — [project-name] project vault.
 
-If a matching page or note tagged with the repo name exists:
+The bound page loads automatically via `/kno.start`. Keep the
+confirmation minimal — the page content speaks for itself.
+
+### Personal vault with git
+
+If `vault_type` is not `"project"` but `git` is present:
 
 > kno active — detected: [repo_name].
-> I'll surface relevant content as we work.
+
+Don't suggest project vault setup here — that's the start skill's job.
+Just confirm presence and let topic matching handle the rest.
 
 **If the start skill (`/kno.start`) already ran this session, skip the session
 confirmation** — the user already knows kno is present.
 
-## Developer context
+## Project and developer context
 
-When `vault_status` includes a `git` field, this is a project session. Apply
-these additional behaviors — they do not replace the general behaviors above.
+These behaviors apply when `vault_type` is `"project"` or when
+`vault_status` includes a `git` field. They layer on top of the general
+behaviors above — they don't replace them.
 
 ### Richer matching
 
-In a developer session, awareness has more precise signal:
-- Match the repo name from `vault_status.git.repo_name` against page names,
-  page tags, and note `repo` tags.
+In a project vault, all notes and pages are project-scoped — matching is
+naturally precise. In a personal vault with git detected, use the repo
+name as an additional signal:
+
+- Match `vault_status.git.repo_name` against page names, page tags, and
+  note `repo` tags.
 - Match `type: decision` notes to current architectural topics.
 - Surface `type: debt` with `status: open` when the conversation touches
   that module or area.

@@ -65,8 +65,8 @@ problems.
 ### Coming back the next day
 
 This is where the loop pays off. You start a new session and type
-`/kno.start`. If you've bound a page to your directory (via a `.kno`
-file — see [Auto-loading pages](#auto-loading-pages-with-kno)), it loads
+`/kno.start`. If you're in a project with a project vault (see
+[Project vaults](#project-vaults)), kno loads your project page
 instantly. Otherwise, kno lists your pages and offers to load the
 relevant one. Either way, you're working with full context in seconds —
 the decisions you made yesterday, the issues you found, the setup details
@@ -94,9 +94,8 @@ create one explicitly:
 /kno.page new
 ```
 
-kno offers a starting template — for general knowledge or developer
-projects — and you can customize it or start fresh. The guidance you
-write shapes every future update.
+kno offers a starting template with guidance that shapes how future
+curations maintain the page. You can customize it or start fresh.
 
 When you create a page, kno also offers to fold any existing sessions
 into it — so your page starts with real knowledge, not empty.
@@ -196,57 +195,76 @@ still work — you're just driving manually.
 Most users won't need to change this. The default balances being helpful
 without being noisy.
 
-## Auto-loading pages with `.kno`
+---
 
-If you work in the same directory regularly, you can bind a vault page
-to it so it loads the moment you start. Create a `.kno` file in the
-directory:
+## Project vaults
 
-```toml
-page = "CNC Maintenance"
+When you work on a project repeatedly — a codebase, a client engagement,
+a research effort — a project vault keeps that knowledge scoped and
+shareable. Run `kno init` in the project directory:
+
+```bash
+cd ~/code/my-project
+kno init
 ```
 
-Now when you type `/kno.start` in that directory, kno loads
-**CNC Maintenance** immediately — no prompting, no picking from a list.
-You're working with full context in seconds.
+This creates a `.kno/` directory at the project root with:
+- A config file (`config.toml`) with the project page bound for auto-load
+- A default page named after the project, with guidance template
+- Directories for notes and pages
+- A `.gitignore` that excludes `notes/` and `index/` from git
 
-In a git repo, kno offers to create this file when you create a page or
-the next time you run `/kno.start`. But `.kno` isn't developer-specific
-— any directory where you repeatedly work on the same topic benefits.
-You can always create one manually.
+When you start a session in this directory, kno automatically loads the
+project page — decisions, known issues, setup details, all there before
+you write a line of code.
 
-The `.kno` file can also override your vault's nudge level for that
-directory:
+### What's shared, what's local
 
-```toml
-page = "CNC Maintenance"
+If the project directory is tracked by git, pages are committed and
+shared with collaborators. Notes and the search index are local to
+each person — they're personal session summaries that feed into the
+shared pages through curate.
 
-[skill]
-nudge_level = "active"
-```
+### Sharing with collaborators
 
-### How it works
+When `.kno/` is committed to a repo or shared directory, everyone who
+opens the project gets the curated page and config. New team members
+start their first session with the project's accumulated knowledge
+loaded automatically.
 
-The kno MCP server reads the `.kno` file when a session starts and
-includes the bound page in the vault status response. Claude Code
-picks this up reliably via `/kno.start`.
+### Project vaults vs personal vaults
 
-### Disabling `.kno` setup prompts
+Your personal vault (`~/kno`) is general-purpose — it holds knowledge
+across all topics. Project vaults are scoped to a single project. You
+can use both: project vaults for project-specific knowledge, your
+personal vault for everything else.
 
-In git repos, kno offers to create a `.kno` file if one doesn't exist.
-If you'd rather not be prompted, tell kno to stop asking — it saves
-the preference in your vault config so it applies across all repos.
+When kno detects a project vault, it uses that vault exclusively for the
+session. Your personal vault is unaffected.
 
-## Developer workflows
+### In git repos
 
-kno works especially well in coding sessions. When the kno MCP server
-detects a git repository, everything you save gets tagged with the
-project name automatically. kno applies developer-aware guidance —
-tracking decisions with rationale, known issues with status, and
-non-obvious setup details.
+When the kno MCP server detects a git repository, it enriches the
+session automatically — no config needed:
 
-For the full developer guide — including project pages, team onboarding,
-and dev-specific features — see the [Developer Guide](kno-dev-guide).
+- **Automatic repo tagging** — every save gets the repo name as a tag.
+  You don't need to add `#my-project` — it's already there.
+- **Developer types** — saves can be typed as `decision`, `debt`,
+  `runbook`, `bug`, or `dependency`. These help curate organize
+  knowledge into the right page sections.
+- **Status tracking** — `debt` and `bug` types support `open` /
+  `resolved` status. When you fix a known issue, curate updates the
+  page accordingly.
+
+Git also makes project vaults natural to share — pages commit to the
+repo, notes stay local via `.gitignore`. A well-curated project page
+is the onboarding document you wish existed when you joined.
+
+### Disabling project vault prompts
+
+In git repos without a project vault, kno offers to create one. If
+you'd rather not be prompted, tell kno to stop asking — it saves the
+preference in your vault config so it applies across all repos.
 
 ---
 
@@ -275,9 +293,9 @@ to Obsidian or any markdown viewer that supports YAML frontmatter:
 kno setup --publish ~/obsidian/kno
 ```
 
-This adds a publish target to your config. From then on, pages are
-**automatically published after every curate** — no extra step needed.
-You can also publish manually at any time:
+This adds a publish target to your user config (`~/.kno/config.toml`).
+Pages from **all your vaults** — personal and project — publish there
+automatically whenever a page is updated. You can also publish manually:
 
 ```bash
 kno publish
@@ -297,6 +315,53 @@ Published pages include:
 The vault remains the source of truth. Published files are derived
 artifacts that can be regenerated at any time with `kno publish`.
 
+### Project grouping
+
+When publishing from project vaults to an absolute path (like
+`~/obsidian/kno`), pages are automatically grouped into a subdirectory
+named after the project. This keeps pages from different projects
+organized:
+
+```
+~/obsidian/kno/
+  my-api/
+    my-api.md
+  frontend/
+    frontend.md
+```
+
+Relative paths (like `docs/kno`) are already project-scoped, so no
+grouping is applied. You can override this per-target with the `group`
+field in config.
+
+### Two-level publish config
+
+Publish targets can be configured at two levels:
+
+- **User config** (`~/.kno/config.toml`) — targets here apply across
+  all your vaults. This is where personal destinations like Obsidian go.
+  Use `kno setup --publish` to add targets here.
+
+- **Vault config** (`.kno/config.toml` or `~/kno/config.toml`) — targets
+  here apply to that vault only. Use this for team-specific destinations
+  like a shared docs directory.
+
+Both levels are merged at publish time. Duplicates (same path) are
+deduplicated.
+
+```toml
+# In ~/.kno/config.toml — personal, applies everywhere
+[[publish.targets]]
+path = "~/obsidian/kno"
+format = "frontmatter"
+
+# In .kno/config.toml — project-specific
+[[publish.targets]]
+path = "docs/kno"
+format = "markdown"
+group = "false"       # no project subdirectory for relative paths
+```
+
 ### Formats
 
 Two formats are available:
@@ -309,20 +374,6 @@ Override the format per-publish:
 
 ```bash
 kno publish --format markdown
-```
-
-### Multiple targets
-
-Add multiple targets in `config.toml`:
-
-```toml
-[[publish.targets]]
-path = "~/obsidian/kno"
-format = "frontmatter"
-
-[[publish.targets]]
-path = "~/docs/kno"
-format = "markdown"
 ```
 
 ### Time to value
@@ -406,10 +457,9 @@ Slash commands are there if you want explicit control.
 
 ## Reference
 
-For developer workflows (git detection, project pages, team use), see the
-[Developer Guide](kno-dev-guide). For the complete CLI specification, see
-the [CLI Reference](kno-cli). For detailed skill behavior, see the
-[Skills Reference](kno-skills). For how the layers connect, see the
+For the complete CLI specification, see the [CLI Reference](kno-cli).
+For detailed skill behavior, see the [Skills Reference](kno-skills).
+For how the layers connect, see the
 [Architecture](https://github.com/kno-ai/kno/blob/main/ARCHITECTURE.md) doc.
 
 ### Browsing your vault from the terminal
@@ -434,7 +484,8 @@ kno vault status
 
 ### Config
 
-`~/kno/config.toml`:
+Your vault config lives at `<vault>/config.toml`. User-level config
+(for publish targets that apply everywhere) lives at `~/.kno/config.toml`.
 
 ```toml
 [notes]
@@ -454,11 +505,11 @@ default_limit = 10
 
 [skill]
 nudge_level = "active"        # "off", "light", or "active"
-# prompt_project_setup = false  # set to false to stop .kno creation prompts
 
 # [[publish.targets]]
 # path = "~/obsidian/kno"
 # format = "frontmatter"            # "frontmatter" or "markdown"
+# group = "auto"                    # "auto", "true", or "false"
 ```
 
 ### Managing your vault in conversation

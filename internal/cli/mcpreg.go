@@ -12,6 +12,7 @@ import (
 type mcpClient struct {
 	Name       string // user-facing name for --register flag
 	ConfigPath string // absolute path to config file
+	Dynamic    bool   // true if client provides meaningful cwd (project vault detection)
 }
 
 // knownMCPClients returns all known MCP client configurations on this system.
@@ -27,13 +28,15 @@ func knownMCPClients() []mcpClient {
 		clients = append(clients, mcpClient{
 			Name:       "claude-desktop",
 			ConfigPath: filepath.Join(home, "Library", "Application Support", "Claude", "claude_desktop_config.json"),
+			Dynamic:    false, // cwd is not meaningful
 		})
 	}
 
-	// Claude Code — cross-platform
+	// Claude Code — cross-platform, cwd is the workspace root
 	clients = append(clients, mcpClient{
 		Name:       "claude-code",
 		ConfigPath: filepath.Join(home, ".claude.json"),
+		Dynamic:    true,
 	})
 
 	// Filter to clients whose parent directory exists.
@@ -52,7 +55,7 @@ func registerMCPClients(clients []mcpClient, vaultPath, serverName string) ([]mc
 	var registered []mcpClient
 	var errs []error
 	for _, c := range clients {
-		if err := registerMCPAt(c.ConfigPath, vaultPath, serverName); err != nil {
+		if err := registerMCPAt(c.ConfigPath, vaultPath, serverName, c.Dynamic); err != nil {
 			errs = append(errs, fmt.Errorf("%s: %w", c.Name, err))
 		} else {
 			registered = append(registered, c)
@@ -61,7 +64,7 @@ func registerMCPClients(clients []mcpClient, vaultPath, serverName string) ([]mc
 	return registered, errs
 }
 
-func registerMCPAt(configPath, vaultPath, serverName string) error {
+func registerMCPAt(configPath, vaultPath, serverName string, isDynamic bool) error {
 	var clientConfig map[string]any
 	data, err := os.ReadFile(configPath)
 	if err != nil {
@@ -85,10 +88,19 @@ func registerMCPAt(configPath, vaultPath, serverName string) error {
 		servers = make(map[string]any)
 	}
 
+	var args []string
+	if isDynamic {
+		// Dynamic resolution: let kno detect project vault from cwd.
+		args = []string{"mcp"}
+	} else {
+		// Explicit vault path for clients without meaningful cwd.
+		args = []string{"--vault", vaultPath, "mcp"}
+	}
+
 	servers[serverName] = map[string]any{
 		"type":    "stdio",
 		"command": knoBin,
-		"args":    []string{"--vault", vaultPath, "mcp"},
+		"args":    args,
 		"env":     map[string]string{},
 	}
 	clientConfig["mcpServers"] = servers
