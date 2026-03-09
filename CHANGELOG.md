@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.12.1](https://github.com/kno-ai/kno/compare/v0.12.0...v0.12.1) (2026-03-09)
+
+
+### Bug Fixes
+
+* publish target duplication and double-nesting ([f811ed8](https://github.com/kno-ai/kno/commit/f811ed873401bbb511ecbff98c5e9e3d344b40ec))
+
 ## [0.12.0](https://github.com/kno-ai/kno/compare/v0.11.0...v0.12.0) (2026-03-09)
 
 
