@@ -101,7 +101,13 @@ func ShouldGroup(target config.PublishTarget, projectName string) bool {
 	case "false":
 		return false
 	default: // "" or "auto"
-		return isAbsoluteLike(target.Path)
+		if !isAbsoluteLike(target.Path) {
+			return false
+		}
+		// Don't double-nest: if the path already ends with the project
+		// name, grouping would create .../project/project/.
+		cleaned := filepath.Clean(target.Path)
+		return filepath.Base(cleaned) != projectName
 	}
 }
 

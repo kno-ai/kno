@@ -49,8 +49,10 @@ func newSetupCmd() *cobra.Command {
 			fmt.Fprintf(cmd.OutOrStdout(), "✓  Vault created at %s\n", vaultPath)
 			fmt.Fprintf(cmd.OutOrStdout(), "✓  Config written to %s\n", cfgPath)
 
-			// Add publish target if requested — writes to user config
-			// (~/.kno/config.toml) so targets apply across all vaults.
+			// Set publish target if requested — writes to user config
+			// (~/.kno/config.toml) so the target applies across all vaults.
+			// Always replaces any previous target set via setup --publish.
+			// For multiple targets, edit config.toml directly.
 			if publishPath != "" {
 				userDir := config.UserConfigDir()
 				if userDir == "" {
@@ -65,37 +67,27 @@ func newSetupCmd() *cobra.Command {
 					return fmt.Errorf("loading user config: %w", err)
 				}
 
-				// Check if target already exists.
-				alreadyExists := false
-				for _, t := range userCfg.Publish.Targets {
-					if t.Path == publishPath {
-						alreadyExists = true
-						break
-					}
+				// Replace all existing targets with the new one.
+				newTarget := config.PublishTarget{
+					Path:   publishPath,
+					Format: "frontmatter",
+				}
+				userCfg.Publish.Targets = []config.PublishTarget{newTarget}
+				if err := config.Save(userDir, userCfg); err != nil {
+					return fmt.Errorf("saving user config: %w", err)
 				}
 
-				if !alreadyExists {
-					userCfg.Publish.Targets = append(userCfg.Publish.Targets, config.PublishTarget{
-						Path:   publishPath,
-						Format: "frontmatter",
-					})
-					if err := config.Save(userDir, userCfg); err != nil {
-						return fmt.Errorf("saving user config: %w", err)
+				// Create target directory.
+				expanded := publishPath
+				if len(expanded) > 1 && expanded[:2] == "~/" {
+					if home, herr := os.UserHomeDir(); herr == nil {
+						expanded = filepath.Join(home, expanded[2:])
 					}
-					// Create target directory.
-					expanded := publishPath
-					if len(expanded) > 1 && expanded[:2] == "~/" {
-						if home, herr := os.UserHomeDir(); herr == nil {
-							expanded = filepath.Join(home, expanded[2:])
-						}
-					}
-					if err := os.MkdirAll(expanded, 0o755); err != nil {
-						fmt.Fprintf(cmd.ErrOrStderr(), "Warning: could not create publish directory: %v\n", err)
-					}
-					fmt.Fprintf(cmd.OutOrStdout(), "✓  Publish target added: %s (in %s)\n", publishPath, config.ConfigPath(userDir))
-				} else {
-					fmt.Fprintf(cmd.OutOrStdout(), "—  Publish target already configured: %s\n", publishPath)
 				}
+				if err := os.MkdirAll(expanded, 0o755); err != nil {
+					fmt.Fprintf(cmd.ErrOrStderr(), "Warning: could not create publish directory: %v\n", err)
+				}
+				fmt.Fprintf(cmd.OutOrStdout(), "✓  Publish target set: %s (in %s)\n", publishPath, config.ConfigPath(userDir))
 			}
 
 			if !noRegister {

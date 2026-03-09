@@ -65,7 +65,7 @@ rm -rf "$SETUP_PUB_VAULT"
 SETUP_PUB_DIR=$(mktemp -d /tmp/kno-e2e-setup-pubdir.XXXXXX)
 SETUP_PUB_USER_CFG=$(mktemp -d /tmp/kno-e2e-setup-usercfg.XXXXXX)
 export KNO_USER_CONFIG_DIR="$SETUP_PUB_USER_CFG"
-assert_contains "setup --publish" "Publish target added" "$KNO" setup --vault "$SETUP_PUB_VAULT" --no-register --publish "$SETUP_PUB_DIR"
+assert_contains "setup --publish" "Publish target set" "$KNO" setup --vault "$SETUP_PUB_VAULT" --no-register --publish "$SETUP_PUB_DIR"
 grep -q "frontmatter" "$SETUP_PUB_USER_CFG/config.toml" && pass "publish config written to user config" || fail "publish config missing from user config"
 unset KNO_USER_CONFIG_DIR
 rm -rf "$SETUP_PUB_VAULT" "$SETUP_PUB_DIR" "$SETUP_PUB_USER_CFG"
@@ -203,8 +203,8 @@ assert_exit_nonzero "delete nonexistent page" "$KNO" --vault "$VAULT" page delet
 echo ""
 echo "Publish"
 
-# No targets configured — should show help message
-assert_contains "publish no targets" "No publish targets" "$KNO" --vault "$VAULT" publish
+# No targets configured — should show help message (isolate from real user config)
+KNO_USER_CONFIG_DIR=$(mktemp -d /tmp/kno-e2e-usercfg.XXXXXX) assert_contains "publish no targets" "No publish targets" "$KNO" --vault "$VAULT" publish
 
 # Configure a publish target
 PUBLISH_DIR=$(mktemp -d /tmp/kno-e2e-publish.XXXXXX)

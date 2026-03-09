@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kno-ai/kno/internal/config"
 	"github.com/kno-ai/kno/internal/model"
 )
 
@@ -178,6 +179,79 @@ func TestRenderFrontmatter_TagsWithSpecialChars(t *testing.T) {
 	// Tags with special chars should be quoted.
 	if !strings.Contains(got, `"c++"`) && !strings.Contains(got, "c++") {
 		t.Errorf("expected c++ tag in output, got:\n%s", got)
+	}
+}
+
+func TestShouldGroup(t *testing.T) {
+	tests := []struct {
+		name        string
+		target      config.PublishTarget
+		projectName string
+		want        bool
+	}{
+		{
+			name:        "absolute path with project name",
+			target:      config.PublishTarget{Path: "/Users/me/obsidian"},
+			projectName: "myproject",
+			want:        true,
+		},
+		{
+			name:        "absolute path already ending with project name",
+			target:      config.PublishTarget{Path: "/Users/me/obsidian/myproject"},
+			projectName: "myproject",
+			want:        false,
+		},
+		{
+			name:        "absolute path ending with project name and trailing slash",
+			target:      config.PublishTarget{Path: "/Users/me/obsidian/myproject/"},
+			projectName: "myproject",
+			want:        false,
+		},
+		{
+			name:        "no project name",
+			target:      config.PublishTarget{Path: "/Users/me/obsidian"},
+			projectName: "",
+			want:        false,
+		},
+		{
+			name:        "relative path",
+			target:      config.PublishTarget{Path: "docs/kno"},
+			projectName: "myproject",
+			want:        false,
+		},
+		{
+			name:        "group true overrides",
+			target:      config.PublishTarget{Path: "/Users/me/obsidian/myproject", Group: "true"},
+			projectName: "myproject",
+			want:        true,
+		},
+		{
+			name:        "group false overrides",
+			target:      config.PublishTarget{Path: "/Users/me/obsidian", Group: "false"},
+			projectName: "myproject",
+			want:        false,
+		},
+		{
+			name:        "tilde path with project name suffix",
+			target:      config.PublishTarget{Path: "~/obsidian/myproject"},
+			projectName: "myproject",
+			want:        false,
+		},
+		{
+			name:        "tilde path without project name suffix",
+			target:      config.PublishTarget{Path: "~/obsidian"},
+			projectName: "myproject",
+			want:        true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := ShouldGroup(tt.target, tt.projectName)
+			if got != tt.want {
+				t.Errorf("ShouldGroup(%+v, %q) = %v, want %v", tt.target, tt.projectName, got, tt.want)
+			}
+		})
 	}
 }
 
