@@ -361,15 +361,15 @@ In a git repo without a project vault, the start skill offers to create
 one with `kno init`. This can be disabled with `prompt_project_setup =
 false` in the vault config.
 
-## Developer Context
+## Git Context
 
 When the kno MCP server detects a git repository, all skills gain
 project context. Everything you save is automatically tagged with
-the repo name, a developer-specific type vocabulary is available
-(`decision`, `debt`, `runbook`, `bug`, `dependency`), and page guidance
-is tailored to engineering knowledge — decisions with dates, known
-issues with status, setup instructions.
+the repo name, a richer type vocabulary is available (`decision`,
+`debt`, `runbook`, `bug`, `dependency`), and page guidance is tailored
+to project knowledge — decisions with dates, known issues with status,
+setup instructions.
 
-The general knowledge loop is unchanged — developer context enriches it,
+The general knowledge loop is unchanged — git context enriches it,
 it doesn't replace it. See [In git repos](kno-guide#in-git-repos) in
 the User Guide for details.

@@ -62,10 +62,15 @@ You say yes, and the session starts informed — no re-explaining your setup,
 no rediscovering decisions you already made, no cold starts on familiar
 problems.
 
-### Coming back the next day
+### The knowledge loop
 
-This is where the loop pays off. You start a new session and type
-`/kno.start`. If you're in a project with a project vault (see
+kno runs on a simple loop: **capture → curate → load**. You save what
+you learned, periodically weave notes into pages, and load those pages
+into future sessions. Each pass compounds the next — better pages make
+better loads, which make better sessions, which produce better saves.
+
+This is where it pays off. You start a new session and type `/kno.start`.
+If you're in a project with a project vault (see
 [Project vaults](#project-vaults)), kno loads your project page
 instantly. Otherwise, kno lists your pages and offers to load the
 relevant one. Either way, you're working with full context in seconds —
@@ -102,9 +107,10 @@ into it — so your page starts with real knowledge, not empty.
 
 ### Curating notes into pages
 
-Curating is where your saved notes become structured knowledge. kno
-lets you know when notes are building up and suggests curating — you
-can also run `/kno.curate` explicitly any time.
+Curating is the middle step of the knowledge loop — where your saved
+notes become structured knowledge. kno lets you know when notes are
+building up and suggests curating — you can also run `/kno.curate`
+explicitly any time.
 
 kno scans your uncurated notes, matches them to pages by content
 and tags, synthesizes an updated document, shows you what changed, and
@@ -249,8 +255,8 @@ session automatically — no config needed:
 
 - **Automatic repo tagging** — every save gets the repo name as a tag.
   You don't need to add `#my-project` — it's already there.
-- **Developer types** — saves can be typed as `decision`, `debt`,
-  `runbook`, `bug`, or `dependency`. These help curate organize
+- **Note types** — saves can be typed as `decision`, `debt`,
+  `runbook`, `bug`, or `dependency`, helping curate organize
   knowledge into the right page sections.
 - **Status tracking** — `debt` and `bug` types support `open` /
   `resolved` status. When you fix a known issue, curate updates the
@@ -376,20 +382,14 @@ Override the format per-publish:
 kno publish --format markdown
 ```
 
-### Time to value
-
-Publishing is the fastest way to see the value of your vault. After one
-curate pass, you have a living document in Obsidian — browsable, searchable,
-and linked to your other notes. Just one good page makes the loop click.
-
 ---
 
 ## Vault management
 
 You don't need to think about capacity. When the vault is full, kno
 automatically removes the oldest curated note to make room — its
-knowledge is already in a page, so nothing is lost. The curate loop
-is what protects your knowledge: once a note's insights are woven
+knowledge is already in a page, so nothing is lost. The knowledge loop
+is what protects you: once a note's insights are woven
 into a page, the raw note can safely be recycled.
 
 If the vault is full and no curated notes exist, kno removes the
