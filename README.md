@@ -1,5 +1,7 @@
 # kno
 
+*A [kno ai](https://kno-ai.com) project*
+
 A knowledge vault for your AI conversations.
 
 Your AI conversations reset every session. The insight you reached, the
